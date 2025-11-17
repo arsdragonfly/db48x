@@ -32,7 +32,7 @@
 #include "dmcp.h"
 #include "sim-dmcp.h"
 #include <target.h>
-
+#include <QtGui>
 
 #if WASM
 
@@ -56,6 +56,7 @@ uintptr_t ui_lcd_buffer()
 #include <QBitmap>
 #include <QGraphicsPixmapItem>
 #include <QTimer>
+#include <QOpenGLWidget>
 
 SimScreen *SimScreen::theScreen = nullptr;
 
@@ -84,6 +85,7 @@ SimScreen::SimScreen(QWidget *parent)
       contentXOffset(0),
       redraws(0)
 {
+    setViewport(new QOpenGLWidget());
     screen.clear();
     screen.setBackgroundBrush(QBrush(Qt::black));
 
