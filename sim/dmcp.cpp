@@ -31,16 +31,21 @@
 
 #include "datetime.h"
 #include "dmcp_fonts.c"
+#include "object.h"
 #include "recorder.h"
+#include "runtime.h"
 #include "sim-dmcp.h"
+#include "sysmenu.h"
 #include "target.h"
 #include "tests.h"
+#include "text.h"
 #include "types.h"
+#include "user_interface.h"
 
+#include <cstring>
 #include <iostream>
 #include <stdarg.h>
 #include <stdio.h>
-#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 
@@ -62,7 +67,6 @@ RECORDER(lcd_warning,   64, "Warnings from lcd/display functions");
 #undef ppgm_fp
 
 extern bool          run_tests;
-extern bool          noisy_tests;
 extern bool          no_beep;
 
 uint                 lcd_refresh_requested = 0;
@@ -847,13 +851,13 @@ void run_help_file_style(const char * help_file, user_style_fn_t *user_style_fn)
 void start_buzzer_freq(uint32_t freq)
 {
     record(dmcp, "start_buzzer %u.%03uHz", freq / 1000, freq % 1000);
-    if (!no_beep && (!tests::running || noisy_tests))
+    if (!no_beep)
         ui_start_buzzer(freq);
 }
 void stop_buzzer()
 {
     record(dmcp, "stop_buzzer");
-    if (!no_beep && (!tests::running || noisy_tests))
+    if (!no_beep)
         ui_stop_buzzer();
 }
 
@@ -1087,7 +1091,11 @@ void rtc_read(tm_t * tm, dt_t *dt)
     time(&now);
 
     struct tm utm;
+#ifdef _WIN32
+    localtime_s(&utm, &now);
+#else
     localtime_r(&now, &utm);
+#endif
 
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -1141,7 +1149,11 @@ int check_create_dir(const char * dir)
     if (stat(dir, &st) == 0)
         if (st.st_mode & S_IFDIR)
             return 0;
+#ifdef _WIN32
+    return mkdir(dir);
+#else
     return mkdir(dir, 0777);
+#endif
 }
 
 
@@ -1152,4 +1164,71 @@ void bitblt24(uint32_t x,
               int      blt_op,
               int      fill)
 {
+}
+
+
+
+size_t ui_clipboard_copy(char *buf, size_t maxlen)
+// ----------------------------------------------------------------------------
+//   Copy from clipboard
+// ----------------------------------------------------------------------------
+{
+    if (!buf || maxlen == 0)
+        return 0;
+
+    extern user_interface ui;
+    ui.clear_shift();
+
+    if (size_t sz = rt.editing())
+    {
+        utf8 data = rt.editor();
+        size_t copy = sz < maxlen ? sz : maxlen - 1;
+        memcpy(buf, data, copy);
+        buf[copy] = '\0';
+        return copy;
+    }
+
+    if (!ST(STAT_RUNNING) && rt.depth() > 0)
+    {
+        if (object_p obj = rt.top())
+        {
+            if (text_p sym = obj->as_text())
+            {
+                size_t sz = 0;
+                utf8 data = sym->value(&sz);
+                size_t copy = sz < maxlen ? sz : maxlen - 1;
+                memcpy(buf, data, copy);
+                buf[copy] = '\0';
+                return copy;
+            }
+            size_t rendered = obj->render(buf, maxlen - 1);
+            if (rendered > 0)
+            {
+                buf[rendered] = '\0';
+                return rendered;
+            }
+        }
+    }
+    return 0;
+}
+
+
+void ui_clipboard_paste(const char *text, size_t len)
+// ----------------------------------------------------------------------------
+//   Past clipboard
+// ----------------------------------------------------------------------------
+{
+    if (!text || len == 0)
+        return;
+
+    extern user_interface ui;
+    ui.clear_shift();
+
+    if (!ST(STAT_RUNNING))
+    {
+        uint pos = ui.cursor_position();
+        size_t ins = ui.insert(pos, utf8(text), len);
+        ui.cursor_position(pos + ins);
+        redraw_lcd(false);
+    }
 }

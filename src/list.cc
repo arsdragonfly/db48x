@@ -117,13 +117,17 @@ object::result list::list_parse(id      type,
             s = +p.source + utf8_next(+p.source, s - +p.source, max);
             break;
         }
-        if (precedence && (cp == '\'' || cp == ')' ||
-                           (!alist && (cp == ';' || cp == '}' || cp == ']'))))
+        bool separator = cp == ';' || (cp == ',' && !Settings.DecimalComma());
+        if (precedence &&
+            (cp == '\'' || cp == ')' ||
+             (!alist && (separator || cp == '}' || cp == ']'))))
+        {
             break;
-        if (utf8_whitespace(cp) || (cp == ';' && alist))
+        }
+        if (utf8_whitespace(cp) || (alist && separator))
         {
             s = utf8_next(s);
-            if (cp == ';')
+            if (separator)
                 precedence = p.precedence;
             continue;
         }
@@ -136,13 +140,29 @@ object::result list::list_parse(id      type,
         // For algebraic objects, check if we have or need parentheses
         if (precedence && length)
         {
+            // Implicit multiplication
+            if (!infix && precedence < 0 &&
+                (cp == '(' || is_valid_as_name_initial(cp)))
+            {
+                infix = static_object(ID_multiply);
+                if (is_valid_as_name_initial(cp))
+                {
+                    size_t cmdlen = length;
+                    if (id cmd = command::lookup(s, cmdlen, true))
+                        if (object::handler[cmd].arity == 2)
+                            infix = nullptr;
+                }
+                if (infix)
+                    precedence = MULTIPLICATIVE;
+            }
+
             if (precedence > 0)
             {
                 // Check if we see parentheses, or if we have `sin sin X`
                 bool parenthese = (cp == '(' || arity > 1) && !infix;
                 if (parenthese || infix || prefix || alist)
                 {
-                    int childp = infix      ? int(infix->precedence() + 1)
+                    int childp = infix      ? int(infix->precedence() | 1)
                                : parenthese ? int(LOWEST)
                                : alist      ? int(LOWEST)
                                             : int(SYMBOL);
@@ -235,7 +255,7 @@ object::result list::list_parse(id      type,
                         {
                             iswhere = false;
                         }
-                        else if (cp != ';')
+                        else if (cp != ';' && cp != ',')
                         {
                             rt.unterminated_error().source(start, +s-start);
                             return ERROR;
@@ -309,7 +329,7 @@ object::result list::list_parse(id      type,
                 // We just parsed an algebraic, e.g. 'sin', etc
                 // stash it and require parentheses for arguments
                 id type = obj->type();
-                if (function::has_symbolic_arguments(type))
+                if (has_symbolic_arguments(type))
                     special = type;
                 if (!is_extended_algebraic(type) && !special)
                 {
@@ -354,14 +374,9 @@ object::result list::list_parse(id      type,
                     break;
                 if (objprec < FUNCTIONAL)
                 {
-                    infix = obj;
-                    precedence = -objprec;
-                    obj = nullptr;
-                }
-                else if (!infix)
-                {
-                    // Implicit multiplication
-                    infix = static_object(ID_multiply);
+                    infix        = obj;
+                    precedence   = -objprec;
+                    obj          = nullptr;
                 }
             }
             else
@@ -383,7 +398,10 @@ object::result list::list_parse(id      type,
             // Copy the parsed object to the scratch pad (may GC)
             do
             {
-                record(list_parse, "Copying %t to scratchpad", object_p(obj));
+                record(list_parse,
+                       "Copying %t to scratchpad arg %u/%u prec %d [%+s]",
+                       +obj, arg, arity, precedence,
+                       special ? cstring(object::name(special)) : "");
                 objcount++;
 
                 size_t objsize = obj->size();
@@ -391,9 +409,11 @@ object::result list::list_parse(id      type,
 
                 // For expressions, copy only the payload unless we want it
                 // to be preserved as a symbolic expression
-                if (precedence && !alist)
-                    if (!special ||
-                        !function::is_symbolic_argument(special, arity-arg))
+                // Note a subtlety here:
+                // - For single-argument functions, arg is 0
+                // - For n-ary functions, arg is 1..n (does not start at 0)
+                if (precedence && (!alist || obj->as_quoted(ID_object)))
+                    if (!special || !is_symbolic_argument(special, arg))
                         if (expression_p eq = obj->as<expression>())
                             obj = eq->objects(&objsize);
 
@@ -475,7 +495,7 @@ object::result list::list_parse(id      type,
     // Check that we have a matching closing character
     if (close && cp != close)
     {
-        if (cp != ';')
+        if (cp != ';' && cp != ',')
             record(list_error,
                    "Missing terminator, got %u (%c) not %u (%c) at %s",
                    cp, cp, close, close, utf8(s));
@@ -786,7 +806,7 @@ bool list::expand() const
 
 bool list::expand_deep(uint32_t which) const
 // ----------------------------------------------------------------------------
-//   Expand list content, expending inner expressions/programs/lists
+//   Expand list content, expanding inner expressions/programs/lists
 // ----------------------------------------------------------------------------
 {
     for (object_p obj : *this)
@@ -1176,16 +1196,18 @@ static object::result get(bool increment)
 // ----------------------------------------------------------------------------
 {
     // Check we have an object at level 2
-    if (object_p items = rt.stack(1))
+    if (object_p items = object::strip(rt.stack(1)))
     {
         if (symbol_p name = items->as_quoted<symbol>())
         {
             items = directory::recall_all(name, true);
             if (!items)
                 return object::ERROR;
+            items = object::strip(items);
         }
 
-        object_p item = items->at(rt.stack(0));
+        object_g index = object::strip(rt.stack(0));
+        object_p item = items->at(+index);
         if (!item)
         {
             if (!rt.error())
@@ -1194,7 +1216,6 @@ static object::result get(bool increment)
         else if (increment)
         {
             rt.push(item);
-            object_g index = rt.stack(1);
             bool wrap = items->next_index(&+index);
             if (index)
             {
@@ -1236,7 +1257,7 @@ static object::result put(bool increment)
 // ----------------------------------------------------------------------------
 {
     // Check that we have an object at level 2
-    if (object_p items = rt.stack(2))
+    if (object_p items = object::strip(rt.stack(2)))
     {
         symbol_p name = items->as_quoted<symbol>();
         if (name)
@@ -1244,13 +1265,14 @@ static object::result put(bool increment)
             items = directory::recall_all(name, true);
             if (!items)
                 return object::ERROR;
+            items = object::strip(items);
         }
 
-        if (object_g result = items->at(rt.stack(1), rt.top()))
+        object_g index = object::strip(rt.stack(1));
+        if (object_g result = items->at(index, rt.top()))
         {
             if (increment)
             {
-                object_g index = rt.stack(1);
                 bool wrap = result->next_index(&+index);
                 if (index)
                 {
@@ -1402,12 +1424,23 @@ error:
 }
 
 
+static inline
+object::result map_reduce_filter(list_p (list::*cmd)(object_p) const)
+// ----------------------------------------------------------------------------
+//  There are two signatures for member functions
+// ----------------------------------------------------------------------------
+{
+    auto listcmd = reinterpret_cast<object_p (list::*)(object_p) const>(cmd);
+    return map_reduce_filter(listcmd);
+}
+
+
 COMMAND_BODY(Map)
 // ----------------------------------------------------------------------------
 //   Apply unary function in level 1 to all elements in level 2
 // ----------------------------------------------------------------------------
 {
-    return map_reduce_filter(&list::map_as_object);
+    return map_reduce_filter(&list::map);
 }
 
 
@@ -1425,7 +1458,7 @@ COMMAND_BODY(Filter)
 //   Filter the function in level 1 to all elements in level 2
 // ----------------------------------------------------------------------------
 {
-    return map_reduce_filter(&list::filter_as_object);
+    return map_reduce_filter(&list::filter);
 }
 
 
@@ -1525,7 +1558,37 @@ list_p list::tail() const
 }
 
 
-list_p list::map(object_p prgobj) const
+list_p list::map(object_p prg) const
+// ----------------------------------------------------------------------------
+//   High-level map operation depending on ListRecursionDepth
+// ----------------------------------------------------------------------------
+{
+    // If set to zero, this wraps around to max size_t
+    return map(prg, Settings.ListRecursionDepth() - 1);
+}
+
+
+object_p list::reduce(object_p prg) const
+// ----------------------------------------------------------------------------
+//   High-level reduce operation depending on ListRecursionDepth
+// ----------------------------------------------------------------------------
+{
+    // If set to zero, this wraps around to max size_t
+    return reduce(prg, Settings.ListRecursionDepth() - 1);
+}
+
+
+list_p list::filter(object_p prg) const
+// ----------------------------------------------------------------------------
+//   High-level filter operation depending on ListRecursionDepth
+// ----------------------------------------------------------------------------
+{
+    // If set to zero, this wraps around to max size_t
+    return filter(prg, Settings.ListRecursionDepth() - 1);
+}
+
+
+list_p list::map(object_p prgobj, size_t recurse) const
 // ----------------------------------------------------------------------------
 //   Apply an RPL object (nominally a program) on all elements in the list
 // ----------------------------------------------------------------------------
@@ -1537,9 +1600,9 @@ list_p list::map(object_p prgobj) const
     for (object_p obj : *this)
     {
         id oty = obj->type();
-        if (is_array_or_list(oty))
+        if (is_array_or_list(oty) && recurse > 0)
         {
-            list_g sub = list_p(obj)->map(prg);
+            list_g sub = list_p(obj)->map(prg, recurse-1);
             obj = +sub;
         }
         else
@@ -1572,16 +1635,23 @@ error:
 }
 
 
-object_p list::reduce(object_p prgobj) const
+object_p list::reduce(object_p prgobj, size_t recurse) const
 // ----------------------------------------------------------------------------
 //   Apply an RPL object (nominally a program) on pairs of list elements
 // ----------------------------------------------------------------------------
 {
+    object_g result = nullptr;
     object_g prg    = prgobj;
     size_t   depth  = rt.depth();
-    object_g result = nullptr;
     for (object_p obj : *this)
     {
+        id oty = obj->type();
+        if (is_array_or_list(oty) && recurse > 0)
+        {
+            obj = list_p(obj)->reduce(prgobj, recurse - 1);
+            if (!obj)
+                continue;
+        }
         if (!rt.push(obj))
             goto error;
         if (!result)
@@ -1610,7 +1680,7 @@ error:
 }
 
 
-list_p list::filter(object_p prgobj) const
+list_p list::filter(object_p prgobj, size_t recurse) const
 // ----------------------------------------------------------------------------
 //   Apply an RPL object (nominally a program) to filter elements in a list
 // ----------------------------------------------------------------------------
@@ -1621,12 +1691,11 @@ list_p list::filter(object_p prgobj) const
     scribble scr;
     for (object_g obj : *this)
     {
-        id   oty  = obj->type();
         bool keep = false;
-        if (is_array_or_list(oty))
+        id oty = obj->type();
+        if (is_array_or_list(oty) && recurse > 0)
         {
-            object_g sub = list_p(+obj)->filter(prg);
-            obj = +sub;
+            obj = list_p(+obj)->filter(prg, recurse - 1);
             keep = true;
         }
         else
@@ -1645,7 +1714,6 @@ list_p list::filter(object_p prgobj) const
             if (rt.error())
                 goto error;
         }
-
         if (keep && !rt.append(obj))
             goto error;
     }
@@ -1698,7 +1766,7 @@ error:
 }
 
 
-list_p list::map(algebraic_fn fn) const
+list_p list::map(algebraic_fn fn, size_t recurse) const
 // ----------------------------------------------------------------------------
 //   Apply an algebraic function on all elements in the list
 // ----------------------------------------------------------------------------
@@ -1708,9 +1776,9 @@ list_p list::map(algebraic_fn fn) const
     for (object_p obj : *this)
     {
         id oty = obj->type();
-        if (is_array_or_list(oty))
+        if (is_array_or_list(oty) && recurse > 0)
         {
-            list_g sub = list_p(obj)->map(fn);
+            list_g sub = list_p(obj)->map(fn, recurse-1);
             obj = +sub;
         }
         else
@@ -1736,7 +1804,7 @@ list_p list::map(algebraic_fn fn) const
 }
 
 
-list_p list::map(arithmetic_fn fn, algebraic_r y) const
+list_p list::map(arithmetic_fn fn, algebraic_r y, size_t recurse) const
 // ----------------------------------------------------------------------------
 //   Right-apply an arithmtic function on all elements in the list
 // ----------------------------------------------------------------------------
@@ -1746,9 +1814,9 @@ list_p list::map(arithmetic_fn fn, algebraic_r y) const
     for (object_p obj : *this)
     {
         id oty = obj->type();
-        if (is_array_or_list(oty))
+        if (is_array_or_list(oty) && recurse > 0)
         {
-            list_g sub = list_p(obj)->map(fn, y);
+            list_g sub = list_p(obj)->map(fn, y, recurse-1);
             obj = +sub;
         }
         else
@@ -1774,7 +1842,7 @@ list_p list::map(arithmetic_fn fn, algebraic_r y) const
 }
 
 
-list_p list::map(algebraic_r x, arithmetic_fn fn) const
+list_p list::map(algebraic_r x, arithmetic_fn fn, size_t recurse) const
 // ----------------------------------------------------------------------------
 //   Left-apply an arithmtic function on all elements in the list
 // ----------------------------------------------------------------------------
@@ -1784,9 +1852,9 @@ list_p list::map(algebraic_r x, arithmetic_fn fn) const
     for (object_p obj : *this)
     {
         id oty = obj->type();
-        if (is_array_or_list(oty))
+        if (is_array_or_list(oty) && recurse > 0)
         {
-            list_g sub = list_p(obj)->map(x, fn);
+            list_g sub = list_p(obj)->map(x, fn, recurse-1);
             obj = +sub;
             if (!obj)
                 return nullptr;
@@ -1842,14 +1910,17 @@ int value_compare(object_p *xp, object_p *yp)
     object::id xty = x->type();
     object::id yty = y->type();
     if ((object::is_algebraic(xty) && object::is_algebraic(yty)) ||
-        (xty == object::ID_array   && yty == object::ID_array) ||
+        (xty == object::ID_array   && yty == object::ID_array)   ||
         (xty == object::ID_list    && yty == object::ID_list))
     {
         algebraic_g xa     = algebraic_p(x);
         algebraic_g ya     = algebraic_p(y);
         int         result = 0;
+        xa = xa->evaluate();
+        ya = ya->evaluate();
         if (comparison::compare(&result, xa, ya))
             return result;
+        rt.clear_error();
     }
     return x->compare_to(y);
 }
@@ -1875,7 +1946,7 @@ static int memory_compare_reverse(object_p *xp, object_p *yp)
 
 static object::result do_sort(int (*compare)(object_p *x, object_p *y))
 // ----------------------------------------------------------------------------
-//   RPL command for a sort
+//   Shared code for all RPL sorting commands
 // ----------------------------------------------------------------------------
 {
     if  (object_p obj = rt.stack(0))
@@ -1883,6 +1954,27 @@ static object::result do_sort(int (*compare)(object_p *x, object_p *y))
         if (list_p items = obj->as_array_or_list())
         {
             items = items->sort(compare);
+            return items && rt.top(+items) ? object::OK : object::ERROR;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
+    return object::ERROR;
+}
+
+
+static object::result do_unique(int (*compare)(object_p *x, object_p *y))
+// ----------------------------------------------------------------------------
+//   Shared code for all RPL sorting commands
+// ----------------------------------------------------------------------------
+{
+    if  (object_p obj = rt.stack(0))
+    {
+        if (list_p items = obj->as_array_or_list())
+        {
+            items = items->unique(compare);
             return items && rt.top(+items) ? object::OK : object::ERROR;
         }
         else
@@ -1937,6 +2029,26 @@ COMMAND_BODY(ReverseList)
 {
     return do_sort(nullptr);
 }
+
+
+COMMAND_BODY(Unique)
+// ----------------------------------------------------------------------------
+//   Isolate unique values in a list using value comparison
+// ----------------------------------------------------------------------------
+{
+    return do_unique(value_compare);
+}
+
+
+COMMAND_BODY(QuickUnique)
+// ----------------------------------------------------------------------------
+//   Isolate unique values in a list using memory compare
+// ----------------------------------------------------------------------------
+{
+    return do_unique(memory_compare);
+}
+
+
 
 
 
@@ -2214,7 +2326,8 @@ COMMAND_BODY(LName)
     if (object_p obj = rt.top())
         if (list_p result = list_variables(obj, ID_array, false))
             if (rt.push(result))
-                return OK;
+                if (algebraic::list_result(2))
+                    return OK;
     return ERROR;
 }
 
@@ -2519,13 +2632,14 @@ object_p list::substitute(object_p source, object_p args)
 }
 
 
-list_p list::substitute(symbol_r name, object_r replobj, size_t replsz) const
+list_p list::substitute(symbol_r name, object_p repl, size_t replsz) const
 // ----------------------------------------------------------------------------
 //  Substitute a single name with some other object
 // ----------------------------------------------------------------------------
 {
     scribble scr;
-    id ltype = type();
+    object_g replobj = repl;
+    id       ltype   = type();
     for (object_p obj : *this)
     {
         object_p tobj = obj;
@@ -2790,7 +2904,6 @@ object_p list::column(size_t index) const
 }
 
 
-// Get a sorted list
 list_p list::sort() const
 // ----------------------------------------------------------------------------
 //   Return a sorted list based on value-compare
@@ -2823,5 +2936,33 @@ list_p list::sort(int (*compare)(object_p *x, object_p *y)) const
             if (!rt.append(obj))
                 return nullptr;
     rt.drop(count);
+    return list::make(ty, scr.scratch(), scr.growth());
+}
+
+
+list_p list::unique() const
+// ----------------------------------------------------------------------------
+//   Return a sorted list based on value-compare
+// ----------------------------------------------------------------------------
+{
+    return unique(value_compare);
+}
+
+
+list_p list::unique(int (*compare)(object_p *x, object_p *y)) const
+// ----------------------------------------------------------------------------
+//  Return a list where consecutive items comparing equal are merged
+// ----------------------------------------------------------------------------
+{
+    id       ty = type();
+    object_g last;
+    scribble scr;
+    for (object_p item : *this)
+    {
+        if (!last || compare((object_p *) &last, (object_p *) &item) != 0)
+            if (!rt.append(+item))
+                return nullptr;
+        last = item;
+    }
     return list::make(ty, scr.scratch(), scr.growth());
 }

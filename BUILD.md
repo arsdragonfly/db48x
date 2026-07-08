@@ -1,5 +1,7 @@
 # Building the DB48X project
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/c3d/db48x)
+
 The DB48X project can be built in two variants:
 
 * A simulator that uses Qt to approximately simulate the DM42 platform. There is
@@ -107,9 +109,11 @@ https://apps.microsoft.com/detail/9npcp8drchsn?hl=en-US&gl=US
 Set username and password.
 Rember your password!!!
 
+To run Fedora, open your favorite Windows shell and run the `wsl` command.
+
 ## Prepare Fedora to run DB48x
 
-Run fedora and enter:
+Run Fedora and enter:
 
 ```bash
 sudo dnf install make
@@ -122,7 +126,7 @@ sudo dnf upgrade --refresh
 
 ## Install and build DB48x
 
-Run fedora and enter:
+Run Fedora and enter:
 
 ```bash
 git clone https://github.com/c3d/db48x.git

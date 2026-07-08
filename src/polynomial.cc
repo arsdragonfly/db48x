@@ -30,13 +30,26 @@
 #include "polynomial.h"
 
 #include "arithmetic.h"
+#include "array.h"
+#include "compare.h"
+#include "complex.h"
+#include "decimal.h"
 #include "expression.h"
+#include "factor.h"
 #include "grob.h"
 #include "integer.h"
 #include "leb128.h"
+#include "fraction.h"
+#include "list.h"
 #include "parser.h"
+#include "runtime.h"
+#include "settings.h"
+#include "functions.h"
+#include "unit.h"
 #include "variables.h"
 #include "util.h"
+
+#include <cstdlib>
 
 
 polynomial_p polynomial::make(algebraic_p value)
@@ -282,6 +295,23 @@ polynomial_p polynomial::make(expression_p expr, bool error)
         {
             if (!polynomial_op(depth, pow, 3))
                 goto error;
+        }
+        else if (ty == ID_sqrt)
+        {
+            bool ok = false;
+            if (object_p pobj = rt.top())
+                if (polynomial_p poly = pobj->as<polynomial>())
+                    if (poly->variables() == 0)
+                        if (algebraic_p expr = poly->as_expression())
+                            if (algebraic_g v = expr->evaluate())
+                                if (algebraic_g s = sqrt::run(v))
+                                    if (polynomial_p repl = make(s))
+                                        ok = rt.top(repl);
+            if (!ok)
+            {
+                rt.value_error();
+                goto error;
+            }
         }
         else
         {
@@ -843,9 +873,11 @@ bool polynomial::quorem(polynomial_r  x,
         }
         q = add(q, rpoly);
         rpoly = mul(rpoly, y);
-        r = sub(r, rpoly);
+        r     = sub(r, rpoly);
         if (!r)
             return false;
+        if (r->is_zero(false))
+            break;
 
         // Restart with rest
         rvar = r->variable(+var);
@@ -912,7 +944,7 @@ size_t polynomial::variables() const
 }
 
 
-symbol_g polynomial::variable(size_t index) const
+symbol_p polynomial::variable(size_t index) const
 // ----------------------------------------------------------------------------
 //   Return the variable at the given index as a symbol
 // ----------------------------------------------------------------------------
@@ -968,7 +1000,7 @@ size_t polynomial::variable(utf8 name, size_t len) const
         if (size_t(p - first) >= length)
             break;
     }
-    return ~0U;
+    return ~0UL;
 }
 
 
@@ -1014,6 +1046,18 @@ ularge polynomial::order(size_t *var) const
 }
 
 
+bool polynomial::is_zero(bool error) const
+// ----------------------------------------------------------------------------
+//   Return true if the polynomial is zero
+// ----------------------------------------------------------------------------
+{
+    iterator first = begin();
+    if (first == end())
+        return true;
+    return false;
+}
+
+
 polynomial::iterator polynomial::ranking(size_t *var) const
 // ----------------------------------------------------------------------------
 //   Locate the highest-ranking term in the polynomial
@@ -1053,12 +1097,14 @@ polynomial::iterator polynomial::ranking(size_t var) const
 //   Locate the highest-ranking term for given variable in the polynomial
 // ----------------------------------------------------------------------------
 {
-    size_t vars    = variables();
-    ularge maxexp  = 0;
-    iterator where = end();
+    size_t vars = variables();
+    if (!vars)
+        return begin();
+    ularge   maxexp = 0;
+    iterator where  = end();
     for (auto term : *this)
     {
-        iterator here = term;
+        iterator here = term;   // Using term.exponent() below moves term
         algebraic_g factor = term.factor();
         if (!factor->is_zero(false))
         {
@@ -1348,12 +1394,10 @@ GRAPH_BODY(polynomial)
 
 FUNCTION_BODY(ToPolynomial)
 // ----------------------------------------------------------------------------
-//   Convert an expression as a polynomial
+//   Convert array/list/expression to a polynomial object
 // ----------------------------------------------------------------------------
 {
-    if (!x)
-        return nullptr;
-    if (polynomial_p poly = polynomial::make(x))
+    if (polynomial_p poly = polynomial::get(+x))
         return poly;
     if (!rt.error())
         rt.invalid_polynomial_error();
@@ -1583,14 +1627,14 @@ ularge polynomial::iterator::rank(size_t var) const
 //   Return the rank associated with a variable
 // ----------------------------------------------------------------------------
 {
-    ularge      maxexp = 0;
+    ularge maxexp = 0;
     if (offset < size)
     {
         iterator    it     = *this;
         algebraic_g factor = it.factor();
         if (!factor->is_zero(false))
         {
-            for (size_t v = 0; v  < variables; v++)
+            for (size_t v = 0; v < variables; v++)
             {
                 ularge vexp = it.exponent();
                 if (var == v && vexp > maxexp)
@@ -1701,6 +1745,691 @@ COMMAND_BODY(StoreAlgebraVariable)
                 return OK;
         }
         rt.type_error();
+    }
+    return ERROR;
+}
+
+
+polynomial_p polynomial::from_coefficients(object_p coeffs, bool error)
+// ----------------------------------------------------------------------------
+//   Build a univariate polynomial from array/list coefficients
+// ----------------------------------------------------------------------------
+{
+    if (!coeffs)
+        return nullptr;
+    if (polynomial_p poly = coeffs->as<polynomial>())
+        return poly;
+
+    list_p list = coeffs->as_array_or_list();
+    if (!list)
+    {
+        if (error)
+            rt.type_error();
+        return nullptr;
+    }
+
+    size_t n = list->items();
+    if (!n || n > Settings.MaxPolynomialDegree())
+    {
+        if (error)
+            rt.dimension_error();
+        return nullptr;
+    }
+
+    symbol_p var = polynomial::main_variable();
+    if (!var)
+        return nullptr;
+
+    polynomial_g result = polynomial::make(integer::make(0));
+    if (!result)
+        return nullptr;
+
+    size_t i = 0;
+    for (object_p item : *list)
+    {
+        object_p o = object::strip(item);
+        if (!o->is_real() && !o->is_complex())
+        {
+            if (error)
+                rt.type_error();
+            return nullptr;
+        }
+        algebraic_p coeff = o->as_algebraic();
+        if (!coeff)
+            return nullptr;
+
+        ularge exp = n + ~i;
+        if (!coeff->is_zero(false))
+        {
+            polynomial_g term = polynomial::make(coeff, var, exp);
+            if (!term)
+                return nullptr;
+            result = polynomial::add(result, term);
+            if (!result)
+                return nullptr;
+        }
+        i++;
+    }
+
+    return result;
+}
+
+
+polynomial_p polynomial::get(object_p obj)
+// ----------------------------------------------------------------------------
+//   Turn an object into a polynomial
+// ----------------------------------------------------------------------------
+{
+    if (!obj)
+        return nullptr;
+    obj = object::strip(obj);
+    if (polynomial_p poly = obj->as<polynomial>())
+        return poly;
+    if (polynomial_p poly = polynomial::from_coefficients(obj, false))
+        return poly;
+    if (expression_p expr = obj->as<expression>())
+        obj = expr->as_difference_for_solve();
+    if (algebraic_p alg = obj->as_algebraic())
+        if (polynomial_p poly = polynomial::make(alg))
+            return poly;
+    return nullptr;
+}
+
+
+size_t polynomial::expand(bool error) const
+// ----------------------------------------------------------------------------
+//   Expand polynomial coefficients on the stack
+// ----------------------------------------------------------------------------
+{
+    stack_buffer sbuf;
+    size_t       result = expand(sbuf, error);
+    if (result)
+        sbuf.keep();                // Do not erase the stack
+    return result;
+}
+
+
+size_t polynomial::expand(stack_buffer &sbuf, bool error) const
+// ----------------------------------------------------------------------------
+//   Expand polynomial coefficients in a given stack buffer
+// ----------------------------------------------------------------------------
+{
+    size_t var = variable(main_variable());
+    if (variables() > 1 || !~var)
+    {
+        if (error)
+            rt.invalid_polynomial_error();
+        return 0;
+    }
+
+    algebraic_g  factor, existing;
+    for (iterator it : *this)
+    {
+        ularge exp = it.rank(var);
+        if (exp + 1 > sbuf.items())
+        {
+            if (exp > Settings.MaxPolynomialDegree())
+            {
+                if (error)
+                    rt.dimension_error();
+                return 0;
+            }
+            sbuf.grow(exp + 1 - sbuf.items());
+        }
+        factor = it.factor();
+        object_p obj = sbuf[exp];
+        existing = obj ? obj->as_algebraic() : nullptr;
+        if (!existing)
+        {
+            if (error)
+                rt.type_error();
+            return 0;
+        }
+        factor = existing + factor;
+        sbuf[exp] = +factor;
+    }
+    return sbuf.items();
+}
+
+
+size_t polynomial::expand(object_p pobj, bool error)
+// ----------------------------------------------------------------------------
+//   Expand a polynomial-convertible object (array, equation or polynomial)
+// ----------------------------------------------------------------------------
+{
+    size_t sz = 0;
+    if (list_p lst = pobj->as_array_or_list())
+        lst->expand_without_size(&sz);
+    else if (polynomial_p poly = polynomial::get(pobj))
+        sz = poly->expand(true);
+    else if (error)
+        rt.type_error();
+    return sz;
+}
+
+
+array_p polynomial::coefficients(bool error) const
+// ----------------------------------------------------------------------------
+//   Convert a univariate polynomial to coefficient array
+// ----------------------------------------------------------------------------
+{
+    cleaner      purge;
+    scribble     scr;
+    stack_buffer sbuf;
+    size_t       n = expand(sbuf, error);
+    if (rt.error())
+        return nullptr;
+    while (n-- > 0)
+        if (!rt.append(sbuf[n]))
+            return nullptr;
+    array_g result = array_p(list::make(ID_array, scr.scratch(), scr.growth()));
+    result = purge(result);
+    return result;
+}
+
+
+polynomial_p polynomial::derivative() const
+// ----------------------------------------------------------------------------
+//   Return derivative in the default variable
+// ----------------------------------------------------------------------------
+{
+    return derivative(main_variable());
+}
+
+
+polynomial_p polynomial::derivative(symbol_p sym) const
+// ----------------------------------------------------------------------------
+//   Return derivative in the default variable
+// ----------------------------------------------------------------------------
+{
+    return derivative(variable(sym));
+}
+
+
+polynomial_p polynomial::derivative(size_t var) const
+// ----------------------------------------------------------------------------
+//   Return derivative in the given variable
+// ----------------------------------------------------------------------------
+{
+    scribble     scr;
+    polynomial_g x        = this;
+    gcbytes      polycopy = copy_variables(x);
+    size_t       nvars    = x->variables();
+    for (iterator term : *x)
+    {
+        algebraic_g factor = term.factor();
+        iterator    it     = term;
+        bool        skip   = false;
+        for (size_t v = 0; v < nvars; v++)
+        {
+            ularge exponent = it.exponent();
+            if (v == var)
+            {
+                if (exponent > 0)
+                    factor = factor * integer::make(exponent);
+                else
+                    skip = true;
+            }
+        }
+        if (skip)
+        {
+            for (size_t v = 0; v < nvars; v++)
+                term.exponent();
+        }
+        else
+        {
+            size_t sz = factor->size();
+            byte  *np = rt.allocate(sz);
+            if (!np)
+                return nullptr;
+            memcpy(np, +factor, sz);
+            for (size_t v = 0; v < nvars; v++)
+            {
+                ularge exponent = term.exponent();
+                if (v == var && exponent > 0)
+                    exponent--;
+                byte *ep = rt.allocate(leb128size(exponent));
+                if (!ep)
+                    return nullptr;
+                leb128(ep, exponent);
+            }
+        }
+    }
+    gcbytes data   = scr.scratch();
+    size_t  datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+polynomial_p polynomial::primitive() const
+// ----------------------------------------------------------------------------
+//   Return primitive in the default variable
+// ----------------------------------------------------------------------------
+{
+    return primitive(main_variable());
+}
+
+
+polynomial_p polynomial::primitive(symbol_p sym) const
+// ----------------------------------------------------------------------------
+//   Return primitive in the given variable
+// ----------------------------------------------------------------------------
+{
+    return primitive(variable(sym));
+}
+
+
+polynomial_p polynomial::primitive(size_t var) const
+// ----------------------------------------------------------------------------
+//   Return primitive in the given variable
+// ----------------------------------------------------------------------------
+{
+    scribble     scr;
+    polynomial_g x        = this;
+    gcbytes      polycopy = copy_variables(x);
+    size_t       nvars    = x->variables();
+    for (iterator term : *x)
+    {
+        algebraic_g factor = term.factor();
+        iterator    it     = term;
+        for (size_t v = 0; v < nvars; v++)
+        {
+            ularge exponent = it.exponent();
+            if (v == var)
+            {
+                // Integrate: divide by (exponent+1)
+                factor = factor / integer::make(exponent + 1);
+            }
+        }
+        if (!factor)
+            return nullptr;
+
+        size_t sz = factor->size();
+        byte  *np = rt.allocate(sz);
+        if (!np)
+            return nullptr;
+        memcpy(np, +factor, sz);
+        for (size_t v = 0; v < nvars; v++)
+        {
+            ularge exponent = term.exponent();
+            if (v == var)
+                exponent++;  // Increase exponent by 1
+            byte *ep = rt.allocate(leb128size(exponent));
+            if (!ep)
+                return nullptr;
+            leb128(ep, exponent);
+        }
+    }
+    gcbytes data   = scr.scratch();
+    size_t  datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+RECORDER(polyroots, 16, "Polynomial roots");
+
+list_p polynomial::roots(object::id ty, symbol_p var) const
+// ----------------------------------------------------------------------------
+//   Compute roots for polynomial and cleanup
+// ----------------------------------------------------------------------------
+{
+    cleaner purge;
+    list_p  result = roots_internal(ty, var);
+    if (result)
+        result = result->sort();
+    if (result)
+        result = result->unique();
+    return purge(result);
+}
+
+
+list_p polynomial::roots_internal(object::id ty, symbol_p var) const
+// ----------------------------------------------------------------------------
+//   Compute the roots from a polynomial
+// ----------------------------------------------------------------------------
+{
+    // We can deal with degree <- 2 symbolically, otherwise must be numeric
+    polynomial_g p      = this;
+    symbol_g     vname  = var;
+    bool         round  = Settings.SymbolicResults() && Settings.AutoSimplify();
+    scribble     scr;
+    record(polyroots, "Roots of %t for variable %t", +p, +vname);
+    settings::SaveFractionDigits fd(4);
+
+    while (p && !program::interrupted())
+    {
+        size_t       vars   = p->variables();
+        size_t       vidx   = p->variable(+vname);
+        iterator     r      = p->ranking(vidx);
+        ularge       degree = r.rank(vidx);
+
+        record(polyroots, "Degree %lu", degree);
+        if (degree <= 2)
+        {
+            // ax^2+bx+c = 0, or bx+c=0
+            algebraic_g a[3];
+            algebraic_g x, y;
+            for (iterator term : *p)
+            {
+                uint vexp = ~0;
+                x = term.factor();
+                for (size_t v = 0; v < vars; v++)
+                {
+                    ularge exp = term.exponent();
+                    if (v == vidx)
+                    {
+                        vexp = exp;
+                    }
+                    else
+                    {
+                        y = variable(v);
+                        y = ::pow(y, exp);
+                        x = x * y;
+                    }
+                }
+                if (vexp > 2)
+                {
+                    rt.invalid_polynomial_error();
+                    return nullptr;
+                }
+                algebraic_g &vf = a[vexp];
+                vf = vf ? vf + x : x;
+            }
+
+            record(polyroots, "Direct a=%t b=%t c=%t", +a[2], +a[1], +a[0]);
+            if (!a[0])
+                a[0] = integer::make(0);
+            if (a[2] && !a[2]->is_zero(false))
+            {
+                if (!a[1])
+                    a[1] = integer::make(0);
+                y = a[2] * a[0];                  // ac
+                y = y + y;                        // 2ac
+                y = y + y;                        // 4ac
+                y = a[1] * a[1] - y;              // b^2-4ac
+                if (!y)
+                    goto error;
+                bool neg = y->is_negative(false);
+                if (neg)
+                {
+                    // If negative, provide result only in complex mode
+                    if (!Settings.ComplexResults())
+                    {
+                        record(polyroots, "No real solutions, delta=%t", +y);
+                        return list::make(ty, scr.scratch(), scr.growth());
+                    }
+                    y = -y;
+                }
+                if (!y)
+                    goto error;
+                y = y->symbolic_sqrt();             // sqrt(b^2-4ac)
+                a[2] = integer::make(2) * a[2];         // 2a
+                a[1] = -a[1] / a[2];                    // -b/2a
+                y  = y / a[2];                      // sqrt(b^2-4ac) / 2a
+                if (!y)
+                    goto error;
+                if (neg)
+                {
+                    if (Settings.AutoSimplify())
+                        if (expression_p expr = y->as<expression>())
+                            y = expr->simplify();
+                    x = rectangular::make(a[1], -y);
+                    y = rectangular::make(a[1], y);
+                }
+                else
+                {
+                    x = a[1] - y;
+                    y    = a[1] + y;
+                }
+                if (Settings.AutoSimplify())
+                {
+                    if (expression_p expr = y->as<expression>())
+                        y = expr->simplify();
+                    if (expression_p expr = x->as<expression>())
+                        x = expr->simplify();
+                }
+                if (round && x && y)
+                {
+                    to_sqrt(x);
+                    to_sqrt(y);
+                }
+                record(polyroots, "Solutions %t and %t", +x, +y);
+                if (!rt.append(+x) || !rt.append(+y))
+                    goto error;
+            }
+            else if (a[1] && !a[1]->is_zero(false))
+            {
+                y = -a[0] / a[1];
+                record(polyroots, "Solution is %t", +y);
+                if (!rt.append(+y))
+                    goto error;
+            }
+            else
+            {
+                rt.invalid_polynomial_error();
+                goto error;
+            }
+            return list::make(ty, scr.scratch(), scr.growth());
+        }
+        else
+        {
+            polynomial_g der1 = p->derivative(vidx);
+            polynomial_g der2 = der1->derivative(vidx);
+            stack_buffer spoly, sder1, sder2;
+            if (!p->expand(spoly, true)     ||
+                !der1->expand(sder1, true)  ||
+                !der2->expand(sder2, true))
+                goto error;
+
+            record(polyroots, "p  =%t", +p);
+            record(polyroots, "p' =%t", +der1);
+            record(polyroots, "p''=%t", +der2);
+
+            settings::SaveComplexResults scr(true);
+            size_t      max = Settings.SolverIterations();
+            algebraic_g eps = algebraic::epsilon();
+            algebraic_g n   = integer::make(degree);
+            algebraic_g n1  = integer::make(1);
+            algebraic_g x   = integer::make(0);
+            algebraic_g y, g, h, a;
+            n1 = n - n1;
+
+            // Laguerre iteration
+            bool found = false;
+            for (size_t i = 0; i < max; i++)
+            {
+                if (!x)
+                    goto error;
+                y = horner(spoly, x);
+                record(polyroots, "Laguerre %zu x=%t y=%t", i, +x, +y);
+                if (!y)
+                    goto error;
+                if (y->is_zero(false) || smaller_magnitude(y, eps))
+                {
+                    found = true;
+                    record(polyroots, "Solution found x=%t y=%t", +x, +y);
+                    break;
+                }
+                g = horner(sder1, x);
+                g = g / y;
+                h = horner(sder2, x);
+                h = g * g - h / y;
+                a = n1 * (n * h - g * g);
+                a = sqrt::run(a);
+                record(polyroots, "G=%t H=%t nH-G^2=%t", +g, +h, +a);
+                y = g - a;
+                a = g + a;
+                record(polyroots, "denominators %t or %t", +a, +y);
+                if (smaller_magnitude(a, y))
+                    a = y;
+                a = n / a;
+                x = x - a;
+                record(polyroots, "a=%t new x=%t", +a, +x);
+            }
+
+            sder1.cleanup();
+            sder2.cleanup();
+            spoly.cleanup();
+            if (!found)
+            {
+                rt.no_solution_error();
+                goto error;
+            }
+            if (round && x)
+                to_sqrt(x);
+            if (!rt.append(x))
+                goto error;
+
+            // Here p(x) is small enough, generate x-x0 polynomial
+            der1 = make(vname);
+            der2 = make(x);
+            der1 = sub(der1, der2);
+            der2 = div(p, der1);
+            record(polyroots, "Dividing %t by %t is %t", +p, +der1, +der2);
+            p = der2;
+        }
+    }
+
+error:
+    if (!rt.error())
+        rt.invalid_polynomial_error();
+    return nullptr;
+}
+
+
+
+// ============================================================================
+//
+//   Polynomial evaluation (Horner's method)
+//
+// ============================================================================
+
+algebraic_p polynomial::horner(stack_buffer &s, algebraic_r x)
+// ----------------------------------------------------------------------------
+//   Horner evaluation from coefficients on the stack
+// ----------------------------------------------------------------------------
+{
+    cleaner     purge;
+    size_t      n = s.items();
+    algebraic_g result, c;
+    for (size_t i = 0; i < n; i++)
+    {
+        object_p o = s[n + ~i];
+        c = o->as_algebraic();
+        if (!c)
+            return nullptr;
+        result = result ? result * x + c : c;
+        if (!result)
+            return nullptr;
+    }
+    return purge(result);
+}
+
+
+algebraic_p polynomial::horner(algebraic_r x)
+// ----------------------------------------------------------------------------
+//   Horner evaluation from a polynomial
+// ----------------------------------------------------------------------------
+{
+    stack_buffer s;
+    expand(s, true);
+    if (rt.error())
+        return nullptr;
+    return horner(s, x);
+}
+
+
+COMMAND_BODY(PEval)
+// ----------------------------------------------------------------------------
+//   Evaluate a polynomial at a point
+// ----------------------------------------------------------------------------
+{
+    if (object_p xobj = rt.stack(0))
+    {
+        algebraic_p x = xobj->as_algebraic();
+        if (!x)
+        {
+            rt.type_error();
+            return ERROR;
+        }
+
+        if (object_p pobj = rt.stack(1))
+        {
+            size_t       sz = polynomial::expand(pobj, true);
+            if (!sz)
+                return ERROR;
+            stack_buffer s(sz);
+            algebraic_p result = polynomial::horner(s, x);
+            s.cleanup();
+            if (result && rt.drop() && rt.top(result))
+                return OK;
+        }
+    }
+    return ERROR;
+}
+
+
+
+// ============================================================================
+//
+//   Polynomial roots (PRoot / PCoef / Zeros)
+//
+// ============================================================================
+
+COMMAND_BODY(PRoot)
+// ----------------------------------------------------------------------------
+//   All roots of a polynomial from coefficient vector
+// ----------------------------------------------------------------------------
+{
+    if (object_p pobj = rt.top())
+        if (polynomial_p poly = polynomial::get(pobj))
+            if (symbol_p var = polynomial::main_variable())
+                if (list_p roots = poly->roots(ID_array, var))
+                    if (rt.top(roots))
+                        return OK;
+
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+COMMAND_BODY(PCoef)
+// ----------------------------------------------------------------------------
+//   Monic polynomial coefficients from roots
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        list_p roots = obj->as_array_or_list();
+        if (!roots)
+        {
+            rt.type_error();
+            return ERROR;
+        }
+        polynomial_g var  = polynomial::make(polynomial::main_variable());
+        polynomial_g poly = nullptr;
+        polynomial_g term = nullptr;
+        for (object_p root : *roots)
+        {
+            algebraic_p r = root->as_algebraic();
+            if (!r)
+            {
+                rt.invalid_polynomial_error();
+                return ERROR;
+            }
+            term = polynomial::make(algebraic_p(r));
+            term = polynomial::sub(var, term);
+            poly = poly ? polynomial::mul(poly, term) : +term;
+            if (!poly)
+                return ERROR;
+        }
+
+        algebraic_p result = +poly;
+        if (Settings.CompatiblePolynomials())
+            result = poly->coefficients();
+        if (result && rt.top(result))
+            return OK;
     }
     return ERROR;
 }

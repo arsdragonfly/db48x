@@ -32,6 +32,7 @@
 #include "algebraic.h"
 #include "array.h"
 #include "command.h"
+#include "functions.h"
 #include "menu.h"
 
 
@@ -77,10 +78,12 @@ struct constant : algebraic
         cstring    library;     // Path for library files
         builtins_p builtins;    // Builtins definitions
         size_t     nbuiltins;   // Number of entries in builtins[]
+        cstring    vlabel;      // Label for value
+        cstring    clabel;      // Label for command
         runtime &  (*error)();  // Emit error message
-        symbol_p   (*label)(symbol_r); // Menu label adustment
         bool       (*show_builtins)(); // How to check if we show builtins
         bool       stack_prefix;       // Show prefix on the stack
+        bool       ignore_case;        // Case-insensitive parsing
     };
     typedef const config &config_r;
 
@@ -133,6 +136,7 @@ struct constant : algebraic
         return val;
     }
     algebraic_p numerical_value() const;
+    algebraic_p range() const;
     uint value_index() const
     {
         switch (type())
@@ -216,19 +220,25 @@ public:
 };
 
 
+// Special entries to get a named constant or its value
+SPECIAL_MENU_DECLARE(constant_menu_name);
+SPECIAL_MENU_DECLARE(constant_menu_value);
+SPECIAL_MENU_DECLARE(constant_menu_range);
+
 #define ID(i)
 #define CONSTANT_MENU(ConstantMenu)     struct ConstantMenu : constant_menu {};
 #include "ids.tbl"
 
-COMMAND_DECLARE(Pi, 0);
-COMMAND_DECLARE(EulerianNumber, 0);
-COMMAND_DECLARE(Infinity, 0);
-COMMAND_DECLARE(NegativeInfinity, 0);
-COMMAND_DECLARE_INSERT_HELP(ConstantName,-1);
-COMMAND_DECLARE_INSERT_HELP(ConstantValue,-1);
-COMMAND_DECLARE(Const, 1);
-COMMAND_DECLARE(StandardUncertainty, 1);
-COMMAND_DECLARE(RelativeUncertainty, 1);
+SYMBOL_DECLARE(Pi);
+SYMBOL_DECLARE(EulerianNumber);
+SYMBOL_DECLARE(Infinity);
+SYMBOL_DECLARE(NegativeInfinity);
+FUNCTION(ConstantName);
+FUNCTION(ConstantValue);
+FUNCTION(ConstantRange);
+COMMAND_DECLARE_FN(Const, 1);
+COMMAND_DECLARE_FN(StandardUncertainty, 1);
+COMMAND_DECLARE_FN(RelativeUncertainty, 1);
 COMMAND_DECLARE(Constants, 0);
 
 
@@ -264,6 +274,5 @@ struct relative_uncertainty : constant
 public:
     static const config relative;
 };
-
 
 #endif // CONSTANT_H

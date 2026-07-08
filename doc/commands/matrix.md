@@ -5,6 +5,12 @@
 Stack to Array Command: Returns a vector or matrix built from individual
 elements placed on the stack and dimensions.
 
+If the argument on the stack is a polynomial, `→Array` returns its
+coefficient vector in descending degree order (the same layout `PRoot` and
+`PCoef` use in [CompatiblePolynomials](#compatiblepolynomials) mode). This is
+the usual way to obtain coefficients from a [NewStylePolynomials](#newstylepolynomials)
+`PCoef` result. No stack items are consumed beyond the polynomial.
+
 If the dimension is given as a positive integer, then `→Array` returns a
 vector built from the given number of individual items.
 
@@ -341,6 +347,11 @@ Column norm (one norm) of a matrix
 Row norm (infinity norm) of a matrix
 
 
+## Norm
+
+Euclidean norm of a vector of matrix
+
+
 ## ConstantArray
 
 Returns a constant array, defined as an array whose elements all have the same
@@ -504,7 +515,21 @@ Find a basis for the kernel of a linear application
 
 
 ## LU
-LU factorization of a matrix
+
+Crout LU factorization with partial pivoting for a square matrix `A`.
+
+Returns `L`, `U`, and a permutation matrix `P` such that `P·A = L·U`.
+`L` is lower triangular, `U` is upper triangular with ones on its diagonal,
+and `P` records the row exchanges performed during pivoting.
+
+`M` → `L` `U` `P`
+
+```rpl
+[[-1 2 5][3 1 -2][7 6 5]] LU 3 →List
+@ Expecting { [[ 7 0 0 ] [ -1 2 ⁶/₇ 0 ] [ 3 -1 ⁴/₇ -1 ]] [[ 1 ⁶/₇ ⁵/₇ ] [ 0 1 2 ] [ 0 0 1 ]] [[ 0 0 1 ] [ 1 0 0 ] [ 0 1 0 ]] }
+```
+
+See also: `REF`, `RREF`, `QR`, `DET`, `INV`, `LSQ`.
 
 
 ## MAD
@@ -543,15 +568,61 @@ Change dimensions of an array
 
 
 ## REF
-Reduce matrix to echelon form (upper triangular form)
+Reduce a matrix to echelon form (upper triangular) using Gaussian elimination.
+Requires symbolic results.
+
+`M` `REF` → `M'`
+
+See also: `RREF`, `RREFP`.
 
 
 ## RREF
-Fully reduce to row-reduced echelon form
+Fully reduce a matrix to row-reduced echelon form using Gauss-Jordan elimination.
+For an augmented system matrix, the coefficient block becomes an identity and the
+extra column holds the solution. Requires symbolic results.
+
+`M` `RREF` → `M'`
+
+```rpl
+[[3 4 5][5 6 7]] RREF
+@ Expecting [[ 1 0 -1 ] [ 0 1 2 ]]
+```
+
+See also: `REF`, `RREFP`.
+
+
+## RREFP
+Row-reduced echelon form with pivot list. Returns the pivot values and a matrix
+whose coefficient block is diagonal but not necessarily scaled to 1. DB48X uses
+`RREFP` because commands are case-insensitive and the HP50G name `rref` would
+collide with `RREF`. Requires symbolic results.
+
+`M` `RREFP` → `{ pivots }` `M'`
+
+```rpl
+[[2 1][3 4]] RREFP 2 →List
+@ Expecting { { 10 5 } [[ 10 0 ] [ 0 5 ]] }
+```
+
+See also: `RREF`, `REF`, `RREFMOD`.
 
 
 ## RREFMOD
+Modular row-reduced echelon form (reduction modulo the current CAS modulus).
+Requires symbolic results.
 
+
+## EchelonFormKeepLastColumn
+
+When set, `RREF` and `RREFP` reduce the coefficient block but leave the last
+column unnormalizedw. The last column is still updated by row operations on the
+rest of the matrix. The inverse flag is `EchelonFormReduceLastColumn`.
+
+This corresponds to HP50G system flag −126.
+
+## EchelonFormReduceLastColumn
+
+When set, `RREF` and `RREFP` reduce the coefficient block including the last column. The inverse flag is `EchelonFormKeepLastColumn`.
 
 ## RSD
 Residual R=B-A*X' on a system A*X=B

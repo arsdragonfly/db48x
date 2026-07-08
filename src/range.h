@@ -93,9 +93,15 @@ public:
     RANGE_FUNCTION(sin);
     RANGE_FUNCTION(cos);
     RANGE_FUNCTION(tan);
+    RANGE_FUNCTION(sec);
+    RANGE_FUNCTION(csc);
+    RANGE_FUNCTION(cot);
     RANGE_FUNCTION(asin);
     RANGE_FUNCTION(acos);
     RANGE_FUNCTION(atan);
+    RANGE_FUNCTION(asec);
+    RANGE_FUNCTION(acsc);
+    RANGE_FUNCTION(acot);
 
     RANGE_FUNCTION(sinh);
     RANGE_FUNCTION(cosh);
@@ -103,6 +109,12 @@ public:
     RANGE_FUNCTION(asinh);
     RANGE_FUNCTION(acosh);
     RANGE_FUNCTION(atanh);
+    RANGE_FUNCTION(csch);
+    RANGE_FUNCTION(sech);
+    RANGE_FUNCTION(coth);
+    RANGE_FUNCTION(acsch);
+    RANGE_FUNCTION(asech);
+    RANGE_FUNCTION(acoth);
 
     RANGE_FUNCTION(ln1p);
     RANGE_FUNCTION(expm1);
@@ -191,9 +203,15 @@ struct uncertain : range
     UNCERTAIN_FUNCTION(sin);
     UNCERTAIN_FUNCTION(cos);
     UNCERTAIN_FUNCTION(tan);
+    UNCERTAIN_FUNCTION(sec);
+    UNCERTAIN_FUNCTION(csc);
+    UNCERTAIN_FUNCTION(cot);
     UNCERTAIN_FUNCTION(asin);
     UNCERTAIN_FUNCTION(acos);
     UNCERTAIN_FUNCTION(atan);
+    UNCERTAIN_FUNCTION(asec);
+    UNCERTAIN_FUNCTION(acsc);
+    UNCERTAIN_FUNCTION(acot);
 
     UNCERTAIN_FUNCTION(sinh);
     UNCERTAIN_FUNCTION(cosh);
@@ -201,6 +219,12 @@ struct uncertain : range
     UNCERTAIN_FUNCTION(asinh);
     UNCERTAIN_FUNCTION(acosh);
     UNCERTAIN_FUNCTION(atanh);
+    UNCERTAIN_FUNCTION(csch);
+    UNCERTAIN_FUNCTION(sech);
+    UNCERTAIN_FUNCTION(coth);
+    UNCERTAIN_FUNCTION(acsch);
+    UNCERTAIN_FUNCTION(asech);
+    UNCERTAIN_FUNCTION(acoth);
 
     UNCERTAIN_FUNCTION(ln1p);
     UNCERTAIN_FUNCTION(expm1);
@@ -231,6 +255,7 @@ uncertain_p operator/(uncertain_r x, uncertain_r y);
 uncertain_p operator^(uncertain_r x, uncertain_r y);
 
 
+COMMAND_DECLARE(FromRange, 1);
 COMMAND_DECLARE(ToRange, ~2);
 COMMAND_DECLARE(ToDeltaRange, ~2);
 COMMAND_DECLARE(ToPercentRange, ~2);

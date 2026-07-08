@@ -249,6 +249,10 @@ protected:
     bool        handle_digits(int key);
     bool        noHelpForKey(int key);
     bool        do_search(unicode with = 0, bool restart = false);
+    void        draw_help_access_paths(id cmd,
+                                       coord &x, coord &y,
+                                       coord xleft, coord xright,
+                                       coord ybot, coord height);
 
 
 public:
@@ -309,6 +313,7 @@ protected:
     bool     taLowercase  : 1;  // Lowercase transitory alpha
     bool     taPrevAlpha  : 1;  // Alpha mode before transitory alpha
     bool     taPrevLowerc : 1;  // Lowercase before transitory alpha
+    bool     delayedArrow : 1;  // Wait until key release for arrow key report
     bool     userOnce     : 1;  // User mode should be reset
     bool     shiftDrawn   : 1;  // Cache of drawn annunciators
     bool     xshiftDrawn  : 1;  // Cache

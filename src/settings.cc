@@ -258,6 +258,7 @@ COMMAND_BODY(ResetModes)
 // ----------------------------------------------------------------------------
 {
     Settings = settings();
+    ui.menu_refresh();
     return OK;
 }
 
@@ -677,6 +678,8 @@ cstring setting::label(object::id ty)
         return printf("%u bits", s.WordSize());
     case ID_FractionIterations:
         return printf("→QIt %u", s.FractionIterations());
+    case ID_FractionLargestPrime:
+        return printf("→QπP %u", s.FractionLargestPrime());
     case ID_FractionDigits:
         return printf("→QPr %u", s.FractionDigits());
     case ID_Precision:
@@ -725,6 +728,8 @@ cstring setting::label(object::id ty)
         return printf("Slv~%u", s.SolverImprecision());
     case ID_SolverIterations:
         return printf("Slv#%u", s.SolverIterations());
+    case ID_MaxFactorIterations:
+        return printf("Fac#%u", s.MaxFactorIterations());
     case ID_CustomHeaderRefresh:
         return printf("HdrRefrsh %ums", s.CustomHeaderRefresh());
     case ID_BusyIndicatorRefresh:

@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 
+#undef RELEASE
 
 struct tests
 // ----------------------------------------------------------------------------
@@ -52,11 +53,12 @@ struct tests
     tests()
         : file(), line(), tstart(),
           tname(), sname(), tindex(), sindex(), cindex(), count(),
-          ok(), longpress(), failures(), explanation()
+          ok(), testSelection(), fkeyIndex(),
+          longpress(), failures(), explanation()
     { }
 
-    // Run all tests
-    void run(uint onlyCurrent);
+    // Run all tests; return 0 if all passed, 1 if any failed
+    int run(uint onlyCurrent);
 
     // Individual test categories
     void reset_settings();
@@ -83,7 +85,10 @@ struct tests
     void high_precision_numerical_functions();
     void exact_trig_cases();
     void trig_units();
+    void sec_csc_cot();
+    void hyperbolic_reciprocals();
     void fraction_decimal_conversions();
+    void cfraction();
     void rounding_and_truncating();
     void complex_types();
     void complex_arithmetic();
@@ -96,6 +101,8 @@ struct tests
     void sorting_functions();
     void vector_functions();
     void matrix_functions();
+    void row_echelon();
+    void lu_decomposition();
     void solver_testing();
     void constants_parsing();
     void eqnlib_parsing();
@@ -128,18 +135,23 @@ struct tests
     void online_help();
     void graphic_stack_rendering();
     void insertion_of_variables_constants_and_units();
+    void constants_operations();
     void constants_menu();
     void character_menu();
     void statistics();
     void probabilities();
     void sum_and_product();
     void polynomials();
+    void polynomial_roots();
     void quotient_and_remainder();
+    void prime_number_tests();
+    void exact_quotient();
     void expression_operations();
     void random_number_generation();
     void object_structure();
     void financial_functions();
     void library();
+    void automated_constant_and_library_parsing();
     void check_help_examples();
     void regression_checks();
     void demo_setup();
@@ -255,7 +267,6 @@ struct tests
         LOWERCASE  = 122,       // Lowercase
         LOWER_LS   = 123,       // Lowercase with left shift
         LOWER_RS   = 124,       // Lowercase with right shift
-
     };
 
     enum id : unsigned
@@ -312,9 +323,9 @@ public:
         uint length;
     };
 
-    struct DIRECT
+    struct KEYTYPE
     {
-        DIRECT(std::string text): text(text) {}
+        KEYTYPE(std::string text): text(text) {}
         std::string text;
     };
 
@@ -346,8 +357,13 @@ public:
     tests &itest(long long value);
     tests &itest(char c);
     tests &itest(cstring alpha);
+    tests &itest(const std::string &s);
     tests &itest(WAIT delay);
-    tests &itest(DIRECT direct);
+    tests &itest(KEYTYPE keytype);
+
+    tests &type_keys(cstring txt);
+    tests &ifkey();
+    tests &ifkey(uint shifts);
 
     template <typename... Args>
     tests &itest(LENGTHY length, Args... args)
@@ -483,6 +499,8 @@ public:
     uint                 refresh_count;
     int                  last_key;
     int                  ok;
+    uint                 testSelection;
+    uint                 fkeyIndex;
     bool                 longpress;
     std::vector<failure> failures;
     std::string          explanation;
@@ -494,12 +512,15 @@ public:
     static uint          refresh_delay_time;
     static uint          image_wait_time;
     static cstring       dump_on_fail;
+    static std::string   testing_path;
     static bool          running;
+    static bool          simulate_typing;
 };
 
 #define here()          position(__FILE__, __LINE__)
 #define step(...)       position(__FILE__, __LINE__).istep(__VA_ARGS__)
 #define test(...)       position(__FILE__, __LINE__).itest(__VA_ARGS__)
+#define fkey(...)       position(__FILE__, __LINE__).ifkey(__VA_ARGS__)
 #define got(...)        position(__FILE__, __LINE__).igot(__VA_ARGS__)
 #endif // SIMULATOR
 

@@ -87,60 +87,6 @@ algebraic_p function::symbolic(id op, algebraic_r x)
 }
 
 
-bool function::has_symbolic_arguments(id type)
-// ----------------------------------------------------------------------------
-//   Check if the command has any symbolic arguments, e.g. Root or Sum
-// ----------------------------------------------------------------------------
-{
-    return (type == ID_IFTE                     ||
-            type == ID_Sum                      ||
-            type == ID_Product                  ||
-            type == ID_IFTE                     ||
-            type == ID_Subst                    ||
-            type == ID_Where                    ||
-            type == ID_Copy                     ||
-            type == ID_Integrate                ||
-            type == ID_Root                     ||
-            type == ID_MultipleEquationsSolver  ||
-            type == ID_Derivative               ||
-            type == ID_Primitive);
-}
-
-
-bool function::is_symbolic_argument(id type, uint arg)
-// ----------------------------------------------------------------------------
-//   Check if the given argument needs to be stored in symbolic form
-// ----------------------------------------------------------------------------
-{
-    switch(type)
-    {
-    case ID_Sum:
-        return Sum::can_be_symbolic(arg);
-    case ID_Product:
-        return Product::can_be_symbolic(arg);
-    case ID_IFTE:
-        return IFTE::can_be_symbolic(arg);
-    case ID_Subst:
-        return Subst::can_be_symbolic(arg);
-    case ID_Where:
-        return Where::can_be_symbolic(arg);
-    case ID_Copy:
-        return Copy::can_be_symbolic(arg);
-    case ID_Integrate:
-        return Integrate::can_be_symbolic(arg);
-    case ID_Root:
-        return Root::can_be_symbolic(arg);
-    case ID_Derivative:
-        return Derivative::can_be_symbolic(arg);
-    case ID_Primitive:
-        return Primitive::can_be_symbolic(arg);
-    default:
-        break;
-    }
-    return false;
-}
-
-
 object::result function::evaluate(id op, ops_t ops)
 // ----------------------------------------------------------------------------
 //   Shared code for evaluation of all common math functions
@@ -278,7 +224,7 @@ algebraic_p function::evaluate_noclean(algebraic_r xr, id op, ops_t ops)
     algebraic_g x = xr;
 
     // Check if we are computing exact trigonometric values
-    if (op >= ID_sin && op <= ID_tan)
+    if (op >= ID_sin && op <= ID_cot)
     {
         if (id amode = adjust_angle(x))
         {
@@ -290,7 +236,8 @@ algebraic_p function::evaluate_noclean(algebraic_r xr, id op, ops_t ops)
     }
 
     // Check if we need to add units
-    if (op >= ID_asin && op <= ID_atan)
+    if ((op >= ID_asin && op <= ID_atan) ||
+        (op >= ID_asec && op <= ID_acot))
     {
         if (Settings.SetAngleUnits() && x->is_real())
         {
@@ -406,7 +353,7 @@ algebraic_p function::evaluate_noclean(algebraic_r xr, id op, ops_t ops)
 }
 
 
-object::result function::evaluate(algebraic_fn op, bool mat)
+object::result function::evaluate(algebraic_fn op, uint seqtypes)
 // ----------------------------------------------------------------------------
 //   Perform the operation from the stack, using a C++ operation
 // ----------------------------------------------------------------------------
@@ -414,35 +361,12 @@ object::result function::evaluate(algebraic_fn op, bool mat)
     if (object_p top = strip(rt.top()))
     {
         id topty = top->type();
-        if (topty == ID_polynomial)
-        {
-            if (op == algebraic_fn(sq::evaluate) ||
-                op == algebraic_fn(cubed::evaluate))
-            {
-                polynomial_g xp = polynomial_p(top);
-                ularge exp = op == algebraic_fn(cubed::evaluate) ? 3 : 2;
-                top = polynomial::pow(xp, exp);
-                return (top && rt.top(top)) ? OK : ERROR;
-            }
-            else if (op == algebraic_fn(neg::evaluate))
-            {
-                polynomial_g xp = polynomial_p(top);
-                top = polynomial::neg(xp);
-                return (top && rt.top(top)) ? OK : ERROR;
-            }
-            else
-            {
-                top = polynomial_p(top)->as_expression();
-            }
-            topty = top ? top->type() : ID_expression;
-        }
-        if (topty == ID_list || (topty == ID_array && !mat))
+        if ((topty == ID_list && (seqtypes & (1UL << topty)) == 0) ||
+            (topty == ID_array && (seqtypes & (1UL << topty)) == 0))
         {
             top = list_p(top)->map(op);
         }
-        else if (is_algebraic(topty)            ||
-                 (topty == ID_array && mat)     ||
-                 (is_integer(topty) && op == algebraic_fn(neg::evaluate)))
+        else if (is_algebraic(topty) || (seqtypes & (1UL << topty)))
         {
             algebraic_g x = algebraic_p(top);
             x = op(x);
@@ -460,8 +384,10 @@ object::result function::evaluate(algebraic_fn op, bool mat)
 }
 
 
-object::result function::evaluate(id op, nfunction_fn fn, uint arity,
-                                  bool (*can_be_symbolic)(uint arg))
+object::result function::evaluate(id           op,
+                                  nfunction_fn fn,
+                                  uint         arity,
+                                  uint         symbolic)
 // ----------------------------------------------------------------------------
 //   Perform the operation from the stack for n-ary functions
 // ----------------------------------------------------------------------------
@@ -469,7 +395,6 @@ object::result function::evaluate(id op, nfunction_fn fn, uint arity,
     if (!rt.args(arity))
         return ERROR;
 
-    bool is_symbolic = false;
     algebraic_g args[arity];
     for (uint a = 0; a < arity; a++)
     {
@@ -483,31 +408,9 @@ object::result function::evaluate(id op, nfunction_fn fn, uint arity,
             return ERROR;
         }
         args[a] = arg;
-        if (arg->is_symbolic())
-        {
-            if (!can_be_symbolic(a))
-            {
-                if (Settings.NumericalResults())
-                {
-                    // Conversion to numerical if needed (may fail silently)
-                    (void) to_decimal(args[a], true);
-                    if (!args[a])
-                        return ERROR;
-                }
-                if (args[a]->is_symbolic())
-                    is_symbolic = true;
-            }
-        }
     }
 
-    algebraic_g result;
-
-    // Check the symbolic case
-    if (is_symbolic)
-        result = expression::make(op, args, arity, ID_expression, true);
-    else
-        result = fn(op, args, arity);
-
+    algebraic_g result = fn(op, args, arity);
     if (result && rt.drop(arity) && rt.push(+result))
         return OK;
     return ERROR;
@@ -544,14 +447,16 @@ FUNCTION_BODY(neg)
     case ID_fraction:
     case ID_big_fraction:
     case ID_decimal:
-    {
-        // We can keep the object, just changing the type
-        id negty = id(xt + 1);
-        algebraic_p clone = algebraic_p(rt.clone(x));
-        byte *tp = (byte *) clone;
-        *tp = negty;
-        return clone;
-    }
+        if (!x->is_zero())
+        {
+            // We can keep the object, just changing the type
+            id negty = id(xt + 1);
+            algebraic_p clone = algebraic_p(rt.clone(x));
+            byte *tp = (byte *) clone;
+            *tp = negty;
+            return clone;
+        }
+        return x;
 
     case ID_neg_integer:
     case ID_neg_bignum:
@@ -605,8 +510,7 @@ FUNCTION_BODY(neg)
         return -u;
     }
     case ID_unit:
-        return unit::simple(neg::run(unit_p(+x)->value()),
-                            unit_p(+x)->uexpr());
+        return unit_p(+x)->map(neg::evaluate);
     case ID_tag:
     {
         algebraic_g tagged = tag_p(+x)->tagged_object()->as_algebraic();
@@ -633,7 +537,7 @@ FUNCTION_BODY(neg)
 
 FUNCTION_BODY(abs)
 // ----------------------------------------------------------------------------
-//   Implementation of 'abs'
+//   Implementation of absolute value
 // ----------------------------------------------------------------------------
 //   Special case where we don't need to promote argument to decimal
 {
@@ -684,8 +588,7 @@ FUNCTION_BODY(abs)
     }
 
     case ID_unit:
-        return unit::simple(abs::run(unit_p(+x)->value()),
-                            unit_p(+x)->uexpr());
+        return unit_p(+x)->map(abs::evaluate);
     case ID_tag:
     {
         algebraic_g tagged = tag_p(+x)->tagged_object()->as_algebraic_or_list();
@@ -693,7 +596,6 @@ FUNCTION_BODY(abs)
     }
 
     case ID_array:
-        return array_p(+x)->norm();
     case ID_list:
         return list_p(+x)->map(abs::evaluate);
 
@@ -711,88 +613,102 @@ FUNCTION_BODY(abs)
 }
 
 
-FUNCTION_BODY(arg)
+FUNCTION_BODY(norm)
 // ----------------------------------------------------------------------------
-//   Implementation of the complex argument (0 for non-complex values)
+//   Implementation of norm
 // ----------------------------------------------------------------------------
 {
     if (!x)
         return nullptr;
 
-    id xt = x->type();
-    if (should_be_symbolic(xt))
-        return symbolic(ID_arg, x);
-    auto angle_mode = Settings.AngleMode();
-    algebraic_g a;
-    if (is_complex(xt))
-    {
-        a = complex_p(algebraic_p(x))->arg(angle_mode);
-    }
-    else
-    {
-        bool negative = x->is_negative(false);
-        a = integer::make(0);
-        a = complex::convert_angle(a, angle_mode, angle_mode, negative);
-    }
-    if (a && Settings.SetAngleUnits() && a->is_real())
-        add_angle(a);
+    if (array_p a = x->as<array>())
+        return a->norm();
+    if (list_p l = x->as<list>())
+        return l->map(norm::evaluate);
+    if (unit_p u = x->as<unit>())
+        return u->map(norm::evaluate);
+    return abs::evaluate(x);
+}
+
+
+static algebraic_p complex_op(algebraic_r  x,
+                              object::id   op,
+                              algebraic_fn fn,
+                              algebraic_g  (complex::*method)() const,
+                              algebraic_p (*real)(algebraic_r x))
+// ----------------------------------------------------------------------------
+//   Conversion from complex number to real values
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+    object::id xt = x->type();
+    if (function::should_be_symbolic(xt))
+        return function::symbolic(op, x);
+    if (object::is_complex(xt))
+        return (complex_p(+x)->*method)();
+    if (object::is_array_or_list(xt))
+        return list_p(+x)->map(fn);
+    if (unit_p u = unit::get(x))
+        return op == object::ID_arg ? fn(u->value()) : u->map(fn);
+    if (!object::is_real(xt))
+        rt.type_error();
+    return real(x);
+}
+
+
+#define COMPLEX_OP(op)                                          \
+    static algebraic_p complex_op_##op(algebraic_r x);          \
+    FUNCTION_BODY(op)                                           \
+    {                                                           \
+        return complex_op(x,                                    \
+                          ID_##op,                              \
+                          op::evaluate,                         \
+                          &complex::op,                         \
+                          complex_op_##op);                     \
+    }                                                           \
+    static algebraic_p complex_op_##op(algebraic_r x)
+
+
+COMPLEX_OP(arg)
+// ----------------------------------------------------------------------------
+//   Extract the argument of the input
+// ----------------------------------------------------------------------------
+{
+    auto        am  = Settings.AngleMode();
+    bool        neg = x->is_negative(false);
+    algebraic_g a   = integer::make(0);
+    a               = complex::convert_angle(a, am, am, neg);
+    if (a && a->is_real())
+        if (Settings.SetAngleUnits())
+            algebraic::add_angle(a);
     return a;
 }
 
 
-FUNCTION_BODY(re)
+COMPLEX_OP(re)
 // ----------------------------------------------------------------------------
 //   Extract the real part of a number
 // ----------------------------------------------------------------------------
 {
-    if (!x)
-        return nullptr;
-
-    id xt = x->type();
-    if (should_be_symbolic(xt))
-        return symbolic(ID_re, x);
-    if (is_complex(xt))
-        return complex_p(algebraic_p(x))->re();
-    if (!is_real(xt))
-        rt.type_error();
     return x;
 }
 
 
-FUNCTION_BODY(im)
+COMPLEX_OP(im)
 // ----------------------------------------------------------------------------
 //   Extract the imaginary part of a number (0 for real values)
 // ----------------------------------------------------------------------------
 {
-    if (!x)
-        return nullptr;
-
-    id xt = x->type();
-    if (should_be_symbolic(xt))
-        return symbolic(ID_im, x);
-    if (is_complex(xt))
-        return complex_p(algebraic_p(x))->im();
-    if (!is_real(xt))
-        rt.type_error();
     return integer::make(0);
 }
 
 
-FUNCTION_BODY(conj)
+COMPLEX_OP(conj)
 // ----------------------------------------------------------------------------
 //   Compute the conjugate of input
 // ----------------------------------------------------------------------------
 {
-    if (!x)
-        return nullptr;
-
-    id xt = x->type();
-    if (should_be_symbolic(xt))
-        return symbolic(ID_conj, x);
-    if (is_complex(xt))
-        return complex_p(algebraic_p(x))->conjugate();
-    if (!is_real(xt))
-        rt.type_error();
     return x;
 }
 
@@ -808,26 +724,16 @@ FUNCTION_BODY(sign)
     id xt = x->type();
     if (should_be_symbolic(xt))
         return symbolic(ID_sign, x);
-
     if (x->is_negative(false))
-    {
         return integer::make(-1);
-    }
-    else if (x->is_zero(false))
-    {
+    if (x->is_zero(false))
         return integer::make(0);
-    }
-    else if (is_integer(xt) || is_bignum(xt) || is_fraction(xt) || is_real(xt))
-    {
+    if (is_integer(xt) || is_bignum(xt) || is_fraction(xt) || is_real(xt))
         return integer::make(1);
-    }
-    else if (is_complex(xt))
-    {
+    if (is_complex(xt))
         return polar::make(integer::make(1),
                            complex_p(algebraic_p(x))->pifrac(),
                            object::ID_PiRadians);
-    }
-
     rt.type_error();
     return nullptr;
 }
@@ -976,7 +882,9 @@ FUNCTION_BODY(sq)
         return nullptr;
     if (x->is_symbolic())
         return symbolic(ID_sq, x);
-    return x * x;
+    if (x->is_range())
+        return pow(x, 2);
+    return x*x;
 }
 
 
@@ -999,7 +907,9 @@ FUNCTION_BODY(cubed)
         return nullptr;
     if (x->is_symbolic())
         return symbolic(ID_cubed, x);
-    return x * x * x;
+    if (x->is_range())
+        return pow(x, 3);
+    return x*x*x;
 }
 
 
@@ -1222,6 +1132,16 @@ static algebraic_p rnd_or_trnc(algebraic_r value, int digits,
         return func(decimal_p(+value), digits);
 
     default:
+        if (value->is_symbolic())
+        {
+            settings::SaveNumericalResults snr(true);
+            algebraic_g evaluated = expression_p(+value)->evaluate();
+            if (!evaluated)
+                return nullptr;
+            if (!evaluated->is_symbolic())
+                return rnd_or_trnc(evaluated, digits, func);
+        }
+
         rt.type_error();
         return nullptr;
     }
@@ -1276,18 +1196,21 @@ NFUNCTION_BODY(ToRelativeUncertainty)
 }
 
 
-static algebraic_p uncertainty_rounding(algebraic_g args[], object::
-                                        id which)
+static algebraic_p uncertainty_rounding(algebraic_g args[], object::id which)
 // ----------------------------------------------------------------------------
 //  Compute standard or relative round
 // ----------------------------------------------------------------------------
 {
     algebraic_g x   = args[1];
     algebraic_g u   = args[0];
+    (void) algebraic::to_decimal(x, true);
+    (void) algebraic::to_decimal(u, true);
+
     algebraic_g xv  = x;
     bool        rel = which == object::ID_RelativeRound;
     bool        prc = which == object::ID_PrecisionRound;
     unit_g      uu  = unit::get(u);
+
     if (uu && rel)
     {
         u = uu->convert_to_real();
@@ -1359,14 +1282,17 @@ NFUNCTION_BODY(xroot)
 //   Compute the x-th root
 // ----------------------------------------------------------------------------
 {
-    algebraic_g &x = args[expression::in_algebraic ? 1 : 0];
-    if (x->is_zero())
+    algebraic_g &x = args[0];
+    if (x->is_zero(false))
     {
         rt.domain_error();
     }
     else
     {
-        algebraic_g &y = args[expression::in_algebraic ? 0 : 1];
+        algebraic_g &y = args[1];
+        if (x->is_symbolic() || y->is_symbolic())
+            return expression::make(ID_xroot, args, 2, ID_expression, true);
+
         bool is_int = x->is_integer();
         bool is_neg = false;
         if (!is_int && x->is_decimal())
@@ -1476,9 +1402,9 @@ NFUNCTION_BODY(comb)
             ularge mi = mval->value<ularge>();
             n = integer::make(ni < mi ? 0 : 1);
             for (ularge i = ni - mi + 1; i <= ni && n; i++)
-                n = n * algebraic_g(integer::make(i));
+                n = n * integer::make(i);
             for (ularge i = 2; i <= mi && n; i++)
-                n = n / algebraic_g(integer::make(i));
+                n = n / integer::make(i);
             return n;
         }
     }
@@ -1502,7 +1428,7 @@ NFUNCTION_BODY(perm)
             ularge mi = mval->value<ularge>();
             n = integer::make(ni < mi ? 0 : 1);
             for (ularge i = ni - mi + 1; i <= ni && n; i++)
-                n = n * algebraic_g(integer::make(i));
+                n = n * integer::make(i);
             return n;
         }
     }
@@ -1511,7 +1437,7 @@ NFUNCTION_BODY(perm)
 }
 
 
-static algebraic_p sum_product(object::id op,
+static algebraic_p sum_product(object::id func, object::id op,
                                algebraic_g args[], uint arity)
 // ----------------------------------------------------------------------------
 //   Perform a sum or product on the operations
@@ -1593,6 +1519,10 @@ static algebraic_p sum_product(object::id op,
         }
         return result;
     }
+    else if (init->is_symbolic() || last->is_symbolic())
+    {
+        return expression::make(func, args, 4, object::ID_expression, true);
+    }
     else
     {
         rt.type_error();
@@ -1606,7 +1536,7 @@ NFUNCTION_BODY(Sum)
 //   Sum operation
 // ----------------------------------------------------------------------------
 {
-    return sum_product(ID_add, args, arity);
+    return sum_product(ID_Sum, ID_add, args, arity);
 }
 
 
@@ -1615,7 +1545,7 @@ NFUNCTION_BODY(Product)
 //   Product operation
 // ----------------------------------------------------------------------------
 {
-    return sum_product(ID_multiply, args, arity);
+    return sum_product(ID_Product, ID_multiply, args, arity);
 }
 
 
@@ -1642,6 +1572,22 @@ FUNCTION_BODY(ToFraction)
         return nullptr;
     algebraic_g xg = x;
     if (arithmetic::to_fraction(xg))
+        return xg;
+    if (!rt.error())
+        rt.type_error();
+    return nullptr;
+}
+
+
+FUNCTION_BODY(ToQuotient)
+// ----------------------------------------------------------------------------
+//   Convert numbers to fractions with π, √n, ln(n) or e factored out
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+    algebraic_g xg = x;
+    if (arithmetic::to_quotient(xg))
         return xg;
     if (!rt.error())
         rt.type_error();
@@ -1787,8 +1733,8 @@ NFUNCTION_BODY(Min)
 //   Process the Min command
 // ----------------------------------------------------------------------------
 {
-    algebraic_g x = args[0]->as_extended_algebraic();
-    algebraic_g y = args[1]->as_extended_algebraic();
+    algebraic_g x = args[1]->as_extended_algebraic();
+    algebraic_g y = args[0]->as_extended_algebraic();
     return evaluate(x, y);
 }
 
@@ -1798,8 +1744,8 @@ NFUNCTION_BODY(Max)
 //   Process the Max command
 // ----------------------------------------------------------------------------
 {
-    algebraic_g x = args[0]->as_extended_algebraic();
-    algebraic_g y = args[1]->as_extended_algebraic();
+    algebraic_g x = args[1]->as_extended_algebraic();
+    algebraic_g y = args[0]->as_extended_algebraic();
     return evaluate(x, y);
 }
 

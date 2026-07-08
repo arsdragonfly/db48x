@@ -209,7 +209,7 @@ struct runtime
     //   Clone an object into the temporaries area
     // ------------------------------------------------------------------------
 
-    object_p clone_global(object_p source, size_t sz);
+    bool clone_global(object_p source, size_t sz);
     // ------------------------------------------------------------------------
     //   Clone values in the stack that point to a global we will change
     // ------------------------------------------------------------------------
@@ -286,7 +286,7 @@ struct runtime
     // ------------------------------------------------------------------------
 
 
-    text_p close_editor(bool convert = false, bool trailing_zero = true);
+    text_p close_editor(bool trailing_zero = true);
     // ------------------------------------------------------------------------
     //   Close the editor and encapsulate its content in a temporary string
     // ------------------------------------------------------------------------
@@ -566,7 +566,7 @@ struct runtime
     //
     // ========================================================================
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC push_options
 #  pragma GCC optimize("-O3")
 #endif // DM42
@@ -639,7 +639,7 @@ struct runtime
     ;
 #endif // OBJECT_H
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC pop_options
 #endif // DM42
 
@@ -759,6 +759,21 @@ struct runtime
     bool drop(uint count = 1);
     // ------------------------------------------------------------------------
     //   Pop the top-level object from the stack, or return NULL
+    // ------------------------------------------------------------------------
+
+    bool drop_at(uint base, uint count = 1);
+    // ------------------------------------------------------------------------
+    //   Remove count entries at depth base from the top
+    // ------------------------------------------------------------------------
+
+    bool push_at(uint base, object_p obj);
+    // ------------------------------------------------------------------------
+    //   Insert one object at depth base from the top
+    // ------------------------------------------------------------------------
+
+    bool swap(uint a, uint b);
+    // ------------------------------------------------------------------------
+    //   Swap two levels in the stack
     // ------------------------------------------------------------------------
 
     uint depth()
@@ -1159,7 +1174,10 @@ protected:
     friend struct GarbageCollectorStatistics;
     friend struct cleaner;
     friend struct runtime_invariants;
+    friend struct stack_buffer;
     friend void dump_gc_pointers();
+
+    static struct stack_buffer *Buffers;
 };
 
 template<typename T>
@@ -1186,6 +1204,42 @@ using object_r  = const object_g &;
 #define GCP(T)                                  \
     struct T;                                   \
     GCP_EXISTING(T)
+
+
+// ============================================================================
+//
+//   Stack buffer - temporary value arrays backed by the RPL stack
+//
+// ============================================================================
+
+struct stack_buffer
+// ----------------------------------------------------------------------------
+//   A contiguous buffer of objects stored at the top of the RPL stack
+// ----------------------------------------------------------------------------
+//   Buffers live above the normal working area.  Balanced arithmetic
+//   (push/pop pairs) below the buffers leaves `base` unchanged.
+//   The runtime keeps a linked list from the topmost buffer (lowest base)
+//   to deeper ones.  Growing a buffer adjusts the base of all buffers above.
+{
+    stack_buffer(size_t sz = 0);
+    ~stack_buffer();
+
+    object_p &operator[](size_t i) const;
+    object_p  get(size_t i);
+    bool      set(size_t i, object_p obj);
+    size_t    items() const             { return count; }
+    void      keep()                    { count = 0; }
+    void      cleanup()                 { drop(count); }
+
+    bool      push(object_p obj);
+    bool      drop(size_t n = 1);
+    bool      grow(size_t n, object_p obj = nullptr);
+
+private:
+    size_t         base;
+    size_t         count;
+    stack_buffer  *next;
+};
 
 
 // ============================================================================

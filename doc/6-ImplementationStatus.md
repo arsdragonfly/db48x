@@ -11,14 +11,14 @@ HP48 implementation.
 
 ## Implemented commands
 
-<!--- DMNONE --->
-The following is an extensive list of DB48x commands, some with multiple
+The following is an extensive list of implemented commands, some with multiple
 spellings.
 
+<!--- DMNONE --->
 * `!` (`fact`, `factorial`, `x!`)
 * `%` (`Percent`)
-* `%T` (`%Ch`, `%Change`, `PercentChange`)
-* `%Total` (`PercentTotal`)
+* `%Ch` (`%Change`, `PercentChange`)
+* `%T` (`%Total`, `PercentTotal`)
 * `*` (`multiply`, `·`, `×`)
 * `+` (`add`)
 * `-` (`subtract`)
@@ -28,9 +28,11 @@ spellings.
 * `==` (`TestSame`)
 * `>` (`TestGT`)
 * `^` (`pow`, `Power`, `↑`)
-* `abs` (`modulus`, `norm`)
+* `abs` (`Modulus`)
 * `acos` (`arccos`, `cos⁻¹`)
 * `acosh` (`cosh⁻¹`)
+* `acot` (`arccot`, `cot⁻¹`)
+* `acsc` (`arccsc`, `csc⁻¹`)
 * `AlarmMenu`
 * `AlgebraMenu`
 * `AllEquationVariables`
@@ -39,7 +41,7 @@ spellings.
 * `AlphaForeground`
 * `Amort` (`TVMAmort`, `TVMAmortize`)
 * `AmortTable` (`AmortizationSchedule`, `TVMAmortizationTable`, `TVMAmortTable`)
-* `and`
+* `And`
 * `AngleMode`
 * `AnglesMenu`
 * `Apply`
@@ -48,6 +50,7 @@ spellings.
 * `arg`
 * `ArithmeticMenu`
 * `Arry→` (`Array→`, `FromArray`)
+* `asec` (`arcsec`, `sec⁻¹`)
 * `asin` (`arcsin`, `sin⁻¹`)
 * `asinh` (`sinh⁻¹`)
 * `Asn` (`AssignKey`)
@@ -112,10 +115,11 @@ spellings.
 * `ClLCD` (`ClearLCD`)
 * `Clone` (`NewOb`, `NewObj`, `NewObject`)
 * `ClΣ` (`ClearData`, `ClearΣ`)
-* `CNrm` (`ColumnNorm`, `RNrm`)
+* `CNrm` (`ColumnNorm`)
 * `Col+` (`AddColumn`, `Column+`)
 * `Col-` (`Column-`, `DeleteColumn`)
 * `Collect`
+* `Color` (`ColorPattern`)
 * `ColΣ` (`DataColumns`, `ΣColumns`)
 * `Col→` (`ColumnsToMatrix`, `Columns→`)
 * `comb` (`Combinations`)
@@ -125,6 +129,7 @@ spellings.
 * `CompareMenu`
 * `CompatibleBasedNumbers`
 * `CompatibleGROBs`
+* `CompatiblePolynomials`
 * `CompatibleTypes`
 * `ComplexIAfterImaginary`
 * `ComplexIBeforeImaginary`
@@ -134,9 +139,8 @@ spellings.
 * `conj`
 * `ConLib` (`ConstantsLibrary`, `ConstantsMenu`)
 * `Const` (`LibraryConstant`)
-* `ConstantName`
+* `ConstantRange`
 * `Constants`
-* `ConstantValue`
 * `cont` (`Continue`)
 * `Convert`
 * `ConvertToUnit`
@@ -144,9 +148,11 @@ spellings.
 * `Corr` (`Correlation`)
 * `cos`
 * `cosh`
+* `cot`
 * `CountBits`
 * `Cov` (`Covariance`)
 * `CrDir` (`CreateDirectory`, `MkDir`)
+* `csc`
 * `Cst` (`CustomMenu`)
 * `CstRU` (`RelativeUncertainty`)
 * `CstSU` (`StandardUncertainty`)
@@ -170,6 +176,7 @@ spellings.
 * `C→R` (`ComplexToReal`, `RectangularToReal`, `ℂ→ℝ`)
 * `Date`
 * `Date+` (`DateAdd`)
+* `Date-` (`DateSub`, `DaysBetweenDates`, `DDays`)
 * `DateDash`
 * `DateDot`
 * `DateForeground`
@@ -180,7 +187,6 @@ spellings.
 * `DateTime`
 * `DayBeforeMonth`
 * `dbug` (`Debug`)
-* `DDays` (`DateSub`)
 * `DebugMenu`
 * `DebugOnError`
 * `Dec` (`Decimal`)
@@ -193,6 +199,8 @@ spellings.
 * `det` (`Determinant`)
 * `Detach`
 * `DetailedTypes`
+* `DFC` (`ContinuedFraction`)
+* `DFC2F` (`ContinuedFractionToFraction`)
 * `DifferentialSolverMenu`
 * `Disp` (`DrawText`)
 * `DisplayDigits`
@@ -248,9 +256,6 @@ spellings.
 * `Eng` (`EngineeringDisplay`)
 * `Eq` (`Equation`)
 * `EqnLib` (`EquationsLibrary`, `EquationsMenu`)
-* `EquationName`
-* `EquationSolver`
-* `EquationValue`
 * `equiv`
 * `erf`
 * `erfc`
@@ -264,7 +269,7 @@ spellings.
 * `ErrorForeground`
 * `Eval` (`Evaluate`)
 * `EvalEq` (`EvaluateEquation`)
-* `excludes`
+* `Excludes`
 * `ExitClearsMenu`
 * `ExitKeepsMenu`
 * `exp`
@@ -275,6 +280,7 @@ spellings.
 * `ExpLogIdentitiesMenu`
 * `ExpLogMenu` (`PowersMenu`)
 * `expm` (`expm1`)
+* `Factors`
 * `False`
 * `FancyExponent`
 * `FC?` (`TestFlagClear`)
@@ -305,9 +311,9 @@ spellings.
 * `FS?C` (`TestFlagSetThenClear`)
 * `FS?S` (`TestFlagSetThenSet`)
 * `Function` (`FunctionPlot`)
-* `Gamma` (`tgamma`)
 * `GAnd` (`GraphicAnd`)
 * `GC` (`GarbageCollect`)
+* `GCD` (`GreatestCommonDenominator`)
 * `GCIconForeground`
 * `GCStats` (`GarbageCollectorStatistics`)
 * `GCStatsClearAfterRead`
@@ -367,6 +373,7 @@ spellings.
 * `HorizontalLists`
 * `HorizontalProgramRendering`
 * `HorizontalVectors`
+* `HSV` (`HSVPattern`)
 * `HyperbolicMenu`
 * `Idn` (`IdentityMatrix`)
 * `IFT` (`IfThen`)
@@ -392,6 +399,7 @@ spellings.
 * `IOMenu`
 * `IP` (`IntegerPart`, `IntPart`)
 * `Isol` (`Isolate`)
+* `IsPrime`
 * `JDN` (`JulianDayNumber`)
 * `JDN→` (`DateFromJulianDayNumber`)
 * `Keys` (`KeyMap`)
@@ -404,10 +412,10 @@ spellings.
 * `LaxArrayResizing`
 * `LazyEvaluation`
 * `LCD→` (`FromLCD`, `Screen→`)
+* `LCM` (`LeastCommonMultiple`)
 * `LeadingZero`
 * `LeftShiftBackground`
 * `LeftShiftForeground`
-* `lgamma` (`LogGamma`)
 * `LibEq` (`LibraryEquation`)
 * `Library`
 * `Libs` (`Libraries`)
@@ -419,10 +427,12 @@ spellings.
 * `ListAsData`
 * `ListAsProgram`
 * `ListMenu`
+* `ListRecursionDepth`
 * `List→` (`FromList`)
 * `ln`
 * `ln1p` (`lnp1`)
 * `LName` (`ListExpressionNames`)
+* `lnΓ` (`lgamma`, `LnGamma`)
 * `log` (`log10`)
 * `log2`
 * `LogFit` (`LogarithmicFit`)
@@ -444,6 +454,11 @@ spellings.
 * `MathModesMenu`
 * `MatrixMenu`
 * `Max`
+* `MaxFactorIterations`
+* `MaxFactorsBits`
+* `MaxLaguerreIterations`
+* `MaxPolynomialDegree`
+* `MaxRootDivisor`
 * `MaxFlags`
 * `MaxH` (`MaximumShowHeight`)
 * `MaximumDecimalExponent`
@@ -477,12 +492,13 @@ spellings.
 * `MultipleSteps`
 * `MultiSolverMenu`
 * `NameDisplayMode`
-* `NAnd`
+* `nand`
 * `NDupN` (`NDuplicateN`)
 * `NeedToClearErrors`
 * `neg` (`Negate`)
 * `NegativeUnderflowIndicator`
 * `NextEq` (`NextEquation`)
+* `NextPr` (`NextPrime`)
 * `Nip`
 * `NoAngleUnits`
 * `NoAutoSimplify`
@@ -499,6 +515,7 @@ spellings.
 * `NoPositiveUnderflow`
 * `NoProgramLastArguments`
 * `NOr`
+* `norm`
 * `NormalPolynomialRender`
 * `NoStackAutoScale`
 * `NoStackSave`
@@ -506,6 +523,7 @@ spellings.
 * `NoTrailingDecimal`
 * `NoUndefinedResult`
 * `NSub`
+* `NewStylePolynomials`
 * `Num` (`CharToUnicode`, `Char→Code`, `Codepoint`)
 * `NumberDotOrComma`
 * `NumberedVariables`
@@ -537,7 +555,9 @@ spellings.
 * `Path` (`DirectoryPath`)
 * `PCov` (`PopulationCovariance`)
 * `perm` (`Permutations`)
+* `PgAll` (`PurgeAll`)
 * `PgDir` (`PurgeDirectory`, `RmDir`)
+* `Pi` (`π`)
 * `Pick`
 * `Pick3`
 * `Pict` (`GraphicPicture`)
@@ -558,11 +578,15 @@ spellings.
 * `PositiveUnderflowIndicator`
 * `PowerVoltage`
 * `PPar` (`PlotParameters`)
+* `PCoef` (`PolynomialCoefficients`)
+* `PEval` (`PolynomialEvaluation`)
+* `PRoot` (`PolynomialRoots`)
 * `PrcRnd` (`PrecisionRound`)
 * `Prec` (`Precision`)
 * `PredX` (`PredictX`)
 * `PredY` (`PredictY`)
 * `PrefixPolynomialRender`
+* `PrevPr` (`PreviousPrime`)
 * `PrincipalSolution`
 * `PrintingMenu`
 * `ProbabilitiesMenu`
@@ -571,7 +595,6 @@ spellings.
 * `Prompt`
 * `PSDev` (`PopulationStandardDeviation`)
 * `Purge`
-* `PurgeAll`
 * `PushEvaluatedAssignment`
 * `PushOriginalAssignment`
 * `Put`
@@ -580,12 +603,14 @@ spellings.
 * `PwrFit` (`PowerFit`)
 * `P→R` (`PolarToReal`, `Polarℂ→ℝ`)
 * `QuickSort`
+* `Quote`
 * `Rad` (`Radians`)
 * `rand` (`RandomNumber`)
 * `Random`
 * `RandomGeneratorBits`
 * `RandomGeneratorOrder`
 * `RangeMenu`
+* `Range→` (`FromRange`)
 * `RanM` (`RandomArray`, `RandomMatrix`)
 * `RcEq` (`RecallEquation`)
 * `Rcl` (`Recall`)
@@ -608,6 +633,7 @@ spellings.
 * `rem`
 * `ReorderTerms`
 * `ReportPrecisionLoss`
+* `Res` (`Resolution`)
 * `ResetModes`
 * `ResultBackground`
 * `ResultFont`
@@ -624,6 +650,7 @@ spellings.
 * `RLB` (`RotateLeftByte`)
 * `RLC` (`RotateLeftCount`)
 * `Rnd` (`Round`)
+* `RNrm` (`RowNorm`)
 * `Roll`
 * `RollD` (`RollDown`)
 * `Root`
@@ -633,7 +660,6 @@ spellings.
 * `RoundMenuForeground`
 * `Row+` (`AddRow`)
 * `Row-` (`DeleteRow`)
-* `RowNorm`
 * `Row→` (`RowsToMatrix`, `Rows→`)
 * `RR` (`RotateRight`)
 * `RRB` (`RotateRightByte`)
@@ -663,6 +689,7 @@ spellings.
 * `SDev` (`StandardDeviation`)
 * `SearchBackground`
 * `SearchForeground`
+* `sec`
 * `SelectedMenuForeground`
 * `SelectionBackground`
 * `SelectionForeground`
@@ -713,10 +740,8 @@ spellings.
 * `SoftwareDisplayRefresh`
 * `SolverImprecision`
 * `SolverIterations`
+* `SolverShuffles`
 * `SolvingMenu`
-* `SolvingMenuRecall`
-* `SolvingMenuSolve`
-* `SolvingMenuStore`
 * `Sort`
 * `sq` (`Square`, `x²`)
 * `SquareMenuBackground`
@@ -738,6 +763,7 @@ spellings.
 * `StandardExponent`
 * `StateNameForeground`
 * `StatisticsMenu`
+* `StatsPlotBins`
 * `Std` (`StandardDisplay`)
 * `StdRnd` (`StandardRound`)
 * `StepByStepAlgebraResults`
@@ -754,7 +780,7 @@ spellings.
 * `StoKeys` (`StoreKeys`)
 * `StoreAtEnd`
 * `StoreAtStart`
-* `StoVX` (`StoreAlgebraVariable`, `Storeⓧ`)
+* `StoVX` (`StoreAlgebraVariable`, `Storeⓧ`, `STOVX`)
 * `StoΣ` (`StoreData`, `StoreΣ`)
 * `StrictArrayResizing`
 * `Str→` (`Compile`, `Text→`)
@@ -812,6 +838,7 @@ spellings.
 * `ToolsMenu`
 * `TooManyDigitsErrors`
 * `ToPolar` (`→Polar`)
+* `ToRange` (`→Interval`, `→Range`)
 * `ToSpherical` (`→Spherical`)
 * `ToStr` (`ToText`, `→Str`, `→Text`)
 * `Tot` (`DataTotal`, `ΣTotal`)
@@ -820,9 +847,11 @@ spellings.
 * `TrailingDecimal`
 * `Tran` (`Transpose`)
 * `TrigIdentitiesMenu`
+* `TrigSin`
 * `Trn` (`TransConjugate`)
 * `Trnc` (`Truncate`)
 * `True`
+* `Truth` (`TruthPlot`)
 * `TruthLogicForIntegers`
 * `TVars` (`TypedVariables`)
 * `TVM` (`FinanceSolverMenu`)
@@ -884,9 +913,6 @@ spellings.
 * `UVal` (`UnitValue`)
 * `Var` (`Variance`)
 * `VariablesMenu`
-* `VariablesMenuExecute`
-* `VariablesMenuRecall`
-* `VariablesMenuStore`
 * `VariableWidthDigits`
 * `Vars` (`Variables`)
 * `VectorMenu`
@@ -895,18 +921,20 @@ spellings.
 * `VerticalProgramRendering`
 * `VerticalVectors`
 * `VoltageForeground`
-* `VX` (`AlgebraVariable`, `RclVX`, `ⓧ`)
+* `VX` (`AlgebraVariable`, `RclVX`, `RCLVX`, `ⓧ`)
 * `V→` (`FromVector`, `Vector→`)
 * `Wait`
 * `XCol` (`IndependentColumn`)
 * `XLib` (`LibraryItem`)
-* `XlibName`
-* `XlibValue`
-* `Xor`
+* `XLibName` (`ConstantName`, `EquationName`)
+* `XLibValue` (`ConstantValue`, `EquationValue`)
+* `xor`
 * `xpon` (`Exponent`)
+* `XQ` (`ToQuotient`, `→QPi`, `→Qπ`)
 * `XRng` (`PlotXRange`, `XRange`)
 * `xroot`
 * `XVars` (`ExpressionVariables`)
+* `XYPlotBins`
 * `x³` (`cubed`)
 * `YCol` (`DependentColumn`)
 * `YearFirst`
@@ -917,6 +945,7 @@ spellings.
 * `ZeroPowerZeroIsOne`
 * `ZeroPowerZeroIsUndefined`
 * `|` (`Where`)
+* `Γ` (`Gamma`, `tgamma`)
 * `Σ` (`Sum`)
 * `Σ+` (`AddData`)
 * `Σ-` (`RemoveData`)
@@ -929,30 +958,39 @@ spellings.
 * `ΣXY` (`SumOfXY`)
 * `ΣY` (`SumOfY`)
 * `ΣY2` (`SumOfYSquares`, `ΣY²`)
+* `℮` (`EulerianNumber`)
+* `→%Range` (`ToPercentRange`)
 * `→2D` (`To2DVector`, `→V2`)
 * `→3D` (`To3DVector`, `→V3`)
 * `→Cartesian` (`ToRectangular`, `→Rectangular`)
 * `→Col` (`MatrixToColumns`, `→Columns`)
 * `→Deg` (`ToDegrees`, `→Degrees`)
-* `→Num` (`ToDecimal`, `→Decimal`)
+* `→Num` (`ToDecimal`, `→Decimal`, `→Number`)
 * `→Poly` (`ToPolynomial`, `→Polynomial`)
 * `→Prg` (`ToProgram`, `→Program`)
 * `→Q` (`ToFraction`, `→Frac`, `→ℚ`)
 * `→QDigits` (`FractionDigits`)
 * `→QIterations` (`FractionIterations`)
+* `→QπMaxPrime` (`FractionLargestPrime`)
 * `→Rad` (`ToRadians`, `→Radians`)
 * `→Row` (`MatrixToRows`, `→Rows`)
+* `→Un` (`ToUncertain`, `→Uncertain`, `→σRange`)
 * `→Ur` (`ToRelativeUncertainty`, `→RelUnc`)
 * `→Us` (`ToStandardUncertainty`, `→StdUnc`)
 * `→πr` (`ToPiRadians`, `→PiRadians`)
+* `→∆Range` (`ToDeltaRange`)
 * `↓Match` (`MatchDown`)
 * `∂` (`Derivative`)
 * `∆List` (`ListDifferences`)
 * `∏` (`Product`)
 * `∏List` (`ListProduct`)
+* `−∞` (`NegativeInfinity`)
 * `√` (`sqrt`, `SquareRoot`)
 * `∛` (`cbrt`, `CubeRoot`)
+* `∞` (`Infinity`)
 * `∠` (`atan2`)
+* `∩` (`Intersect`, `RangeIntersect`)
+* `∪` (`RangeUnion`, `Union`)
 * `∫` (`Integrate`)
 * `≠` (`TestNE`)
 * `≤` (`TestLE`)
@@ -962,14 +1000,11 @@ spellings.
 * `▶` (`Copy`)
 * `⨯` (`cross`)
 <!--- !DMNONE --->
-
 <!--- DM42 --->
-The following is an extensive list of commands.
-
 * `!`
 * `%`
+* `%Ch`
 * `%T`
-* `%Total`
 * `*`
 * `+`
 * `-`
@@ -982,6 +1017,8 @@ The following is an extensive list of commands.
 * `abs`
 * `acos`
 * `acosh`
+* `acot`
+* `acsc`
 * `AlarmMenu`
 * `AlgebraMenu`
 * `AllEquationVariables`
@@ -990,7 +1027,7 @@ The following is an extensive list of commands.
 * `AlphaForeground`
 * `Amort`
 * `AmortTable`
-* `and`
+* `And`
 * `AngleMode`
 * `AnglesMenu`
 * `Apply`
@@ -999,6 +1036,7 @@ The following is an extensive list of commands.
 * `arg`
 * `ArithmeticMenu`
 * `Arry→`
+* `asec`
 * `asin`
 * `asinh`
 * `Asn`
@@ -1067,6 +1105,7 @@ The following is an extensive list of commands.
 * `Col+`
 * `Col-`
 * `Collect`
+* `Color`
 * `ColΣ`
 * `Col→`
 * `comb`
@@ -1076,6 +1115,7 @@ The following is an extensive list of commands.
 * `CompareMenu`
 * `CompatibleBasedNumbers`
 * `CompatibleGROBs`
+* `CompatiblePolynomials`
 * `CompatibleTypes`
 * `ComplexIAfterImaginary`
 * `ComplexIBeforeImaginary`
@@ -1085,9 +1125,8 @@ The following is an extensive list of commands.
 * `conj`
 * `ConLib`
 * `Const`
-* `ConstantName`
+* `ConstantRange`
 * `Constants`
-* `ConstantValue`
 * `cont`
 * `Convert`
 * `ConvertToUnit`
@@ -1095,9 +1134,11 @@ The following is an extensive list of commands.
 * `Corr`
 * `cos`
 * `cosh`
+* `cot`
 * `CountBits`
 * `Cov`
 * `CrDir`
+* `csc`
 * `Cst`
 * `CstRU`
 * `CstSU`
@@ -1121,6 +1162,7 @@ The following is an extensive list of commands.
 * `C→R`
 * `Date`
 * `Date+`
+* `Date-`
 * `DateDash`
 * `DateDot`
 * `DateForeground`
@@ -1131,7 +1173,6 @@ The following is an extensive list of commands.
 * `DateTime`
 * `DayBeforeMonth`
 * `dbug`
-* `DDays`
 * `DebugMenu`
 * `DebugOnError`
 * `Dec`
@@ -1144,6 +1185,8 @@ The following is an extensive list of commands.
 * `det`
 * `Detach`
 * `DetailedTypes`
+* `DFC`
+* `DFC2F`
 * `DifferentialSolverMenu`
 * `Disp`
 * `DisplayDigits`
@@ -1199,9 +1242,6 @@ The following is an extensive list of commands.
 * `Eng`
 * `Eq`
 * `EqnLib`
-* `EquationName`
-* `EquationSolver`
-* `EquationValue`
 * `equiv`
 * `erf`
 * `erfc`
@@ -1215,7 +1255,7 @@ The following is an extensive list of commands.
 * `ErrorForeground`
 * `Eval`
 * `EvalEq`
-* `excludes`
+* `Excludes`
 * `ExitClearsMenu`
 * `ExitKeepsMenu`
 * `exp`
@@ -1226,6 +1266,7 @@ The following is an extensive list of commands.
 * `ExpLogIdentitiesMenu`
 * `ExpLogMenu`
 * `expm`
+* `Factors`
 * `False`
 * `FancyExponent`
 * `FC?`
@@ -1256,9 +1297,9 @@ The following is an extensive list of commands.
 * `FS?C`
 * `FS?S`
 * `Function`
-* `Gamma`
 * `GAnd`
 * `GC`
+* `GCD`
 * `GCIconForeground`
 * `GCStats`
 * `GCStatsClearAfterRead`
@@ -1310,6 +1351,7 @@ The following is an extensive list of commands.
 * `HideSeconds`
 * `HideTime`
 * `HideVoltage`
+* `Histogram`
 * `HMS+`
 * `HMS-`
 * `HMS→`
@@ -1317,6 +1359,7 @@ The following is an extensive list of commands.
 * `HorizontalLists`
 * `HorizontalProgramRendering`
 * `HorizontalVectors`
+* `HSV`
 * `HyperbolicMenu`
 * `Idn`
 * `IFT`
@@ -1342,6 +1385,7 @@ The following is an extensive list of commands.
 * `IOMenu`
 * `IP`
 * `Isol`
+* `IsPrime`
 * `JDN`
 * `JDN→`
 * `Keys`
@@ -1354,10 +1398,10 @@ The following is an extensive list of commands.
 * `LaxArrayResizing`
 * `LazyEvaluation`
 * `LCD→`
+* `LCM`
 * `LeadingZero`
 * `LeftShiftBackground`
 * `LeftShiftForeground`
-* `lgamma`
 * `LibEq`
 * `Library`
 * `Libs`
@@ -1369,10 +1413,12 @@ The following is an extensive list of commands.
 * `ListAsData`
 * `ListAsProgram`
 * `ListMenu`
+* `ListRecursionDepth`
 * `List→`
 * `ln`
 * `ln1p`
 * `LName`
+* `lnΓ`
 * `log`
 * `log2`
 * `LogFit`
@@ -1394,6 +1440,11 @@ The following is an extensive list of commands.
 * `MathModesMenu`
 * `MatrixMenu`
 * `Max`
+* `MaxFactorIterations`
+* `MaxFactorsBits`
+* `MaxLaguerreIterations`
+* `MaxPolynomialDegree`
+* `MaxRootDivisor`
 * `MaxFlags`
 * `MaxH`
 * `MaximumDecimalExponent`
@@ -1427,12 +1478,13 @@ The following is an extensive list of commands.
 * `MultipleSteps`
 * `MultiSolverMenu`
 * `NameDisplayMode`
-* `NAnd`
+* `nand`
 * `NDupN`
 * `NeedToClearErrors`
 * `neg`
 * `NegativeUnderflowIndicator`
 * `NextEq`
+* `NextPr`
 * `Nip`
 * `NoAngleUnits`
 * `NoAutoSimplify`
@@ -1449,6 +1501,7 @@ The following is an extensive list of commands.
 * `NoPositiveUnderflow`
 * `NoProgramLastArguments`
 * `NOr`
+* `norm`
 * `NormalPolynomialRender`
 * `NoStackAutoScale`
 * `NoStackSave`
@@ -1456,6 +1509,7 @@ The following is an extensive list of commands.
 * `NoTrailingDecimal`
 * `NoUndefinedResult`
 * `NSub`
+* `NewStylePolynomials`
 * `Num`
 * `NumberDotOrComma`
 * `NumberedVariables`
@@ -1487,7 +1541,9 @@ The following is an extensive list of commands.
 * `Path`
 * `PCov`
 * `perm`
+* `PgAll`
 * `PgDir`
+* `Pi`
 * `Pick`
 * `Pick3`
 * `Pict`
@@ -1513,6 +1569,7 @@ The following is an extensive list of commands.
 * `PredX`
 * `PredY`
 * `PrefixPolynomialRender`
+* `PrevPr`
 * `PrincipalSolution`
 * `PrintingMenu`
 * `ProbabilitiesMenu`
@@ -1521,7 +1578,6 @@ The following is an extensive list of commands.
 * `Prompt`
 * `PSDev`
 * `Purge`
-* `PurgeAll`
 * `PushEvaluatedAssignment`
 * `PushOriginalAssignment`
 * `Put`
@@ -1530,12 +1586,14 @@ The following is an extensive list of commands.
 * `PwrFit`
 * `P→R`
 * `QuickSort`
+* `Quote`
 * `Rad`
 * `rand`
 * `Random`
 * `RandomGeneratorBits`
 * `RandomGeneratorOrder`
 * `RangeMenu`
+* `Range→`
 * `RanM`
 * `RcEq`
 * `Rcl`
@@ -1558,6 +1616,7 @@ The following is an extensive list of commands.
 * `rem`
 * `ReorderTerms`
 * `ReportPrecisionLoss`
+* `Res`
 * `ResetModes`
 * `ResultBackground`
 * `ResultFont`
@@ -1574,6 +1633,7 @@ The following is an extensive list of commands.
 * `RLB`
 * `RLC`
 * `Rnd`
+* `RNrm`
 * `Roll`
 * `RollD`
 * `Root`
@@ -1583,7 +1643,6 @@ The following is an extensive list of commands.
 * `RoundMenuForeground`
 * `Row+`
 * `Row-`
-* `RowNorm`
 * `Row→`
 * `RR`
 * `RRB`
@@ -1613,6 +1672,7 @@ The following is an extensive list of commands.
 * `SDev`
 * `SearchBackground`
 * `SearchForeground`
+* `sec`
 * `SelectedMenuForeground`
 * `SelectionBackground`
 * `SelectionForeground`
@@ -1663,10 +1723,8 @@ The following is an extensive list of commands.
 * `SoftwareDisplayRefresh`
 * `SolverImprecision`
 * `SolverIterations`
+* `SolverShuffles`
 * `SolvingMenu`
-* `SolvingMenuRecall`
-* `SolvingMenuSolve`
-* `SolvingMenuStore`
 * `Sort`
 * `sq`
 * `SquareMenuBackground`
@@ -1688,6 +1746,7 @@ The following is an extensive list of commands.
 * `StandardExponent`
 * `StateNameForeground`
 * `StatisticsMenu`
+* `StatsPlotBins`
 * `Std`
 * `StdRnd`
 * `StepByStepAlgebraResults`
@@ -1762,6 +1821,7 @@ The following is an extensive list of commands.
 * `ToolsMenu`
 * `TooManyDigitsErrors`
 * `ToPolar`
+* `ToRange`
 * `ToSpherical`
 * `ToStr`
 * `Tot`
@@ -1770,9 +1830,11 @@ The following is an extensive list of commands.
 * `TrailingDecimal`
 * `Tran`
 * `TrigIdentitiesMenu`
+* `TrigSin`
 * `Trn`
 * `Trnc`
 * `True`
+* `Truth`
 * `TruthLogicForIntegers`
 * `TVars`
 * `TVM`
@@ -1834,9 +1896,6 @@ The following is an extensive list of commands.
 * `UVal`
 * `Var`
 * `VariablesMenu`
-* `VariablesMenuExecute`
-* `VariablesMenuRecall`
-* `VariablesMenuStore`
 * `VariableWidthDigits`
 * `Vars`
 * `VectorMenu`
@@ -1850,13 +1909,15 @@ The following is an extensive list of commands.
 * `Wait`
 * `XCol`
 * `XLib`
-* `XlibName`
-* `XlibValue`
-* `Xor`
+* `XLibName`
+* `XLibValue`
+* `xor`
 * `xpon`
+* `XQ`
 * `XRng`
 * `xroot`
 * `XVars`
+* `XYPlotBins`
 * `x³`
 * `YCol`
 * `YearFirst`
@@ -1867,6 +1928,7 @@ The following is an extensive list of commands.
 * `ZeroPowerZeroIsOne`
 * `ZeroPowerZeroIsUndefined`
 * `|`
+* `Γ`
 * `Σ`
 * `Σ+`
 * `Σ-`
@@ -1879,6 +1941,8 @@ The following is an extensive list of commands.
 * `ΣXY`
 * `ΣY`
 * `ΣY2`
+* `℮`
+* `→%Range`
 * `→2D`
 * `→3D`
 * `→Cartesian`
@@ -1890,19 +1954,26 @@ The following is an extensive list of commands.
 * `→Q`
 * `→QDigits`
 * `→QIterations`
+* `→QπMaxPrime`
 * `→Rad`
 * `→Row`
+* `→Un`
 * `→Ur`
 * `→Us`
 * `→πr`
+* `→∆Range`
 * `↓Match`
 * `∂`
 * `∆List`
 * `∏`
 * `∏List`
+* `−∞`
 * `√`
 * `∛`
+* `∞`
 * `∠`
+* `∩`
+* `∪`
 * `∫`
 * `≠`
 * `≤`
@@ -1913,12 +1984,10 @@ The following is an extensive list of commands.
 * `⨯`
 <!--- !DM42 --->
 <!--- DM32 --->
-The following is an extensive list of commands.
-
 * `!`
 * `%`
+* `%Ch`
 * `%T`
-* `%Total`
 * `*`
 * `+`
 * `-`
@@ -1931,6 +2000,8 @@ The following is an extensive list of commands.
 * `abs`
 * `acos`
 * `acosh`
+* `acot`
+* `acsc`
 * `AlarmMenu`
 * `AlgebraMenu`
 * `AllEquationVariables`
@@ -1939,7 +2010,7 @@ The following is an extensive list of commands.
 * `AlphaForeground`
 * `Amort`
 * `AmortTable`
-* `and`
+* `And`
 * `AngleMode`
 * `AnglesMenu`
 * `Apply`
@@ -1948,6 +2019,7 @@ The following is an extensive list of commands.
 * `arg`
 * `ArithmeticMenu`
 * `Arry→`
+* `asec`
 * `asin`
 * `asinh`
 * `Asn`
@@ -2016,6 +2088,7 @@ The following is an extensive list of commands.
 * `Col+`
 * `Col-`
 * `Collect`
+* `Color`
 * `ColΣ`
 * `Col→`
 * `comb`
@@ -2025,6 +2098,7 @@ The following is an extensive list of commands.
 * `CompareMenu`
 * `CompatibleBasedNumbers`
 * `CompatibleGROBs`
+* `CompatiblePolynomials`
 * `CompatibleTypes`
 * `ComplexIAfterImaginary`
 * `ComplexIBeforeImaginary`
@@ -2034,9 +2108,8 @@ The following is an extensive list of commands.
 * `conj`
 * `ConLib`
 * `Const`
-* `ConstantName`
+* `ConstantRange`
 * `Constants`
-* `ConstantValue`
 * `cont`
 * `Convert`
 * `ConvertToUnit`
@@ -2044,9 +2117,11 @@ The following is an extensive list of commands.
 * `Corr`
 * `cos`
 * `cosh`
+* `cot`
 * `CountBits`
 * `Cov`
 * `CrDir`
+* `csc`
 * `Cst`
 * `CstRU`
 * `CstSU`
@@ -2070,6 +2145,7 @@ The following is an extensive list of commands.
 * `C→R`
 * `Date`
 * `Date+`
+* `Date-`
 * `DateDash`
 * `DateDot`
 * `DateForeground`
@@ -2080,7 +2156,6 @@ The following is an extensive list of commands.
 * `DateTime`
 * `DayBeforeMonth`
 * `dbug`
-* `DDays`
 * `DebugMenu`
 * `DebugOnError`
 * `Dec`
@@ -2093,6 +2168,8 @@ The following is an extensive list of commands.
 * `det`
 * `Detach`
 * `DetailedTypes`
+* `DFC`
+* `DFC2F`
 * `DifferentialSolverMenu`
 * `Disp`
 * `DisplayDigits`
@@ -2148,9 +2225,6 @@ The following is an extensive list of commands.
 * `Eng`
 * `Eq`
 * `EqnLib`
-* `EquationName`
-* `EquationSolver`
-* `EquationValue`
 * `equiv`
 * `erf`
 * `erfc`
@@ -2164,7 +2238,7 @@ The following is an extensive list of commands.
 * `ErrorForeground`
 * `Eval`
 * `EvalEq`
-* `excludes`
+* `Excludes`
 * `ExitClearsMenu`
 * `ExitKeepsMenu`
 * `exp`
@@ -2175,6 +2249,7 @@ The following is an extensive list of commands.
 * `ExpLogIdentitiesMenu`
 * `ExpLogMenu`
 * `expm`
+* `Factors`
 * `False`
 * `FancyExponent`
 * `FC?`
@@ -2205,9 +2280,9 @@ The following is an extensive list of commands.
 * `FS?C`
 * `FS?S`
 * `Function`
-* `Gamma`
 * `GAnd`
 * `GC`
+* `GCD`
 * `GCIconForeground`
 * `GCStats`
 * `GCStatsClearAfterRead`
@@ -2259,6 +2334,7 @@ The following is an extensive list of commands.
 * `HideSeconds`
 * `HideTime`
 * `HideVoltage`
+* `Histogram`
 * `HMS+`
 * `HMS-`
 * `HMS→`
@@ -2266,6 +2342,7 @@ The following is an extensive list of commands.
 * `HorizontalLists`
 * `HorizontalProgramRendering`
 * `HorizontalVectors`
+* `HSV`
 * `HyperbolicMenu`
 * `Idn`
 * `IFT`
@@ -2291,6 +2368,7 @@ The following is an extensive list of commands.
 * `IOMenu`
 * `IP`
 * `Isol`
+* `IsPrime`
 * `JDN`
 * `JDN→`
 * `Keys`
@@ -2303,10 +2381,10 @@ The following is an extensive list of commands.
 * `LaxArrayResizing`
 * `LazyEvaluation`
 * `LCD→`
+* `LCM`
 * `LeadingZero`
 * `LeftShiftBackground`
 * `LeftShiftForeground`
-* `lgamma`
 * `LibEq`
 * `Library`
 * `Libs`
@@ -2318,10 +2396,12 @@ The following is an extensive list of commands.
 * `ListAsData`
 * `ListAsProgram`
 * `ListMenu`
+* `ListRecursionDepth`
 * `List→`
 * `ln`
 * `ln1p`
 * `LName`
+* `lnΓ`
 * `log`
 * `log2`
 * `LogFit`
@@ -2343,6 +2423,11 @@ The following is an extensive list of commands.
 * `MathModesMenu`
 * `MatrixMenu`
 * `Max`
+* `MaxFactorIterations`
+* `MaxFactorsBits`
+* `MaxLaguerreIterations`
+* `MaxPolynomialDegree`
+* `MaxRootDivisor`
 * `MaxFlags`
 * `MaxH`
 * `MaximumDecimalExponent`
@@ -2376,12 +2461,13 @@ The following is an extensive list of commands.
 * `MultipleSteps`
 * `MultiSolverMenu`
 * `NameDisplayMode`
-* `NAnd`
+* `nand`
 * `NDupN`
 * `NeedToClearErrors`
 * `neg`
 * `NegativeUnderflowIndicator`
 * `NextEq`
+* `NextPr`
 * `Nip`
 * `NoAngleUnits`
 * `NoAutoSimplify`
@@ -2398,6 +2484,7 @@ The following is an extensive list of commands.
 * `NoPositiveUnderflow`
 * `NoProgramLastArguments`
 * `NOr`
+* `norm`
 * `NormalPolynomialRender`
 * `NoStackAutoScale`
 * `NoStackSave`
@@ -2405,6 +2492,7 @@ The following is an extensive list of commands.
 * `NoTrailingDecimal`
 * `NoUndefinedResult`
 * `NSub`
+* `NewStylePolynomials`
 * `Num`
 * `NumberDotOrComma`
 * `NumberedVariables`
@@ -2436,7 +2524,9 @@ The following is an extensive list of commands.
 * `Path`
 * `PCov`
 * `perm`
+* `PgAll`
 * `PgDir`
+* `Pi`
 * `Pick`
 * `Pick3`
 * `Pict`
@@ -2462,6 +2552,7 @@ The following is an extensive list of commands.
 * `PredX`
 * `PredY`
 * `PrefixPolynomialRender`
+* `PrevPr`
 * `PrincipalSolution`
 * `PrintingMenu`
 * `ProbabilitiesMenu`
@@ -2470,7 +2561,6 @@ The following is an extensive list of commands.
 * `Prompt`
 * `PSDev`
 * `Purge`
-* `PurgeAll`
 * `PushEvaluatedAssignment`
 * `PushOriginalAssignment`
 * `Put`
@@ -2479,12 +2569,14 @@ The following is an extensive list of commands.
 * `PwrFit`
 * `P→R`
 * `QuickSort`
+* `Quote`
 * `Rad`
 * `rand`
 * `Random`
 * `RandomGeneratorBits`
 * `RandomGeneratorOrder`
 * `RangeMenu`
+* `Range→`
 * `RanM`
 * `RcEq`
 * `Rcl`
@@ -2507,6 +2599,7 @@ The following is an extensive list of commands.
 * `rem`
 * `ReorderTerms`
 * `ReportPrecisionLoss`
+* `Res`
 * `ResetModes`
 * `ResultBackground`
 * `ResultFont`
@@ -2523,6 +2616,7 @@ The following is an extensive list of commands.
 * `RLB`
 * `RLC`
 * `Rnd`
+* `RNrm`
 * `Roll`
 * `RollD`
 * `Root`
@@ -2532,7 +2626,6 @@ The following is an extensive list of commands.
 * `RoundMenuForeground`
 * `Row+`
 * `Row-`
-* `RowNorm`
 * `Row→`
 * `RR`
 * `RRB`
@@ -2562,6 +2655,7 @@ The following is an extensive list of commands.
 * `SDev`
 * `SearchBackground`
 * `SearchForeground`
+* `sec`
 * `SelectedMenuForeground`
 * `SelectionBackground`
 * `SelectionForeground`
@@ -2612,10 +2706,8 @@ The following is an extensive list of commands.
 * `SoftwareDisplayRefresh`
 * `SolverImprecision`
 * `SolverIterations`
+* `SolverShuffles`
 * `SolvingMenu`
-* `SolvingMenuRecall`
-* `SolvingMenuSolve`
-* `SolvingMenuStore`
 * `Sort`
 * `sq`
 * `SquareMenuBackground`
@@ -2637,6 +2729,7 @@ The following is an extensive list of commands.
 * `StandardExponent`
 * `StateNameForeground`
 * `StatisticsMenu`
+* `StatsPlotBins`
 * `Std`
 * `StdRnd`
 * `StepByStepAlgebraResults`
@@ -2711,6 +2804,7 @@ The following is an extensive list of commands.
 * `ToolsMenu`
 * `TooManyDigitsErrors`
 * `ToPolar`
+* `ToRange`
 * `ToSpherical`
 * `ToStr`
 * `Tot`
@@ -2719,9 +2813,11 @@ The following is an extensive list of commands.
 * `TrailingDecimal`
 * `Tran`
 * `TrigIdentitiesMenu`
+* `TrigSin`
 * `Trn`
 * `Trnc`
 * `True`
+* `Truth`
 * `TruthLogicForIntegers`
 * `TVars`
 * `TVM`
@@ -2783,9 +2879,6 @@ The following is an extensive list of commands.
 * `UVal`
 * `Var`
 * `VariablesMenu`
-* `VariablesMenuExecute`
-* `VariablesMenuRecall`
-* `VariablesMenuStore`
 * `VariableWidthDigits`
 * `Vars`
 * `VectorMenu`
@@ -2799,13 +2892,15 @@ The following is an extensive list of commands.
 * `Wait`
 * `XCol`
 * `XLib`
-* `XlibName`
-* `XlibValue`
-* `Xor`
+* `XLibName`
+* `XLibValue`
+* `xor`
 * `xpon`
+* `XQ`
 * `XRng`
 * `xroot`
 * `XVars`
+* `XYPlotBins`
 * `x³`
 * `YCol`
 * `YearFirst`
@@ -2816,6 +2911,7 @@ The following is an extensive list of commands.
 * `ZeroPowerZeroIsOne`
 * `ZeroPowerZeroIsUndefined`
 * `|`
+* `Γ`
 * `Σ`
 * `Σ+`
 * `Σ-`
@@ -2828,6 +2924,8 @@ The following is an extensive list of commands.
 * `ΣXY`
 * `ΣY`
 * `ΣY2`
+* `℮`
+* `→%Range`
 * `→2D`
 * `→3D`
 * `→Cartesian`
@@ -2839,19 +2937,26 @@ The following is an extensive list of commands.
 * `→Q`
 * `→QDigits`
 * `→QIterations`
+* `→QπMaxPrime`
 * `→Rad`
 * `→Row`
+* `→Un`
 * `→Ur`
 * `→Us`
 * `→πr`
+* `→∆Range`
 * `↓Match`
 * `∂`
 * `∆List`
 * `∏`
 * `∏List`
+* `−∞`
 * `√`
 * `∛`
+* `∞`
 * `∠`
+* `∩`
+* `∪`
 * `∫`
 * `≠`
 * `≤`
@@ -2954,7 +3059,6 @@ implemented by the time the project reaches version 1.0.
 * `F0λ`
 * `FACTOR`
 * `FACTORMOD`
-* `FACTORS`
 * `FANNING`
 * `FAST3D`
 * `FCOEF`
@@ -3007,7 +3111,6 @@ implemented by the time the project reaches version 1.0.
 * `IQUOT`
 * `IREMAINDER`
 * `ISOM`
-* `ISPRIME?`
 * `I→R`
 * `JORDAN`
 * `KER`
@@ -3056,7 +3159,6 @@ implemented by the time the project reaches version 1.0.
 * `MULTMOD`
 * `MUSER`
 * `NDIST`
-* `NEXTPRIME`
 * `NOVAL`
 * `NUMX`
 * `NUMY`
@@ -3066,12 +3168,10 @@ implemented by the time the project reaches version 1.0.
 * `PARSURFACE`
 * `PARTFRAC`
 * `PCAR`
-* `PCOEF`
 * `PCONTOUR`
 * `PDIM`
 * `PERINFO`
 * `PERTBL`
-* `PEVAL`
 * `PICTURE`
 * `PLOT`
 * `PLOTADD`
@@ -3084,9 +3184,7 @@ implemented by the time the project reaches version 1.0.
 * `POWMOD`
 * `PREDV`
 * `PREVAL`
-* `PREVPRIME`
 * `PROMPTSTO`
-* `PROOT`
 * `PROPFRAC`
 * `PSDEV`
 * `PSI`
@@ -3096,7 +3194,6 @@ implemented by the time the project reaches version 1.0.
 * `PUSH`
 * `PVIEW`
 * `PX→C`
-* `→Qπ`
 * `qr`
 * `QR`
 * `QUAD`
@@ -3109,7 +3206,6 @@ implemented by the time the project reaches version 1.0.
 * `RCIJ`
 * `RCLALARM`
 * `RCLF`
-* `RCLVX`
 * `RDM`
 * `REF`
 * `REMAINDER`
@@ -3168,7 +3264,6 @@ implemented by the time the project reaches version 1.0.
 * `SREPL`
 * `STOALARM`
 * `STOF`
-* `STOVX`
 * `STREAM`
 * `STURM`
 * `STURMAB`
@@ -3199,7 +3294,6 @@ implemented by the time the project reaches version 1.0.
 * `TRIG`
 * `TRIGCOS`
 * `TRIGO`
-* `TRIGSIN`
 * `TRIGTAN`
 * `TRN`
 * `TRUNC`
@@ -3228,7 +3322,6 @@ implemented by the time the project reaches version 1.0.
 * `YSLICE`
 * `YVOL`
 * `YYRNG`
-* `ZEROS`
 * `ZFACTOR`
 * `ZVOL`
 * `;` (Semicolon)

@@ -29,7 +29,7 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
-
+#include "arithmetic.h"
 #include "functions.h"
 #include "program.h"
 #include "settings.h"
@@ -38,6 +38,8 @@
 GCP(expression);
 GCP(funcall);
 GCP(grob);
+GCP(array);
+
 struct grapher;
 
 struct expression : program
@@ -103,8 +105,8 @@ struct expression : program
 
     static expression_p parse_all(utf8 src, size_t len);
 
+    bool is_zero(bool error = true) const;
     bool is_simplifiable() const;
-
     static expression_p get(object_p obj);
     static list_p current_equation(bool all, bool error);
     bool is_well_defined(symbol_p solving = nullptr,
@@ -249,6 +251,7 @@ struct expression : program
     expression_p fold_constants() const;
     expression_p reorder_terms() const;
     expression_p simplify() const;
+    expression_p trig_sin() const;
     expression_p as_difference_for_solve() const; // Transform A=B into A-B
     bool         split_equation(expression_g &left, expression_g &right) const;
     bool         split(id ty, expression_g &left, expression_g &right) const;
@@ -264,11 +267,14 @@ struct expression : program
                                   algebraic_g  factor,
                                   algebraic_g &scale,
                                   algebraic_g &exponent);
-    expression_p isolate(symbol_r sym) const;
-    expression_p derivative(symbol_r sym) const;
-    expression_p primitive(symbol_r sym) const;
+    expression_p       isolate(symbol_r sym, bool error) const;
+    expression_p       isolate(symbol_r s) const { return isolate(s, true); }
+    expression_p       isolated(symbol_r sym) const;
+    static list_p      zeros(object_p eq, symbol_r sym);
+    expression_p       derivative(symbol_r sym) const;
+    expression_p       primitive(symbol_r sym) const;
 
-    expression_p where(algebraic_r args) const
+    expression_p       where(algebraic_r args) const
     {
         algebraic_g expr = this;
         if (algebraic_p obj = list::where(expr, args))
@@ -352,7 +358,6 @@ public:
     static object_g    *independent_value;
     static symbol_g    *dependent;
     static object_g    *dependent_value;
-    static bool         in_algebraic;
     static bool         contains_independent_variable;
     static uint         constant_index;
 
@@ -433,8 +438,10 @@ struct eq
     }
 
     // Negation operation
-    eq<args..., leb(object::ID_neg)>
-    operator-()         { return eq<args..., leb(object::ID_neg)>(); }
+    eq<args..., leb(object::ID_neg)> operator-() const
+    {
+        return eq<args..., leb(object::ID_neg)>();
+    }
 
     template <uint ty>
     using fntype = typename std::conditional<(ty < 128),
@@ -453,9 +460,15 @@ struct eq
     EQ_FUNCTION(sin);
     EQ_FUNCTION(cos);
     EQ_FUNCTION(tan);
+    EQ_FUNCTION(sec);
+    EQ_FUNCTION(csc);
+    EQ_FUNCTION(cot);
     EQ_FUNCTION(asin);
     EQ_FUNCTION(acos);
     EQ_FUNCTION(atan);
+    EQ_FUNCTION(asec);
+    EQ_FUNCTION(acsc);
+    EQ_FUNCTION(acot);
 
     EQ_FUNCTION(sinh);
     EQ_FUNCTION(cosh);
@@ -463,6 +476,12 @@ struct eq
     EQ_FUNCTION(asinh);
     EQ_FUNCTION(acosh);
     EQ_FUNCTION(atanh);
+    EQ_FUNCTION(csch);
+    EQ_FUNCTION(sech);
+    EQ_FUNCTION(coth);
+    EQ_FUNCTION(acsch);
+    EQ_FUNCTION(asech);
+    EQ_FUNCTION(acoth);
 
     EQ_FUNCTION(ln1p);
     EQ_FUNCTION(expm1);
@@ -493,99 +512,153 @@ struct eq
 #undef EQ_FUNCTION
 
     // Arithmetic
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_add)>
-    operator+(eq<y...>) { return eq<args..., y..., leb(object::ID_add)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_add)> operator+(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_add)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_subtract)>
-    operator-(eq<y...>) { return eq<args..., y..., leb(object::ID_subtract)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_subtract)> operator-(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_subtract)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_multiply)>
-    operator*(eq<y...>) { return eq<args..., y..., leb(object::ID_multiply)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_multiply)> operator*(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_multiply)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_divide)>
-    operator/(eq<y...>) { return eq<args..., y..., leb(object::ID_divide)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_divide)> operator/(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_divide)>();
+    }
 
     template<byte ...y>
     eq<args..., y..., leb(object::ID_mod)>
-    operator%(eq<y...>) { return eq<args..., y..., leb(object::ID_mod)>(); }
+    operator%(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_mod)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_rem)>
-    rem(eq<y...>) { return eq<args..., y..., leb(object::ID_rem)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_rem)> rem(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_rem)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_pow)>
-    operator^(eq<y...>) { return eq<args..., y..., leb(object::ID_pow)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_pow)> operator^(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_pow)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_pow)>
-    pow(eq<y...>) { return eq<args..., y..., leb(object::ID_pow)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_pow)> pow(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_pow)>();
+    }
 
-    template<byte ...y>
+    template <byte... y>
     eq<args..., y..., lb(object::ID_Derivative), hb(object::ID_Derivative)>
-    deriv(eq<y...>) { return eq<args..., y...,
-                                lb(object::ID_Derivative),
-                                hb(object::ID_Derivative)>(); }
-    template<byte ...y>
+    deriv(eq<y...>) const
+    {
+        return eq<args...,
+                  y...,
+                  lb(object::ID_Derivative),
+                  hb(object::ID_Derivative)>();
+    }
+    template <byte... y>
     eq<args..., y..., lb(object::ID_Derivative), hb(object::ID_Derivative)>
-    operator>>(eq<y...>) { return eq<args..., y...,
-                                     lb(object::ID_Derivative),
-                                     hb(object::ID_Derivative)>(); }
-    template<byte ...y>
+    operator>>(eq<y...>) const
+    {
+        return eq<args...,
+                  y...,
+                  lb(object::ID_Derivative),
+                  hb(object::ID_Derivative)>();
+    }
+    template <byte... y>
     eq<args..., y..., lb(object::ID_Primitive), hb(object::ID_Primitive)>
-    prim(eq<y...>) { return eq<args..., y...,
-                               lb(object::ID_Primitive),
-                               hb(object::ID_Primitive)>(); }
-    template<byte ...y>
+        prim(eq<y...>) const
+    {
+        return eq<args...,
+                  y...,
+                  lb(object::ID_Primitive),
+                  hb(object::ID_Primitive)>();
+    }
+    template <byte... y>
     eq<args..., y..., lb(object::ID_Primitive), hb(object::ID_Primitive)>
-    operator<<(eq<y...>) { return eq<args..., y...,
-                                     lb(object::ID_Primitive),
-                                     hb(object::ID_Primitive)>(); }
+    operator<<(eq<y...>) const
+    {
+        return eq<args...,
+                  y...,
+                  lb(object::ID_Primitive),
+                  hb(object::ID_Primitive)>();
+    }
 
-    template<byte ...y>
+    template <byte... y>
     eq<leb(object::ID_funcall),
        leb(sizeof...(args) + sizeof...(y)),
-       y..., args...>
-    call(eq<y...>) { return eq<leb(object::ID_funcall),
-                               leb(sizeof...(args)+sizeof...(y)),
-                               y..., args...>(); }
-    template<byte ...y>
+       y...,
+       args...>
+    call(eq<y...>) const
+    {
+        return eq<leb(object::ID_funcall),
+                  leb(sizeof...(args) + sizeof...(y)),
+                  y...,
+                  args...>();
+    }
+    template <byte... y>
     eq<leb(object::ID_funcall),
        leb(sizeof...(args) + sizeof...(y)),
-       y..., args...>
-    operator()(eq<y...>) { return eq<leb(object::ID_funcall),
-                                     leb(sizeof...(args)+sizeof...(y)),
-                                     y..., args...>(); }
+       y...,
+       args...>
+    operator()(eq<y...>) const
+    {
+        return eq<leb(object::ID_funcall),
+                  leb(sizeof...(args) + sizeof...(y)),
+                  y...,
+                  args...>();
+    }
 
     // Comparisons
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_TestLT)>
-    operator<(eq<y...>) { return eq<args..., y..., leb(object::ID_TestLT)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_TestLT)> operator<(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_TestLT)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_TestEQ)>
-    operator==(eq<y...>) { return eq<args..., y..., leb(object::ID_TestEQ)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_TestEQ)> operator==(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_TestEQ)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_TestGT)>
-    operator>(eq<y...>) { return eq<args..., y..., leb(object::ID_TestGT)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_TestGT)> operator>(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_TestGT)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_TestLE)>
-    operator<=(eq<y...>) { return eq<args..., y..., leb(object::ID_TestLE)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_TestLE)> operator<=(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_TestLE)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_TestNE)>
-    operator!=(eq<y...>) { return eq<args..., y..., leb(object::ID_TestNE)>(); }
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_TestNE)> operator!=(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_TestNE)>();
+    }
 
-    template<byte ...y>
-    eq<args..., y..., leb(object::ID_TestGE)>
-    operator>=(eq<y...>) { return eq<args..., y..., leb(object::ID_TestGE)>(); }
-
+    template <byte... y>
+    eq<args..., y..., leb(object::ID_TestGE)> operator>=(eq<y...>) const
+    {
+        return eq<args..., y..., leb(object::ID_TestGE)>();
+    }
 };
 
 
@@ -601,9 +674,15 @@ EQ_FUNCTION(cbrt);
 EQ_FUNCTION(sin);
 EQ_FUNCTION(cos);
 EQ_FUNCTION(tan);
+EQ_FUNCTION(sec);
+EQ_FUNCTION(csc);
+EQ_FUNCTION(cot);
 EQ_FUNCTION(asin);
 EQ_FUNCTION(acos);
 EQ_FUNCTION(atan);
+EQ_FUNCTION(asec);
+EQ_FUNCTION(acsc);
+EQ_FUNCTION(acot);
 
 EQ_FUNCTION(sinh);
 EQ_FUNCTION(cosh);
@@ -611,6 +690,12 @@ EQ_FUNCTION(tanh);
 EQ_FUNCTION(asinh);
 EQ_FUNCTION(acosh);
 EQ_FUNCTION(atanh);
+EQ_FUNCTION(csch);
+EQ_FUNCTION(sech);
+EQ_FUNCTION(coth);
+EQ_FUNCTION(acsch);
+EQ_FUNCTION(asech);
+EQ_FUNCTION(acoth);
 
 EQ_FUNCTION(ln1p);
 EQ_FUNCTION(expm1);
@@ -641,13 +726,20 @@ EQ_FUNCTION(conj);
 
 #undef EQ_FUNCTION
 
-// Pi constant
-// struct eq_pi : eq<object::ID_pi> {};
+// Pi and e constants
+#define EQ_TWO_BYTES(x)  eq<byte(((x) & 0x7F) | 0x80), byte((x) >> 7)>
+struct eq_pi : EQ_TWO_BYTES(object::ID_Pi) {};
+struct eq_e  : EQ_TWO_BYTES(object::ID_EulerianNumber) {};
 
 // Build a symbol out of a character
-template <byte c>       struct eq_symbol  : eq<object::ID_symbol,  1, c> {};
+template <byte c>
+struct eq_symbol  : eq<object::ID_symbol,  1, c> {};
 template <byte c, byte d>
 struct eq_debug_symbol  : eq<object::ID_symbol,  2, c, d> {};
+
+// Build a local variable reference
+template <byte c>
+struct eq_local : eq<object::ID_local, c> {};
 
 // Build an integer constant
 template <uint c, std::enable_if_t<(c >= 0 && c < 128), bool> = true>
@@ -674,28 +766,31 @@ struct eq_always : eq<object::ID_True>
 
 COMMAND_DECLARE(MatchUp,   2);
 COMMAND_DECLARE(MatchDown, 2);
-
+NFUNCTION_EXT(Zeros, 2, SYMARGS );
 FUNCTION(Expand);
 FUNCTION(Collect);
 FUNCTION(FoldConstants);
 FUNCTION(ReorderTerms);
 FUNCTION(Simplify);
+FUNCTION(TrigSin);
 
 COMMAND_DECLARE(Apply, 2);
-COMMAND_DECLARE(Isolate, 2);
+COMMAND_DECLARE_SPECIAL(Quote, algebraic, 1,
+                        PREC_DECL(FUNCTION); SYMARGS);
+COMMAND_DECLARE_FN(Isolate, 2);
 COMMAND_DECLARE_SPECIAL(Derivative, algebraic, 2,
                         PREC_DECL(SYMBOL);
                         INSERT_DECL(Derivative);
                         PARSE_DECL(Derivative);
-                        static bool can_be_symbolic(uint) { return true; });
+                        SYMARGS);
 COMMAND_DECLARE_SPECIAL(Primitive, algebraic, 2,
                         PREC_DECL(MULTIPLICATIVE);
                         INSERT_DECL(Primitive);
                         PARSE_DECL(Primitive);
-                        static bool can_be_symbolic(uint) { return true; });
+                        SYMARGS);
 COMMAND_DECLARE_SPECIAL(Where, arithmetic, 2,
                         PREC_DECL(WHERE);
-                        static bool can_be_symbolic(uint) { return true; });
-NFUNCTION(Subst, 2, static bool can_be_symbolic(uint) { return true; } );
+                        SYMARGS);
+NFUNCTION_EXT(Subst, 2, SYMARGS);
 
 #endif // EXPRESSION_H

@@ -106,6 +106,63 @@ The command will generate `Unable to isolate` if the expression cannot be
 reorganized, for example because it contains functions that have no known
 inverse.
 
+
+## Quote
+
+Return an object unevaluated (quoted).
+
+`Obj` `Quote` → `QuotedObj`
+
+The result is an algebraic expression containing `Obj` without evaluating it.
+This is used to pass unevaluated names or formulas as arguments, for example
+when building symbolic functions or when a CAS command must not evaluate its
+parameters prematurely.
+
+`5` `QUOTE` → `'5'`
+`'A+B'` `QUOTE` → `'A+B'` (unchanged if already quoted)
+
+`Quote` is mostly useful in algebraic expressions:
+
+```rpl
+@ Create an ArcLen commnand
+@ Note that the HP50G ARM erroneously lacks ∫ at end of the program
+@ We changed the names compared to ARM example because DB48x is case-insensitive,
+@ and START..END or VAR would cause a syntax error with original example names.
+« → arcstart arcend arcexpr arcvar
+  « arcstart arcend arcexpr arcvar ∂ SQ 1 + SQRT arcvar ∫ »
+» 'ArcLen' STO
+
+@ Evaluate the result numerically in radians
+'ArcLen(0,π,QUOTE(SIN(X)),QUOTE(X))'
+RAD →Decimal DEG
+@ Expecting 3.82019 77890 3
+```
+
+However, the rules for local name evaluations make the use of `Quote` less often necessary than on HP calculator. Consider the following example:
+
+```rpl
+@ Example program
+« → A B C 'A+B*C' » 'MyFn' STO
+
+@ Evaluation of MyFn with symbolic names
+'MyFn(X;Y;Z)' EVAL
+
+@ Evaluation of MyFn with expressions
+'MyFn(X+1;Y-1;Z*2)' EVAL
+
+@ Store a numerical value in X
+42 'X' STO
+
+@ Evaluation of MyFn without quotes will evaluate X
+'MyFn(X+1;Y-1;Z*2)' EVAL
+
+@ Evaluation of MyFn with quote will not evaluate X
+'MyFn(Quote(X+1);Y-1;Z*2)' EVAL
+
+4 →List
+@ Expecting { 'X+Y·Z' 'X+1+(Y-1)·(Z·2)' '43+(Y-1)·(Z·2)' 'X+1+(Y-1)·(Z·2)' }
+```
+
 ## Derivative
 
 Compute the derivative function for an expression. The algebraic syntax for `∂` is `'∂name(expr)'` For example, `'∂x(sin(2*x^2)'` computes `4*X*cos(2*X^2)`
@@ -209,7 +266,14 @@ Match and apply a rule to an expression only once
 
 
 ## TRIGSIN
-Simplify replacing cos(x)^2+sin(x)^2=1
+Simplify replacing `cos(x)²` with `1-sin(x)²`
+
+This command applies the Pythagorean identity to rewrite expressions so that
+cosine squares are replaced by sine squares. This favors the use of `sin` over
+`cos` in the expression.
+
+`'cos(X)^2'` ▶ `'1-(sin X)²'`
+`'cos(A+B)^2'` ▶ `'1-(sin(A+B))²'`
 
 
 ## ALLROOTS
@@ -239,20 +303,57 @@ The configuration directory is stored in the global variable with the name
 
 ## AlgebraVariable
 
-Recall the current algebra variable.
+Recall the current CAS algebra variable (HP-50G `VX` / `RCLVX`).
 
 The `AlgebraVariable` command returns the current variable used for polynomial
 evaluation and symbolic computations.
 If no variable is set, it defaults to `X`.
-The variable is stored in the algebra configuration directory.
+The variable is stored in the `AlgebraConfiguration` directory.
+
+Spellings: `VX`, `RclVX`, `RCLVX`, `ⓧ`.
+
+## ToPolynomial
+
+Convert an algebraic object to a polynomial.
+
+`X` ▶ `Poly`
+
+* If `X` is already a polynomial, it is returned unchanged.
+* If `X` is an array or list of coefficients in descending degree order, a
+  univariate polynomial in the current `AlgebraVariable` is built (same layout
+  as `PRoot` and `PCoef` in [CompatiblePolynomials](#compatiblepolynomials)
+  mode).
+* Otherwise, `X` is treated as an expression and expanded to a polynomial when
+  possible.
+
+```rpl
+[ 1 2 -25 -26 120 ] ToPolynomial
+@ Expecting x↑4+2·x↑3-25·x↑2-26·x+120
+```
+
+Use `ToArray` to recover the coefficient vector. See
+[NewStylePolynomials](#newstylepolynomials) for the default `PCoef` result type.
+
+## FromPolynomial
+
+Convert a polynomial to an ordinary expression.
+
+`Poly` ▶ `Expr`
+
+Rewrites the polynomial using normal infix notation (sums and products of
+powers). The variable names and term order follow the internal polynomial
+representation. Use `ToPolynomial` for the inverse conversion.
 
 ## StoreAlgebraVariable
 
-Store the current algebra variable.
+Store the current CAS algebra variable (HP-50G `STOVX`).
 
-The `StoreAlgebraVariable` command sets the variable used for polynomial evaluation and symbolic computations.
+The `StoreAlgebraVariable` command sets the variable used for polynomial
+evaluation and symbolic computations.
 The variable must be a quoted symbol (e.g., `'X'`).
-The variable is stored in the algebra configuration directory.
+The variable is stored in the `AlgebraConfiguration` directory.
+
+Spellings: `StoVX`, `STOVX`, `Storeⓧ`.
 
 ## Equation
 

@@ -1,6 +1,7 @@
 # Define the executable
 set(SOURCES
     sim-main.cpp
+    sim-eval.cpp
     sim-window.cpp
     sim-screen.cpp
     sim-rpl.cpp
@@ -21,6 +22,7 @@ set(SOURCES
     ../src/complex.cc
     ../src/conditionals.cc
     ../src/constants.cc
+    ../src/continued-fraction.cc
     ../src/custom.cc
     ../src/datetime.cc
     ../src/decimal.cc
@@ -29,6 +31,7 @@ set(SOURCES
     ../src/dmcp/target.cc
     ../src/equations.cc
     ../src/expression.cc
+    ../src/factor.cc
     ../src/file.cc
     ../src/files.cc
     ../src/finance.cc
@@ -103,7 +106,7 @@ endif()
 if(WIN32)
     target_link_libraries(${TARGET} PRIVATE setupapi)
 elseif(ANDROID)
-    # No additional libraries for Android
+    target_compile_definitions(${TARGET} PRIVATE ANDROID)
 elseif(FREEBSD)
     target_link_libraries(${TARGET} PRIVATE thr iconv)
 elseif(APPLE)

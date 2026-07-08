@@ -61,6 +61,45 @@ For a real argument that is an odd-integer multiple of 90 degrees, an
 `symbexpr` ▶ `tan symbexpr`
 
 
+## sec
+
+[Analytic function](#analytic-functions) returning the secant of the argument (1/cos).
+
+For real arguments, the current angle mode determines the number's units, unless
+angular units are specified. At odd-integer multiples of 90° in the current angle
+units, an [infinite result](#infinite-result) is generated.
+
+`z` ▶ *sec* `z`
+
+`symbexpr` ▶ `sec symbexpr`
+
+
+## csc
+
+[Analytic function](#analytic-functions) returning the cosecant of the argument (1/sin).
+
+For real arguments, the current angle mode determines the number's units, unless
+angular units are specified. At integer multiples of 180° in the current angle
+units, an [infinite result](#infinite-result) is generated.
+
+`z` ▶ *csc* `z`
+
+`symbexpr` ▶ `csc symbexpr`
+
+
+## cot
+
+[Analytic function](#analytic-functions) returning the cotangent of the argument (cos/sin).
+
+For real arguments, the current angle mode determines the number's units, unless
+angular units are specified. At integer multiples of 180° in the current angle
+units, an [infinite result](#infinite-result) is generated.
+
+`z` ▶ *cot* `z`
+
+`symbexpr` ▶ `cot symbexpr`
+
+
 ## ASIN
 Compute the arcsine
 
@@ -71,6 +110,21 @@ Compute the arccosine
 
 ## ATAN
 Compute the arctangent
+
+
+## sec⁻¹
+
+Compute the arc-secant. The argument must satisfy |x| ≥ 1.
+
+
+## csc⁻¹
+
+Compute the arc-cosecant. The argument must satisfy |x| ≥ 1.
+
+
+## cot⁻¹
+
+Compute the arc-cotangent.
 
 
 ## ATAN2
@@ -109,6 +163,30 @@ Compute the hyperbolic arccosine
 Compute the hyperbolic arctangent
 
 
+## csch
+Compute the hyperbolic cosecant (1/sinh)
+
+
+## sech
+Compute the hyperbolic secant (1/cosh)
+
+
+## coth
+Compute the hyperbolic cotangent (cosh/sinh)
+
+
+## csch⁻¹
+Compute the hyperbolic arccosecant
+
+
+## sech⁻¹
+Compute the hyperbolic arcsecant
+
+
+## coth⁻¹
+Compute the hyperbolic arccotangent
+
+
 ## LOG10
 Compute logarithm in base 10
 
@@ -124,20 +202,12 @@ Compute the square root
 Compute the cube root
 
 
-## EXPM
+## Expm1
 Compute exp(x)-1
-
-
-## LNP1
-Compute ln(x+1)
 
 
 ## Ln1p
 Compute ln(x+1)
-
-
-## Expm1
-Compute exp(x)-1
 
 
 ## Exp2

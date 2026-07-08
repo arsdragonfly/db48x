@@ -52,12 +52,11 @@ static const cstring basic_library[] =
 {
 
     // ------------------------------------------------------------------------
-    //   Physics
+    //   Test cases to show examples of library commands
     // ------------------------------------------------------------------------
 
     "Secrets",          nullptr,
 
-    "Dedicace", "\"À tous ceux qui se souviennent de Maubert électronique\"",
     "Dedicace", "\"À tous ceux qui se souviennent de Maubert électronique\"",
     "LibraryHelp",  "\"To modify the library, edit the config/library.csv file\"",
     "Physics",          nullptr,
@@ -96,17 +95,18 @@ const xlib::config xlib::library =
     .type           = ID_xlib,
     .first_menu     = ID_LibraryMenu00,
     .last_menu      = ID_LibraryMenu99,
-    .name           = ID_XlibName,
-    .value          = ID_XlibValue,
+    .name           = ID_library_menu_name,
+    .value          = ID_library_menu_value,
     .command        = ID_object,
     .file           = "config/library.csv",
     .library        = "library",
     .builtins       = basic_library,
     .nbuiltins      = sizeof(basic_library) / sizeof(*basic_library),
+    .vlabel         = "Code",
     .error          = invalid_xlib_error,
-    .label          = nullptr,
     .show_builtins  = show_builtin_library,
     .stack_prefix   = false,
+    .ignore_case    = true,
 };
 
 
@@ -294,7 +294,7 @@ bool xlib::operation(object_p obj, object_p (xlib::*op)() const)
 }
 
 
-COMMAND_BODY(XlibName)
+EVAL_BODY(library_menu_name)
 // ----------------------------------------------------------------------------
 //   Put the name of a xlib on the stack
 // ----------------------------------------------------------------------------
@@ -309,7 +309,7 @@ COMMAND_BODY(XlibName)
 }
 
 
-INSERT_BODY(XlibName)
+INSERT_BODY(library_menu_name)
 // ----------------------------------------------------------------------------
 //   Put the name of a xlib in the editor
 // ----------------------------------------------------------------------------
@@ -319,7 +319,7 @@ INSERT_BODY(XlibName)
 }
 
 
-HELP_BODY(XlibName)
+HELP_BODY(library_menu_name)
 // ----------------------------------------------------------------------------
 //   Put the help for a given xlib function key
 // ----------------------------------------------------------------------------
@@ -333,7 +333,7 @@ HELP_BODY(XlibName)
 }
 
 
-COMMAND_BODY(XlibValue)
+EVAL_BODY(library_menu_value)
 // ----------------------------------------------------------------------------
 //   Put the value of a xlib on the stack
 // ----------------------------------------------------------------------------
@@ -350,7 +350,7 @@ COMMAND_BODY(XlibValue)
 }
 
 
-INSERT_BODY(XlibValue)
+INSERT_BODY(library_menu_value)
 // ----------------------------------------------------------------------------
 //   Insert the value of a xlib
 // ----------------------------------------------------------------------------
@@ -364,12 +364,12 @@ INSERT_BODY(XlibValue)
 }
 
 
-HELP_BODY(XlibValue)
+HELP_BODY(library_menu_value)
 // ----------------------------------------------------------------------------
 //   Put the help for a given library function ley
 // ----------------------------------------------------------------------------
 {
-    return XlibName::do_help(nullptr);
+    return library_menu_name::do_help(nullptr);
 }
 
 

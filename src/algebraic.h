@@ -74,6 +74,12 @@ struct algebraic : command
     // Convert to a fraction
     static bool to_fraction(algebraic_g &x);
 
+    // Convert to a fraction with square roots
+    static bool to_sqrt(algebraic_g &x);
+
+    // Convert to a fraction with π, √n, ln(n) or e factored out
+    static bool to_quotient(algebraic_g &x);
+
     // Convert to decimal number
     static bool to_decimal(algebraic_g &x, bool weak = false);
 
@@ -82,6 +88,10 @@ struct algebraic : command
     {
         return x && (!x->is_big() || to_decimal(x));
     }
+
+    // Convert to hw floating point if possible
+    static bool to_hwfloat(algebraic_g &x);
+    static bool to_hwdouble(algebraic_g &x);
 
     // Marking that we are talking about angle units
     typedef id angle_unit;
@@ -120,14 +130,15 @@ struct algebraic : command
     // Function pointers used by generic evaluation code
     typedef decimal_p (*decimal_fn)(decimal_r x);
 
-    template<typename value>
+    template <typename value>
     static algebraic_p as_hwfp(value x);
     // -------------------------------------------------------------------------
     //   Return a hardware floating-point value if possible
     // -------------------------------------------------------------------------
 
-    bool is_numeric_constant() const;
-    algebraic_p as_numeric_constant() const;
+
+    bool               is_numeric_constant() const;
+    algebraic_p        as_numeric_constant() const;
     // ------------------------------------------------------------------------
     //   Check if a value is a valid numerical constant (real or complex)
     // ------------------------------------------------------------------------
@@ -136,12 +147,40 @@ struct algebraic : command
 
     static algebraic_p epsilon(int imprecision = 0);
 
-    static int compare(algebraic_r x, algebraic_r y);
+    algebraic_p        snap_near_integer(algebraic_r eps) const;
+    static algebraic_p integer_sqrt(ularge value);
+    algebraic_p        symbolic_sqrt() const;
+
+    static int         compare(algebraic_r x, algebraic_r y);
+    static bool        list_result(uint depth, bool reverse = true);
+    static bool        in_expression;
 
     INSERT_DECL(algebraic);
 };
 
 typedef algebraic_p (*algebraic_fn)(algebraic_r x);
 typedef algebraic_p (*arithmetic_fn)(algebraic_r x, algebraic_r y);
+
+
+// ============================================================================
+//
+//   Commands and quasi-symbols that can be used in expressions
+//
+// ============================================================================
+
+#define SYMBOL_DECLARE(derived)                                         \
+    COMMAND_DECLARE_SPECIAL(derived, algebraic, 0, PREC_DECL(SYMBOL); )
+#define COMMAND_DECLARE_FN(derived, nargs)            \
+    COMMAND_DECLARE_SPECIAL(derived, command, nargs, PREC_DECL(FUNCTION); )
+
+SYMBOL_DECLARE(Ticks);                  // Return number of ticks
+SYMBOL_DECLARE(Version);                // Return a version string
+COMMAND_DECLARE_FN(ToText,1);           // Convert an object to text
+COMMAND_DECLARE_FN(ToProgram,1);        // Convert expression to program
+COMMAND_DECLARE_FN(Type, 1);            // Return the type of the object
+COMMAND_DECLARE_FN(TypeName, 1);        // Return the type name of the object
+COMMAND_DECLARE_FN(Cycle, 1);           // Cycle among representations
+COMMAND_DECLARE_FN(BinaryToReal, 1);    // Convert binary to real
+COMMAND_DECLARE_FN(RealToBinary, 1);    // Convert real to binary
 
 #endif // ALGEBRAIC_H

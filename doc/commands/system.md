@@ -249,6 +249,24 @@ Return DB48X version information as text.
 
  ▶ `"Version information"`
 
+## Chuck
+
+The most powerful command in DB48x.
+
+ ▶ `"Chuck pearl of wisdom"`
+
+The `CHUCK` command is by far the most powerful command in DB48x.
+Users must run it regularly to keep their calculator in shape.
+
+* `CHUCK` does not have arguments, it wins every single one.
+* `CHUCK` does not merely produce a result, it produces the best result
+every single time, effortlessly.
+* `CHUCK` does not need help, it provides help.
+* `CHUCK` never fails, any error is a user error.
+* `CHUCK` does not drain the battery, it exercises power.
+* `CHUCK` is so fast it has to slow down for you to keep up.
+* `CHUCK` can identify if your DB48x build is genuine.
+
 
 ## FreeMemory
 
@@ -313,7 +331,7 @@ power, because of additional animations or more expensive graphical rendering.
 ## Bytes
 
 Return the size of the object and a hash of its value. On classic RPL systems,
-teh hash is a 5-nibbles CRC32. On DB48X, the hash is a based integer of the
+the hash is a 5-nibbles CRC32. On DB48X, the hash is a based integer of the
 current [wordsize](#stws) corresponding to the binary representation of the
 object.
 

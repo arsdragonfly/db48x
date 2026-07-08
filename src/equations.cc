@@ -1416,24 +1416,6 @@ static runtime &invalid_equation_error()
 }
 
 
-static symbol_p equation_label(symbol_r sym)
-// ----------------------------------------------------------------------------
-//   Simplify equations to show then in menu label
-// ----------------------------------------------------------------------------
-{
-    if (sym)
-    {
-        size_t   len    = 0;
-        utf8     source = sym->value(&len);
-        if (object_p obj = object::parse(source, len))
-            if (expression_p expr = obj->as<expression>())
-                if (symbol_p ssym = expr->as_symbol(false))
-                    return ssym;
-    }
-    return sym;
-}
-
-
 static bool show_builtin_equations()
 // ----------------------------------------------------------------------------
 //   Show the builtin equations
@@ -1454,15 +1436,16 @@ const equation::config equation::equations =
     .type           = ID_equation,
     .first_menu     = ID_EquationsMenu00,
     .last_menu      = ID_EquationsMenu99,
-    .name           = ID_EquationName,
-    .value          = ID_EquationValue,
-    .command        = ID_EquationSolver,
+    .name           = ID_equation_menu_name,
+    .value          = ID_equation_menu_value,
+    .command        = ID_equation_menu_solver,
     .file           = "config/equations.csv",
     .library        = "library",
     .builtins       = basic_equations,
     .nbuiltins      = sizeof(basic_equations) / sizeof(*basic_equations),
+    .vlabel         = "Equation",
+    .clabel         = "Solve",
     .error          = invalid_equation_error,
-    .label          = equation_label,
     .show_builtins  = show_builtin_equations,
     .stack_prefix   = false,
 };
@@ -1594,7 +1577,7 @@ utf8 equation_menu::name(id type, size_t &len)
 }
 
 
-COMMAND_BODY(EquationName)
+EVAL_BODY(equation_menu_name)
 // ----------------------------------------------------------------------------
 //   Put the name of a equation on the stack
 // ----------------------------------------------------------------------------
@@ -1610,7 +1593,7 @@ COMMAND_BODY(EquationName)
 }
 
 
-INSERT_BODY(EquationName)
+INSERT_BODY(equation_menu_name)
 // ----------------------------------------------------------------------------
 //   Put the name of a equation in the editor
 // ----------------------------------------------------------------------------
@@ -1620,7 +1603,7 @@ INSERT_BODY(EquationName)
 }
 
 
-HELP_BODY(EquationName)
+HELP_BODY(equation_menu_name)
 // ----------------------------------------------------------------------------
 //   Put the help for a given equation name
 // ----------------------------------------------------------------------------
@@ -1634,7 +1617,7 @@ HELP_BODY(EquationName)
 }
 
 
-COMMAND_BODY(EquationValue)
+EVAL_BODY(equation_menu_value)
 // ----------------------------------------------------------------------------
 //   Put the value of a equation on the stack
 // ----------------------------------------------------------------------------
@@ -1651,7 +1634,7 @@ COMMAND_BODY(EquationValue)
 }
 
 
-INSERT_BODY(EquationValue)
+INSERT_BODY(equation_menu_value)
 // ----------------------------------------------------------------------------
 //   Insert the value of a equation
 // ----------------------------------------------------------------------------
@@ -1665,17 +1648,16 @@ INSERT_BODY(EquationValue)
 }
 
 
-HELP_BODY(EquationValue)
+HELP_BODY(equation_menu_value)
 // ----------------------------------------------------------------------------
 //   Put the help for a given equation value
 // ----------------------------------------------------------------------------
 {
-    return EquationName::do_help(nullptr);
+    return equation_menu_name::do_help(nullptr);
 }
 
 
-
-COMMAND_BODY(EquationSolver)
+EVAL_BODY(equation_menu_solver)
 // ----------------------------------------------------------------------------
 //   Solve for a given equation
 // ----------------------------------------------------------------------------
@@ -1693,7 +1675,7 @@ COMMAND_BODY(EquationSolver)
 }
 
 
-INSERT_BODY(EquationSolver)
+INSERT_BODY(equation_menu_solver)
 // ----------------------------------------------------------------------------
 //   Insert the code in a program to solve a library equation
 // ----------------------------------------------------------------------------
@@ -1707,12 +1689,12 @@ INSERT_BODY(EquationSolver)
 }
 
 
-HELP_BODY(EquationSolver)
+HELP_BODY(equation_menu_solver)
 // ----------------------------------------------------------------------------
 //   Put the help for a given equation value
 // ----------------------------------------------------------------------------
 {
-    return EquationName::do_help(nullptr);
+    return equation_menu_name::do_help(nullptr);
 }
 
 

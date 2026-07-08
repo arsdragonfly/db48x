@@ -30,11 +30,55 @@
 // ****************************************************************************
 
 #include "arithmetic.h"
+#include "functions.h"
 #include "list.h"
 #include "runtime.h"
 
 
 GCP(array);
+
+enum class echelon_mode : uint8_t
+// ----------------------------------------------------------------------------
+//   Describe which kind of echelon operation we request
+// ----------------------------------------------------------------------------
+{
+    REF,
+    RREF,
+    RREFP,
+    RREFMOD,
+};
+
+
+struct echelon_options
+// ----------------------------------------------------------------------------
+//   Parameters for echelon operations
+// ----------------------------------------------------------------------------
+{
+    echelon_mode mode            = echelon_mode::RREF;
+    bool         reduce_last_col = true;
+};
+
+
+struct echelon_result
+// ----------------------------------------------------------------------------
+//   Echelon operations return a matrix and a list of pivot points
+// ----------------------------------------------------------------------------
+{
+    array_g matrix;
+    list_g  pivots;
+};
+
+
+struct lu_result
+// ----------------------------------------------------------------------------
+//   LU decomposition gives three matrices as results
+// ----------------------------------------------------------------------------
+{
+    array_g L;
+    array_g U;
+    array_g P;
+};
+
 
 struct array : list
 // ----------------------------------------------------------------------------
@@ -43,24 +87,24 @@ struct array : list
 {
     array(id type, gcbytes bytes, size_t len): list(type, bytes, len) {}
 
-    static array_g map(algebraic_fn fn, array_r x)
+    static array_g map(algebraic_fn fn, array_r x, size_t recurse = ~0U)
     {
-        return x->map(fn);
+        return x->map(fn, recurse);
     }
 
-    array_p map(algebraic_fn fn) const
+    array_p map(algebraic_fn fn, size_t recurse = ~0U) const
     {
-        return array_p(list::map(fn));
+        return array_p(list::map(fn, recurse));
     }
 
-    array_p map(arithmetic_fn fn, algebraic_r y) const
+    array_p map(arithmetic_fn fn, algebraic_r y, size_t recurse = ~0U) const
     {
-        return array_p(list::map(fn, y));
+        return array_p(list::map(fn, y, recurse));
     }
 
-    array_p map(algebraic_r x, arithmetic_fn fn) const
+    array_p map(algebraic_r x, arithmetic_fn fn, size_t recurse = ~0U) const
     {
-        return array_p(list::map(x, fn));
+        return array_p(list::map(x, fn, recurse));
     }
 
     // Append data
@@ -111,12 +155,15 @@ struct array : list
     static array_p      mul(array_r x, array_r y);
     static algebraic_p  dot(array_r x, array_r y);
     static array_p      cross(array_r x, array_r y);
-    static algebraic_p  one_norm(array_p x, bool column);
-    static result       one_norm(bool column);
+    static algebraic_p  one_norm(algebraic_r x, bool column);
 
     static result       add_row_or_column(bool columnist);
     static result       delete_row_or_column(bool columnist);
     static result       swap_row_or_column(bool columnist);
+
+    static echelon_result row_echelon(array_r m, echelon_options opt);
+    static object::result echelon_command(echelon_mode mode);
+    static lu_result      lu_factorization(array_r m);
 
 public:
     OBJECT_DECL(array);
@@ -133,18 +180,18 @@ array_p operator-(array_r x, array_r y);
 array_p operator*(array_r x, array_r y);
 array_p operator/(array_r x, array_r y);
 
-COMMAND_DECLARE(det, 1);
-COMMAND_DECLARE_SPECIAL(dot,   command, 2, PREC_DECL(MULTIPLICATIVE); );
-COMMAND_DECLARE_SPECIAL(cross, command, 2, PREC_DECL(MULTIPLICATIVE); );
+FUNCTION_MAT(det);
+COMMAND_DECLARE_SPECIAL(dot,   algebraic, 2, PREC_DECL(MULTIPLICATIVE); );
+COMMAND_DECLARE_SPECIAL(cross, algebraic, 2, PREC_DECL(MULTIPLICATIVE); );
 COMMAND_DECLARE(ToArray, ~2);
 COMMAND_DECLARE(FromArray, 1);
 COMMAND_DECLARE(ConstantArray, 2);
-COMMAND_DECLARE(IdentityMatrix, 1);
-COMMAND_DECLARE(RandomMatrix, 1);
-COMMAND_DECLARE(Transpose, 1);
-COMMAND_DECLARE(TransConjugate, 1);
-COMMAND_DECLARE(ColumnNorm, 1);
-COMMAND_DECLARE(RowNorm, 1);
+COMMAND_DECLARE_FN(IdentityMatrix, 1);
+COMMAND_DECLARE_FN(RandomMatrix, 1);
+FUNCTION_MAT(Transpose);
+FUNCTION_MAT(TransConjugate);
+FUNCTION_MAT(ColumnNorm);
+FUNCTION_MAT(RowNorm);
 
 COMMAND_DECLARE(MatrixToColumns, 1);
 COMMAND_DECLARE(MatrixToRows, 1);
@@ -156,11 +203,16 @@ COMMAND_DECLARE(DeleteColumn, 2);
 COMMAND_DECLARE(DeleteRow, 2);
 COMMAND_DECLARE(ColumnSwap, 3);
 COMMAND_DECLARE(RowSwap, 3);
+COMMAND_DECLARE(REF, 1);
+COMMAND_DECLARE(RREF, 1);
+COMMAND_DECLARE(RREFP, 1);
+COMMAND_DECLARE(RREFMOD, 1);
+COMMAND_DECLARE(LU, 1);
 
-COMMAND_DECLARE(ToCylindrical, 1);
-COMMAND_DECLARE(ToSpherical, 1);
-COMMAND_DECLARE(To2DVector, 2);
-COMMAND_DECLARE(To3DVector, 3);
+COMMAND_DECLARE_FN(To2DVector, 2);
+COMMAND_DECLARE_FN(To3DVector, 3);
+FUNCTION_MAT(ToCylindrical);
+FUNCTION_MAT(ToSpherical);
 COMMAND_DECLARE(FromVector, 1);
 
 #endif // ARRAY_H

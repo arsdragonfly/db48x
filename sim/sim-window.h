@@ -70,14 +70,14 @@ public:
     ~TestsThread()
     {
         if (isRunning())
-            while (isFinished())
-                terminate();
+            wait();
     }
-    void run()
+    void run() override
     {
         tests TestSuite;
-        TestSuite.run(onlyCurrent + 2*demo1 + 4*demo2 + 8*demo3);
+        exitCode = TestSuite.run(onlyCurrent + 2 * demo1 + 4 * demo2 + 8 * demo3);
     }
+    int  exitCode = 0;
     bool onlyCurrent;
     bool demo1, demo2, demo3;
 };
@@ -157,19 +157,27 @@ class MainWindow : public QMainWindow
     QScopedPointer<AudioGenerator> generator;
     volatile bool                  playing;
 
+    int                            pendingExitCode = 0;
+    bool                           shutdownRequested = false;
+
     enum { SAMPLE_RATE = 20000, SAMPLE_COUNT = SAMPLE_RATE };
 public:
     static qreal       userScaling;
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = 0, bool console = false);
     ~MainWindow();
 
     void pushKey(int key);
     QPixmap &screen() { return ui.screen->mainPixmap; }
     static MainWindow * theMainWindow() { return mainWindow; }
     static QPixmap &    theScreen()     { return mainWindow->screen(); }
-    static void         screenshot(cstring basename = "screens/",
+    static bool         screenshot(cstring basename = "screens/",
+                                   int     x = 0,
+                                   int     y = 0,
+                                   int     w = LCD_W,
+                                   int     h = LCD_H);
+    static bool         screensave(cstring filename,
                                    int     x = 0,
                                    int     y = 0,
                                    int     w = LCD_W,
@@ -178,18 +186,26 @@ public:
 
     void                startBuzzer(uint frequency);
     void                stopBuzzer();
-    bool                buzzerPlaying() { return playing; }
+    bool                buzzerPlaying()         { return playing; }
+    static void         setExitCode(int rc)
+    {
+        mainWindow->pendingExitCode = rc;
+    }
 
 protected:
     virtual void keyPressEvent(QKeyEvent *ev);
     virtual void keyReleaseEvent(QKeyEvent *ev);
     bool         eventFilter(QObject *obj, QEvent *ev);
     void         resizeEvent(QResizeEvent *event);
+    void         closeEvent(QCloseEvent *event);
+    void         handleAppStateChange(Qt::ApplicationState state);
 
 signals:
     void        keyResizeSignal(const QRect &rect);
 
 private:
+    void        requestShutdown();
+
     // Audio support
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     void        initializeAudio(const QAudioDevice &deviceInfo, uint freq);
@@ -198,6 +214,8 @@ private:
 #endif
 
 private slots:
+    void        onTestsFinished();
+    void        onRplFinished();
     void        updateAudioDevices();
 };
 

@@ -75,7 +75,18 @@ RECORDER(menus,         16, "Menu operations");
 RECORDER(help,          16, "On-line help");
 RECORDER(help_search,   16, "On-line help topic search");
 RECORDER(tests_ui,      16, "Test interaction with user interface");
+RECORDER(shifts,        16, "Shift logic (including transient alpha)");
 RECORDER(keymap_warning, 8, "Warnings about invalid keymaps");
+
+// Updated when loading keymaps from files (e.g. db48x.48k).
+static uint help_keymap_generation = 1;
+// Updated when ASSIGN/DELKEYS/STOKEY change user key bindings.
+static uint help_assignment_generation = 1;
+// Max bytes kept for one rendered "Keys: ..." help line.
+static constexpr size_t HELP_ACCESS_LINE_SIZE = 80;
+
+// Defined later in this file (default keyboard bindings per shift plane).
+extern const byte *const defaultCommand[user_interface::NUM_PLANES];
 
 #define NUM_TOPICS      (sizeof(topics) / sizeof(topics[0]))
 
@@ -132,6 +143,7 @@ user_interface::user_interface()
       taLowercase(false),
       taPrevAlpha(false),
       taPrevLowerc(false),
+      delayedArrow(false),
       userOnce(false),
       shiftDrawn(false),
       xshiftDrawn(false),
@@ -520,7 +532,7 @@ text_p user_interface::editor_save(bool rewinding)
 // ----------------------------------------------------------------------------
 {
     if (rt.editing())
-        if (text_g editor = rt.close_editor(false, false))
+        if (text_g editor = rt.close_editor(false))
             return editor_save(editor, rewinding);
     return nullptr;
 }
@@ -570,7 +582,7 @@ bool user_interface::editor_history(bool back)
             rt.edit(+ed, sz);
             cursor = 0;
             select = ~0U;
-            alpha = lowercase = xshift = shift = false;
+            alpha = lowercase = shift = xshift = false;
             edRows = 0;
             dirtyEditor = true;
             break;
@@ -671,7 +683,7 @@ bool user_interface::key(int key, bool repeating, bool talpha)
     if (rt.editing())
         update_mode();
 
-    if (!skey && last != KEY_SHIFT)
+    if (!skey && last != KEY_SHIFT && !transalpha)
     {
         shift = false;
         xshift = false;
@@ -717,8 +729,9 @@ object_p user_interface::assign(int keyid, object_p toassign)
     if (assigned && !assigned->as_quoted<StandardKey>())
         result = wrkeymap->store(+keyname, assigned);
     else
-        wrkeymap->purge(+keyname);
+        wrkeymap->purge(+keyname, false);
     rt.updir();
+    help_assignment_generation++;
     menu_refresh(menu::ID_VariablesMenu);
     return result;
 }
@@ -1168,7 +1181,7 @@ bool user_interface::replace_character_left_of_cursor(unicode code)
 
 bool user_interface::replace_character_left_of_cursor(symbol_p sym)
 // ----------------------------------------------------------------------------
-//    Replace the character left of cursor with teh symbol
+//    Replace the character left of cursor with the symbol
 // ----------------------------------------------------------------------------
 {
     size_t len = 0;
@@ -1667,7 +1680,7 @@ bool user_interface::draw_menus()
     }
 
     settings::SaveTabWidth stw(0);
-    for (int plane = 0; plane < planes; plane++)
+    for (int plane = 0; plane < visiblePlanes; plane++)
     {
         cstring *labels = menuLabel[plane];
         if (help)
@@ -2272,17 +2285,13 @@ bool user_interface::draw_annunciators()
 
         if (alpha || user)
         {
-            static cstring lbls[] = {
-                "", "ABC", "abc", "abc",
-                "USR", "αUS", "usr", "αus",
-                "", "ABC", "abc", "abc",
-                "1US", "α1U", "1us", "α1u"
-            };
-            utf8 label = utf8(lbls[alpha + 2*lowercase + 4*user + 8*userOnce]);
+            unicode al = alpha ? (lowercase ? 'a' : 'A') : ' ';
+            unicode us = user ? (userOnce ? 'u' : 'U') : ' ';
             pattern apat = lowercase
                 ? Settings.LowerAlphaForeground()
                 : Settings.AlphaForeground();
-            Screen.text(alpha_x + 1, 0, label, hdr_font, apat);
+            Screen.glyph(alpha_x + 1, 0, us, hdr_font, apat);
+            Screen.glyph(alpha_x + 10, 0, al, hdr_font, apat);
         }
         alphaDrawn = alpha;
         lowercDrawn = lowercase;
@@ -3188,7 +3197,7 @@ void user_interface::load_help(utf8 topic, size_t len)
                     }
                     refidx = 0;
                 }
-                else
+                else if (refidx < sizeof(ref) - 1)
                 {
                     ref[refidx++] = c;
                 }
@@ -3247,7 +3256,8 @@ void user_interface::load_help(utf8 topic, size_t len)
             }
             else
             {
-                ref[refidx] = 0;
+                if (refidx < sizeof(ref))
+                    ref[refidx] = 0;
                 record(help_search, "Checking %u: %s", level, ref);
 
                 // For regular topics, just to a string comparison
@@ -3335,12 +3345,570 @@ enum style_name
 };
 
 
+void user_interface::draw_help_access_paths(id cmd,
+                                            coord &x, coord &y,
+                                            coord xleft, coord xright,
+                                            coord ybot, coord height)
+// ----------------------------------------------------------------------------
+//    Draw possible keyboard access paths for a command in help
+// ----------------------------------------------------------------------------
+{
+    record(help, "draw_help_access_paths cmd=%u", uint(cmd));
+    if (!cmd)
+        return;
+
+    struct access_cache_entry
+    {
+        id        cmd;
+        uint      keymapGen;
+        uint      assignGen;
+        uintptr_t menuSig;
+        uintptr_t userSig;
+        bool      valid;
+        char      text[HELP_ACCESS_LINE_SIZE];
+    };
+    static access_cache_entry accessCache[3] = {};
+    static uint accessCacheNext = 0;
+
+    auto key_label = [](uint key) -> cstring
+    {
+        switch (key)
+        {
+        case KEY_SIGMA:      return "⚙ (A)";
+        case KEY_INV:        return "1/x (B)";
+        case KEY_SQRT:       return "√x (C)";
+        case KEY_LOG:        return "y↑x (D)";
+        case KEY_LN:         return "MTH (E)";
+        case KEY_XEQ:        return "'() (F)";
+        case KEY_STO:        return "STO (G)";
+        case KEY_RCL:        return "VAR (H)";
+        case KEY_RDN:        return "STK (I)";
+        case KEY_SIN:        return "SIN (J)";
+        case KEY_COS:        return "COS (K)";
+        case KEY_TAN:        return "TAN (L)";
+        case KEY_ENTER:      return "ENTER";
+        case KEY_SWAP:       return "x⇆y (M)";
+        case KEY_CHS:        return "+/- (N)";
+        case KEY_E:          return "x10 (O)ⁿ";
+        case KEY_BSP:        return "← (BSP)";
+        case KEY_UP:         return "◀";
+        case KEY_7:          return "7 (P)";
+        case KEY_8:          return "8 (Q)";
+        case KEY_9:          return "9 (R)";
+        case KEY_DIV:        return "÷ (S)";
+        case KEY_DOWN:       return "▶";
+        case KEY_4:          return "4 (T)";
+        case KEY_5:          return "5 (U)";
+        case KEY_6:          return "6 (V)";
+        case KEY_MUL:        return "× (W)";
+        case KEY_SHIFT:      return "🟨";
+        case KEY_1:          return "1 (X)";
+        case KEY_2:          return "2 (Y)";
+        case KEY_3:          return "3 (Z)";
+        case KEY_SUB:        return "-";
+        case KEY_EXIT:       return "EXIT";
+        case KEY_0:          return "0";
+        case KEY_DOT:        return ".";
+        case KEY_RUN:        return "= (SPC)";
+        case KEY_ADD:        return "+ (CAT)";
+        case KEY_F1:         return "F1";
+        case KEY_F2:         return "F2";
+        case KEY_F3:         return "F3";
+        case KEY_F4:         return "F4";
+        case KEY_F5:         return "F5";
+        case KEY_F6:         return "F6";
+        default:             return nullptr;
+        }
+    };
+
+    auto append_text = [](char *dst, size_t cap, size_t &len, cstring src)
+    {
+        if (!dst || !src || !cap)
+            return;
+        if (len >= cap)
+            len = cap - 1;
+        if (len + 1 >= cap)
+        {
+            dst[cap - 1] = 0;
+            return;
+        }
+        while (*src && len + 1 < cap)
+            dst[len++] = *src++;
+        dst[len] = 0;
+    };
+
+    auto append_mods = [&](char *dst, size_t cap, size_t &len,
+                           bool ls, bool rs,
+                           bool al, bool lc, bool tr)
+    {
+        if (ls) append_text(dst, cap, len, "🟨");
+        if (rs) append_text(dst, cap, len, "🟦");
+        if (al) append_text(dst, cap, len, lc ? "α" : "Α");
+        if (tr) append_text(dst, cap, len, lc ? "τ" : "Τ");
+    };
+
+    auto append_access = [&](char *dst, size_t cap, size_t &len,
+                             cstring source, bool &haveAny,
+                             bool ls, bool rs, bool al, bool lc, bool tr,
+                             uint key)
+    {
+        if (!key_label(key) || len + 16 >= cap)
+            return;
+        if (!haveAny)
+            append_text(dst, cap, len, "Keys: ");
+        else
+            append_text(dst, cap, len, ";");
+        append_text(dst, cap, len, source);
+        append_mods(dst, cap, len, ls, rs, al, lc, tr);
+        append_text(dst, cap, len, key_label(key));
+        haveAny = true;
+    };
+
+    auto find_type_match = [](object_p obj, id cmd) -> bool
+    {
+        return obj && id(obj->type()) == cmd;
+    };
+
+    // Find the first keyboard path to reach a given command or menu.
+    // Searches keymap/built-in bindings, then recursively menus if depth > 0.
+    // Returns true if a path was appended, false if nothing found.
+    auto append_cmd_path =
+        [&](auto &self, id target,
+            char *dst, size_t cap, size_t &dlen, uint depth) -> bool
+    {
+        // Search keymap or built-in bindings for target
+        if (keymap)
+        {
+            uint shplane = 0;
+            for (object_p plobj : *keymap)
+            {
+                list_p plane = plobj->as_array_or_list();
+                if (!plane) { shplane++; continue; }
+                uint sp = shplane % NUM_PLANES;
+                uint ap = shplane / NUM_PLANES;
+                for (uint key = 1; key <= NUM_KEYS; key++)
+                {
+                    if (find_type_match(plane->at(key - 1), target))
+                    {
+                        append_mods(dst, cap, dlen,
+                                    sp == 1, sp == 2,
+                                    ap > 0, ap > 1, false);
+                        append_text(dst, cap, dlen, key_label(key));
+                        return true;
+                    }
+                }
+                shplane++;
+            }
+        }
+        else
+        {
+            for (uint p = 0; p < NUM_PLANES; p++)
+            {
+                for (uint key = 1; key <= NUM_KEYS; key++)
+                {
+                    const byte *ptr = defaultCommand[p] + 2 * (key - 1);
+                    if (*ptr && find_type_match((object_p) ptr, target))
+                    {
+                        append_mods(dst, cap, dlen,
+                                    p == 1, p == 2, false, false, false);
+                        append_text(dst, cap, dlen, key_label(key));
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Recursively search in menus if allowed
+        if (depth > 0)
+        {
+            object_p sFn[NUM_PLANES][NUM_SOFTKEYS];
+            for (uint p = 0; p < NUM_PLANES; p++)
+                for (uint f = 0; f < NUM_SOFTKEYS; f++)
+                    sFn[p][f] = function[p][f];
+            uint sPage  = menuPage;
+            uint sPages = menuPages;
+
+            bool hit = false;
+            for (id mty = object::ID_MainMenu;
+                 mty <= object::ID_EditMenu && !hit;
+                 mty = id(uint(mty) + 1))
+            {
+                if (!object::is_menu(mty))
+                    continue;
+                menu_p m = menu_p(menu::static_object(mty));
+                if (!m)
+                    continue;
+                menuPage = 0;
+                menu_info mi(0);
+                if (!m->ops().menu(m, mi))
+                    continue;
+                uint npages = menuPages;
+                for (uint pg = 0; pg < npages && !hit; pg++)
+                {
+                    if (pg > 0)
+                    {
+                        menu_info pmi(pg);
+                        m->ops().menu(m, pmi);
+                    }
+                    for (uint p = 0; p < NUM_PLANES && !hit; p++)
+                    {
+                        for (uint f = 0; f < NUM_SOFTKEYS && !hit; f++)
+                        {
+                            if (find_type_match(function[p][f], target))
+                            {
+                                size_t before = dlen;
+                                if (self(self, mty, dst, cap, dlen,
+                                         depth - 1))
+                                {
+                                    append_text(dst, cap, dlen, " ");
+                                    if (p == 1)
+                                        append_text(dst, cap, dlen, "🟨");
+                                    if (p == 2)
+                                        append_text(dst, cap, dlen, "🟦");
+                                    append_text(dst, cap, dlen,
+                                                key_label(KEY_F1 + f));
+                                    hit = true;
+                                }
+                                else
+                                {
+                                    dlen = before;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (uint p = 0; p < NUM_PLANES; p++)
+                for (uint f = 0; f < NUM_SOFTKEYS; f++)
+                    function[p][f] = sFn[p][f];
+            menuPage  = sPage;
+            menuPages = sPages;
+
+            if (hit)
+                return true;
+        }
+
+        // Fallback: use fancy name
+        append_text(dst, cap, dlen, cstring(object::fancy(target)));
+        return true;
+    };
+
+    uintptr_t menuSig = uintptr_t(menuStack[0]) ^ (uintptr_t(menuPage) << 16);
+    for (uint p = 0; p < NUM_PLANES; p++)
+        for (uint f = 0; f < NUM_SOFTKEYS; f++)
+            menuSig = menuSig * 131U + uintptr_t(function[p][f]);
+    uintptr_t userSig = 0;
+    object_p keymapName = object::static_object(object::ID_KeyMap);
+    for (uint depth = 0; directory *dir = rt.variables(depth); depth++)
+        if (object_p keymapVar = dir->recall(keymapName))
+            userSig = userSig * 131U + uintptr_t(keymapVar);
+
+    const char *accessText = nullptr;
+    for (auto &e : accessCache)
+    {
+        if (e.valid &&
+            e.cmd == cmd &&
+            e.keymapGen == help_keymap_generation &&
+            e.assignGen == help_assignment_generation &&
+            e.menuSig == menuSig &&
+            e.userSig == userSig)
+        {
+            record(help, "  Cache hit for cmd %u", uint(cmd));
+            accessText = e.text;
+            break;
+        }
+    }
+
+    if (!accessText)
+    {
+        record(help, "  Cache miss for cmd %u, building", uint(cmd));
+        char   built[HELP_ACCESS_LINE_SIZE] = {};
+        size_t blen      = 0;
+        bool   any       = false;
+        uint   found     = 0;
+        uint   limit     = 8;
+
+        // Source 1: direct key bindings (keymap or built-in).
+        record(help, "Source 1: keymap scan, keymap=%p", (void *) keymap);
+        if (keymap)
+        {
+            // Source 1a: keymap loaded from file, e.g. db48x.48k.
+            uint shplane = 0;
+            for (object_p plobj : *keymap)
+            {
+                list_p plane = plobj->as_array_or_list();
+                if (!plane)
+                {
+                    shplane++;
+                    continue;
+                }
+                uint sp = shplane % NUM_PLANES;
+                uint ap = shplane / NUM_PLANES;
+                for (uint key = 1; key <= NUM_KEYS && found < limit; key++)
+                    if (find_type_match(plane->at(key - 1), cmd))
+                    {
+                        append_access(built, sizeof(built), blen, "", any,
+                                      sp == 1, sp == 2, ap > 0, ap > 1, false,
+                                      key);
+                        found++;
+                    }
+                if (found >= limit)
+                    break;
+                shplane++;
+            }
+        }
+        else
+        {
+            // Source 1b: built-in keyboard mappings.
+            for (uint p = 0; p < NUM_PLANES && found < limit; p++)
+            {
+                for (uint key = 1; key <= NUM_KEYS && found < limit; key++)
+                {
+                    const byte *ptr = defaultCommand[p] + 2 * (key - 1);
+                    if (*ptr && find_type_match((object_p) ptr, cmd))
+                    {
+                        append_access(built, sizeof(built), blen, "", any,
+                                      p == 1, p == 2, false, false, false,
+                                      key);
+                        found++;
+                    }
+                }
+            }
+        }
+
+        // Source 2: user-defined key assignments (ASSIGN).
+        record(help, "Source 2: user-assigned keys scan");
+        struct usermods { bool ls, rs, al, lc, tr; };
+        static const usermods mods[] =
+        {
+            { false, false, false, false, false },
+            { true,  false, false, false, false },
+            { false, true,  false, false, false },
+            { false, false, true,  false, false },
+            { true,  false, true,  false, false },
+            { false, true,  true,  false, false },
+            { false, false, true,  true,  false },
+            { true,  false, true,  true,  false },
+            { false, true,  true,  true,  false },
+            { false, false, false, false, true  },
+            { true,  false, false, false, true  },
+            { false, true,  false, false, true  },
+        };
+        for (const usermods &m : mods)
+        {
+            for (uint key = 1; key <= NUM_KEYS && found < limit; key++)
+            {
+                uint keyid = platform_keyid(key,
+                                            m.ls, m.rs, m.al, m.lc, m.tr);
+                if (find_type_match(assigned(keyid), cmd))
+                {
+                    append_access(built, sizeof(built), blen, "ⓤ", any,
+                                  m.ls, m.rs, m.al, m.lc, m.tr, key);
+                    found++;
+                }
+            }
+            if (found >= limit)
+                break;
+        }
+
+        // Source 3a: currently visible soft-menu bindings.
+        for (uint p = 0; p < NUM_PLANES && found < limit; p++)
+        {
+            for (uint f = 0; f < NUM_SOFTKEYS && found < limit; f++)
+            {
+                if (find_type_match(function[p][f], cmd))
+                {
+                    append_access(built, sizeof(built), blen, "", any,
+                                  p == 1, p == 2, false, false, false,
+                                  KEY_F1 + f);
+                    found++;
+                }
+            }
+        }
+
+        // Source 3b: scan all system menus across all pages.
+        // Save UI menu state that do_menu clobbers.
+        object_p saveFn[NUM_PLANES][NUM_SOFTKEYS];
+        cstring  saveLbl[NUM_PLANES][NUM_SOFTKEYS];
+        uint16_t saveMrk[NUM_PLANES][NUM_SOFTKEYS];
+        bool     saveMrkA[NUM_PLANES][NUM_SOFTKEYS];
+        for (uint p = 0; p < NUM_PLANES; p++)
+        {
+            for (uint f = 0; f < NUM_SOFTKEYS; f++)
+            {
+                saveFn[p][f]   = function[p][f];
+                saveLbl[p][f]  = menuLabel[p][f];
+                saveMrk[p][f]  = menuMarker[p][f];
+                saveMrkA[p][f] = menuMarkerAlign[p][f];
+            }
+        }
+        id   saveMenuId    = menuStack[0];
+        uint saveMenuPage  = menuPage;
+        uint saveMenuPages = menuPages;
+        bool saveDirty     = dirtyMenu;
+
+        record(help, "Menu scan for cmd %u, MainMenu..EditMenu",
+               uint(cmd));
+        for (id mty = object::ID_MainMenu;
+             mty <= object::ID_EditMenu && found < limit;
+             mty = id(uint(mty) + 1))
+        {
+            if (!object::is_menu(mty))
+                continue;
+            if (mty == saveMenuId)
+                continue;
+
+            menu_p m = menu_p(menu::static_object(mty));
+            if (!m)
+                continue;
+
+            record(help, "  Scanning menu %+s (%u)",
+                   object::name(mty), uint(mty));
+
+            menuPage = 0;
+            menu_info mi(0);
+            if (!m->ops().menu(m, mi))
+            {
+                record(help, "  Menu %+s populate failed", object::name(mty));
+                continue;
+            }
+
+            uint npages = menuPages;
+            if (npages > 100)
+            {
+                record(help, "  Menu %+s claims %u pages, clamping",
+                       object::name(mty), npages);
+                npages = 100;
+            }
+            record(help, "  Menu %+s has %u pages", object::name(mty), npages);
+            for (uint pg = 0; pg < npages && found < limit; pg++)
+            {
+                if (pg > 0)
+                {
+                    menu_info pmi(pg);
+                    record(help, "  Menu %+s page %u/%u",
+                           object::name(mty), pg, npages);
+                    m->ops().menu(m, pmi);
+                }
+
+                for (uint p = 0; p < NUM_PLANES && found < limit; p++)
+                {
+                    for (uint f = 0; f < NUM_SOFTKEYS && found < limit; f++)
+                    {
+                        if (find_type_match(function[p][f], cmd))
+                        {
+                            record(help, "  Found in %+s plane %u key F%u",
+                                   object::name(mty), p, f + 1);
+                            append_text(built, sizeof(built), blen,
+                                        any ? ";" : "Keys: ");
+                            append_cmd_path(append_cmd_path, mty,
+                                            built, sizeof(built), blen, 1);
+                            append_text(built, sizeof(built), blen, " ");
+                            if (p == 1)
+                                append_text(built, sizeof(built), blen, "🟨");
+                            if (p == 2)
+                                append_text(built, sizeof(built), blen, "🟦");
+                            append_text(built, sizeof(built), blen,
+                                        key_label(KEY_F1 + f));
+                            any = true;
+                            found++;
+                        }
+                    }
+                }
+            }
+        }
+        record(help, "Menu scan done, found %u matches", found);
+
+        // Restore saved UI menu state.
+        for (uint p = 0; p < NUM_PLANES; p++)
+        {
+            for (uint f = 0; f < NUM_SOFTKEYS; f++)
+            {
+                function[p][f]       = saveFn[p][f];
+                menuLabel[p][f]      = saveLbl[p][f];
+                menuMarker[p][f]     = saveMrk[p][f];
+                menuMarkerAlign[p][f] = saveMrkA[p][f];
+            }
+        }
+        menuStack[0] = saveMenuId;
+        menuPage     = saveMenuPage;
+        menuPages    = saveMenuPages;
+        dirtyMenu    = saveDirty;
+
+        record(help, "Access path build done: found=%u len=%zu",
+               found, blen);
+        access_cache_entry &slot = accessCache[accessCacheNext];
+        slot.cmd       = cmd;
+        slot.keymapGen = help_keymap_generation;
+        slot.assignGen = help_assignment_generation;
+        slot.menuSig   = menuSig;
+        slot.userSig   = userSig;
+        slot.valid     = true;
+        blen = min(blen, sizeof(slot.text) - 1);
+        for (size_t i = 0; i < blen; i++)
+            slot.text[i] = built[i];
+        slot.text[blen] = 0;
+        accessText = slot.text;
+        accessCacheNext = (accessCacheNext + 1) %
+            (sizeof(accessCache) / sizeof(accessCache[0]));
+    }
+
+    record(help, "  accessText=%p [%+s]",
+           accessText, accessText ? accessText : "null");
+    if (accessText && *accessText)
+    {
+        font_p af = HelpFont;
+        coord  ah = af->height();
+        coord  ay = y + height * 3 / 4;
+        if (ay <= ybot)
+        {
+            Screen.fill(xleft, ay, xright, ay + ah, pattern::white);
+            utf8 text = utf8(accessText);
+            while (*text)
+            {
+                unicode cp = utf8_codepoint(text);
+                text       = utf8_next(text);
+                if (cp == L'🟨' || cp == L'🟦')
+                {
+                    bool          ls     = cp == L'🟨';
+                    const byte   *source = cp == L'🟦' ? ann_right : ann_left;
+                    pixword      *sw     = (pixword *) source;
+                    grob::surface s(sw, ann_width, ann_height, 16);
+                    pattern       fg    = ls ? Settings.LeftShiftForeground()
+                                             : Settings.RightShiftForeground();
+                    pattern       bg    = ls ? Settings.LeftShiftBackground()
+                                             : Settings.RightShiftBackground();
+                    coord ann_x = x + 2;
+                    coord ann_y = ay + (ah - ann_height)/2;
+                    Screen.fill(ann_x - 1, ann_y - 1, ann_x + ann_width + 1, ann_y + ann_height + 1, pattern::black);
+                    Screen.draw(s, ann_x, ann_y, fg);
+                    Screen.draw_background(s, ann_x, ann_y, bg);
+                    x += 8 + ann_width;
+                }
+                else
+                {
+                    x = Screen.glyph(x, ay, cp, af,
+                                     pattern::black, pattern::white);
+                }
+            }
+
+            y = ay + ah / 2;
+            x = xleft;
+        }
+    }
+    record(help, "draw_help_access_paths done for cmd=%u", uint(cmd));
+}
+
+
 bool user_interface::draw_help()
 // ----------------------------------------------------------------------------
 //    Draw the help content
 // ----------------------------------------------------------------------------
 {
 restart:
+    record(help, "draw_help entry force=%u dirty=%u stack=%u freeze=%u",
+           force, dirtyHelp, dirtyStack, freezeStack);
     if ((!force && !dirtyHelp && !dirtyStack) || freezeStack)
         return false;
     dirtyHelp = false;
@@ -3409,7 +3977,14 @@ restart:
     uint    codeStart = 0;
     uint    shown     = 0;
     bool    hadTitle  = false;
+    id      hadCmd    = id(0);
     static char link[60];
+    bool        in_table    = false;
+    int         table_col   = 0;
+    int         table_ncols = 0;
+    coord       table_col_w = 0;
+    bool        advance_col = false;
+    bool        escaped     = false;
 
     // Pun not indented
     helpfile.seek(help);
@@ -3481,7 +4056,9 @@ restart:
                     uint    off  = helpfile.position();
                     unicode nx   = helpfile.get();
                     unicode nnx  = helpfile.get();
-                    if (nx      == '#' || (nx == '*' && nnx == ' '))
+                    if (nx == '#' || (nx == '*' && nnx == ' ')
+                        || (nx == '-' && nnx == ' ')
+                        || (in_table && nx == '|'))
                     {
                         newline = true;
                         emit = true;
@@ -3576,22 +4153,103 @@ restart:
                         emit = true;
                         if (hadTitle)
                             y += height;
+                        hadTitle = false;
                     }
                 }
                 skip = true;
                 break;
 
+            case '\\':
+                escaped = true;
+                skip    = true;
+                break;
+
+            case '|':
+                if (escaped)
+                {
+                    escaped = false;
+                    break;
+                }
+                if (style == CODE)
+                    break;
+                if (last == '\n' || (in_table && table_col >= table_ncols))
+                {
+                    // Start of a table row (first or subsequent)
+                    uint       pos0    = helpfile.position();
+                    unicode    c       = 0;
+                    int        cols    = 0;
+                    bool       is_sep  = true;
+                    while (c != '\n' && c != unicode(EOF))
+                    {
+                        c = helpfile.get();
+                        if (c == '|')
+                            cols++;
+                        if (c != '|' && c != ':' && c != '-' && c != ' '
+                            && c != '\r' && c != '\n' && c != unicode(EOF))
+                            is_sep = false;
+                    }
+                    helpfile.seek(pos0);
+                    if (is_sep)
+                    {
+                        // Separator row: skip the whole line
+                        c = 0;
+                        while (c != '\n' && c != unicode(EOF))
+                            c = helpfile.get();
+                        ch   = '\n'; // so that last=='\n' for the next row
+                        skip = true;
+                    }
+                    else
+                    {
+                        if (!in_table && cols > 0)
+                        {
+                            in_table    = true;
+                            table_ncols = cols;
+                            table_col_w = (xright - r.x1 - 4) / table_ncols;
+                        }
+                        table_col = 0;
+                        x         = r.x1 + 2;
+                        xleft     = r.x1 + 2;
+                        skip      = true;
+                    }
+                }
+                else if (in_table)
+                {
+                    advance_col = true;
+                    emit        = true;
+                    skip        = true;
+                }
+                break;
+
             case '<':
                 // Skip HTML tags
-                if (last == '\n')
-                {
-                    unicode c = helpfile.get();
-                    while (c != '\n' && c != unicode(EOF))
-                        c = helpfile.get();
-                }
                 if (style > ITALIC)
                     break;
+                {
+                    unicode c = helpfile.get();
+                    if (last == '\n')
+                    {
+                        // Block-level: skip whole line
+                        while (c != '\n' && c != unicode(EOF))
+                            c = helpfile.get();
+                    }
+                    else
+                    {
+                        // Inline tag: skip to closing >
+                        while (c != '>' && c != '\n' && c != unicode(EOF))
+                            c = helpfile.get();
+                    }
+                }
                 skip = true;
+                break;
+
+            case '-':
+                if (last == '\n' && helpfile.peek() == ' ')
+                {
+                    restyle = NORMAL;
+                    ch      = L'●';
+                    xleft   = r.x1 + 2 + font->width(utf8("● "));
+                    break;
+                }
                 break;
 
             case '*':
@@ -3713,6 +4371,11 @@ restart:
                 break;
 
             case '[':
+                if (escaped)
+                {
+                    escaped = false;
+                    break;
+                }
                 if (style != CODE)
                 {
                     if (helpfile.peek() != '!')
@@ -3743,6 +4406,11 @@ restart:
                 }
                 break;
             case ']':
+                if (escaped)
+                {
+                    escaped = false;
+                    break;
+                }
                 if (style == TOPIC || style == HIGHLIGHTED_TOPIC)
                 {
                     unicode n  = helpfile.get();
@@ -3847,6 +4515,9 @@ restart:
                                 }
                             }
                         }
+
+                        // Remember that we had a command to draw menu path
+                        hadCmd = cmd;
                     }
                 }
             }
@@ -3871,22 +4542,34 @@ restart:
         }
         else
         {
-            // Go to new line if this does not fit
-            coord right  = x + width;
-            if (right >= xright - 1)
+            // Go to new line if this does not fit (not inside table columns)
+            if (!in_table)
             {
-                x = xleft;
-                y += height;
+                coord right  = x + width;
+                if (right >= xright - 1)
+                {
+                    x = xleft;
+                    y += height;
+                }
             }
             if (widx && hadTitle)
             {
-                y += 5 * height / 4;
+                y += in_table ? height : 5 * height / 4;
                 hadTitle = false;
             }
         }
 
         coord yf = y + height;
         bool draw = yf > ytop;
+
+        // Clip to column boundary when inside a table
+        if (in_table && draw)
+        {
+            coord col_x1 = r.x1 + 2 + table_col * table_col_w;
+            coord col_x2 = col_x1 + table_col_w - 1;
+            rect  ccol(col_x1, r.y1, col_x2, r.y2);
+            Screen.clip(ccol);
+        }
 
         pattern color     = styles[style].color;
         pattern bg        = styles[style].background;
@@ -3967,9 +4650,20 @@ restart:
             }
             x += kwidth;
         }
-        if (italic)
-            if (draw)
-                Screen.clip(r);
+        if (draw && (italic || in_table))
+            Screen.clip(r);
+
+        // Advance to next table column
+        if (advance_col)
+        {
+            table_col++;
+            if (table_col < table_ncols)
+            {
+                x     = r.x1 + 2 + table_col * table_col_w;
+                xleft = x;
+            }
+            advance_col = false;
+        }
 
         // Check special case of yellow shift key
         if (yellow || blue)
@@ -3997,7 +4691,7 @@ restart:
         // Check if we need to draw the image
         if (imdsp)
         {
-            if (image)
+            if (image && draw)
             {
                 grob::surface srcs = image->pixels();
                 rect drect = srcs.area();
@@ -4014,6 +4708,15 @@ restart:
 
         if (newline)
         {
+            if (in_table)
+            {
+                table_col = 0;
+                if (helpfile.peek() != '|')
+                {
+                    in_table    = false;
+                    table_ncols = 0;
+                }
+            }
             xleft  = r.x1 + 2;
             x = xleft;
             if (!hadTitle)
@@ -4021,6 +4724,15 @@ restart:
         }
         if (style <= SUBSUBTITLE)
             y += height / 2;
+
+        // Check if we want to draw the possible keys to access a command
+        if (hadCmd)
+        {
+            if (draw)
+                draw_help_access_paths(hadCmd, x, y,
+                                       xleft, xright, ybot, height);
+            hadCmd = id(0);
+        }
 
         // Select style for next round
         style = restyle;
@@ -4096,7 +4808,7 @@ bool user_interface::noHelpForKey(int key)
 
     if (editing)
     {
-        // No help for ENTER or BSP key while editing
+        // No help for ENTER, BSP, UP, DOWN and RUN keys while editing
         if (key == KEY_ENTER || key == KEY_BSP ||
             key == KEY_UP || key == KEY_DOWN || key == KEY_RUN)
             return true;
@@ -4108,9 +4820,19 @@ bool user_interface::noHelpForKey(int key)
 
     // No help for digits entry
     if (!shift && !xshift)
-        if (key > KEY_ENTER && key < KEY_ADD &&
+    {
+        // Show help for Negate and Cycle only if not editing
+        if (key == KEY_CHS || key == KEY_E)
+            return editing;
+
+        if (key > KEY_SWAP && key < KEY_ADD &&
             key != KEY_SUB && key != KEY_MUL && key != KEY_DIV && key != KEY_RUN)
             return true;
+    }
+
+    // No help for shifted UP/DOWN (history, edit, etc)
+    if (key == KEY_UP || key == KEY_DOWN)
+        return true;
 
     // Other cases are regular functions, we can display help
     return false;
@@ -4202,7 +4924,7 @@ bool user_interface::handle_help(int &key)
         {
             if (!noHelpForKey(last))
                 key = last;     // Time to evaluate
-            last    = 0;
+            last = 0;
         }
 
         // Help keyboard movements only applies when help is shown
@@ -4323,6 +5045,12 @@ bool user_interface::handle_shifts(int &key, bool talpha)
 {
     bool consumed = false;
 
+    record(shifts, "Key %d%+s%+s%+s",
+           key,
+           talpha       ? " talpha"    : "",
+           delayedArrow ? " delayed"   : "",
+           longpress    ? " longpress" : "");
+
     // Transient alpha management
     if (!transalpha)
     {
@@ -4331,20 +5059,15 @@ bool user_interface::handle_shifts(int &key, bool talpha)
         {
             if (key == KEY_UP || key == KEY_DOWN)
             {
-                // Let menu and normal keys go through
-                if (xshift)
-                    return false;
+                repeat = true;
 
                 // Delay processing of up or down until after delay
                 if (longpress)
-                {
-                    repeat = true;
                     return false;
-                }
 
-                last = key;
-                repeat = true;
                 taLowercase = key == KEY_DOWN;
+                delayedArrow = true;
+                last = key;
                 return true;
             }
             else if (key)
@@ -4366,12 +5089,17 @@ bool user_interface::handle_shifts(int &key, bool talpha)
                 return true;
             }
         }
-        else if (!key && (last == KEY_UP || last == KEY_DOWN))
+        else if (!key && delayedArrow)
         {
+            delayedArrow = false;
             if (!longpress)
                 key = last;
             last = 0;
             return false;
+        }
+        else
+        {
+            delayedArrow = false;
         }
     }
     else
@@ -4389,6 +5117,7 @@ bool user_interface::handle_shifts(int &key, bool talpha)
             }
             key = 0;
             last = 0;
+            delayedArrow = false;
             return true;
         }
         else if (key == KEY_UP || key == KEY_DOWN || key == 0)
@@ -4406,34 +5135,31 @@ bool user_interface::handle_shifts(int &key, bool talpha)
     {
         if (longpress)
         {
-            alpha = !alpha;
-            lowercase = false;
-            xshift = 0;
-            shift = 0;
-        }
-        else if (xshift)
-        {
+            if (alpha)
+                alpha = lowercase = false;
+            else
+                alpha = true;
+            shift = false;
             xshift = false;
         }
         else
         {
-            xshift = false;
-#define SHM(d, x, s) ((d << 2) | (x << 1) | (s << 0))
-#define SHD(d, x, s) (1 << SHM(d, x, s))
-            // Double shift toggles xshift
-            bool dshift = last == KEY_SHIFT;
-            int  plane  = SHM(dshift, xshift, shift);
-            const unsigned nextShift =
-                SHD(0, 0, 0) | SHD(0, 1, 0) | SHD(1, 0, 0);
-            const unsigned nextXShift =
-                SHD(0, 0, 1) | SHD(0, 1, 0) | SHD(0, 1, 1) | SHD(1, 0, 1);
-            shift  = (nextShift  & (1 << plane)) != 0;
-            xshift  = (nextXShift & (1 << plane)) != 0;
+            if (xshift)
+            {
+                xshift = false;
+            }
+            else if (shift)
+            {
+                shift = false;
+                xshift = true;
+            }
+            else
+            {
+                shift = true;
+            }
             repeat = true;
         }
         consumed = true;
-#undef SHM
-#undef SHD
     }
     else if (shift && key == KEY_ENTER)
     {
@@ -5074,15 +5800,16 @@ bool user_interface::handle_digits(int key)
             unicode dm          = Settings.DecimalSeparator();
             unicode ns          = Settings.NumberSeparator();
             unicode hs          = Settings.BasedSeparator();
-            bool    had_complex = false;
+            bool    had_numsep  = false;
             while (p > ed && !found)
             {
                 p = (byte *) utf8_previous(p);
                 c = utf8_codepoint(p);
-                if (c == complex::I_MARK || c == complex::ANGLE_MARK)
+                if (c == complex::I_MARK || c == complex::ANGLE_MARK ||
+                    c == '-' || c == '+')
                 {
-                    had_complex = true;
-                    if (c == complex::ANGLE_MARK)
+                    had_numsep = true;
+                    if (c == complex::ANGLE_MARK || c == '+' || c == '-')
                     {
                         found = utf8_next(p);
                     }
@@ -5104,7 +5831,7 @@ bool user_interface::handle_digits(int key)
             if (c == 'e' || c == 'E' || c == Settings.ExponentSeparator())
                 c  = utf8_codepoint(p);
 
-            if (had_complex)
+            if (had_numsep)
             {
                 if (c == '+' || c == '-')
                     *p = '+' + '-' - c;
@@ -5206,14 +5933,106 @@ bool user_interface::handle_digits(int key)
             }
             else
             {
-                byte   buf[4];
-                size_t sz = utf8_encode(Settings.ExponentSeparator(), buf);
-                insert(cursor, buf, sz);
+                // Special case for EEX
+                byte   *ed          = rt.editor();
+                byte   *p           = ed + cursor;
+                byte    cursor_move = 0;
+                uint    hadN        = 0;
+                uint    hadS        = 0;
+                bool    found       = false;
+                unicode c           = utf8_codepoint(p);
+                unicode dm          = Settings.DecimalSeparator();
+                unicode ns          = Settings.NumberSeparator();
+                unicode hs          = Settings.BasedSeparator();
+                while (p > ed)
+                {
+                    p = (byte *) utf8_previous(p);
+                    c = utf8_codepoint(p);
+                    if (c == '-' || c == '+')
+                    {
+                        if (!hadN)
+                            hadS = 1;
+                        else if (hadN)
+                            hadS = hadN;
+                        cursor_move++;
+                        continue;
+                    }
+                    if ((c >= '0' && c <= '9') || c == dm || c == ns)
+                    {
+                        if (!hadN && !hadS)
+                            hadN = 1;
+                        else if (hadS)
+                            hadN = hadS;
+                        cursor_move++;
+                        continue;
+                    }
+                    if (c == 'e' || c == 'E' ||
+                        c == Settings.ExponentSeparator())
+                    {
+                        // E    --> use old E   criteria: 1=0,2=0,3=0
+                        // E-   --> use old E   criteria: 1=S,2=0,3=0
+                        // E8   --> use old E   criteria: 1=N,2=0,3=0
+                        // E-8  --> use old E   criteria: 1=N,2=S,3=0
+                        // E8-   --> new E      criteria: 1=S,2=N,3=0
+                        // E-8-  --> new E      criteria: 1=S,2=N,3=S
+                        // E8-7  --> new E      criteria: 1=N,2=S,3=N
+                        // E8-7  --> new E      criteria: 1=N,2=S,3=N
+                        if ((hadS < 2 && hadN < 2) ||
+                            (hadN > 0 && hadN < 3 && hadS == 2))
+                        {
+                            found = true;
+                            for (int i = 0; i < cursor_move; i++)
+                                cursor = utf8_previous(ed, cursor);
+                        }
+                        break;
+                    }
+                    break;
+                }
+                // '(c)8.888887-8 cursor at beginning --> jump to end of Number,
+                // new E: 8.888887E(c)-8
+                // '(c)8.888887E-8 cursor at beginning --> jump to end of
+                // Number, use old E: 8.888887E(c)-8
+                if (!found)
+                {
+                    cursor_move = 0;
+                    p           = (byte *) ed + cursor;
+                    byte *ende  = ed + rt.editing();
+                    while (p < ende)
+                    {
+                        c = utf8_codepoint(p);
+                        p = (byte *) utf8_next(p);
+                        if ((c >= '0' && c <= '9') || c == dm || c == ns ||
+                            c == hs)
+                        {
+                            cursor_move++;
+                            cursor = utf8_next(ed, cursor);
+                            continue;
+                        }
+                        if (c == 'e' || c == 'E' ||
+                            c == Settings.ExponentSeparator())
+                        {
+                            found  = true;
+                            cursor = utf8_next(ed, cursor);
+                        }
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    p = (byte *) ed + cursor;
+                    p = (byte *) utf8_previous(p);
+                    c = utf8_codepoint(p);
+                    if (!((c >= '0' && c <= '9') || c == dm || c == ns ||
+                          c == hs))
+                        insert(cursor, utf8("1"), 1);
+                    byte   buf[4];
+                    size_t sz = utf8_encode(Settings.ExponentSeparator(), buf);
+                    insert(cursor, buf, sz);
+                }
             }
-            last = 0;
+            last        = 0;
             dirtyEditor = true;
             return true;
-
         }
     }
     if (key > KEY_CHS && key < KEY_F1)
@@ -5435,7 +6254,7 @@ static const byte defaultSecondShiftedCommand[2*user_interface::NUM_KEYS] =
 };
 
 
-static const byte *const defaultCommand[user_interface::NUM_PLANES] =
+const byte *const defaultCommand[user_interface::NUM_PLANES] =
 // ----------------------------------------------------------------------------
 //   Pointers to the default commands
 // ----------------------------------------------------------------------------
@@ -5469,7 +6288,7 @@ bool user_interface::load_keymap(cstring name)
     while (kmap.valid())
     {
         unicode c = kmap.get();
-        if (c == '@')
+        if (c == '@' && !quoted)
         {
             do { c = kmap.get(); } while (c && c != '\n');
             continue;
@@ -5530,6 +6349,7 @@ bool user_interface::load_keymap(cstring name)
     if (result)
     {
         keymap = result;
+        help_keymap_generation++;
 #if SIMULATOR
         ui_load_keymap(name);
 #endif // SIMULATOR
@@ -5650,7 +6470,7 @@ bool user_interface::handle_functions(int key, object_p objp, bool user)
                 menu_refresh(menu::ID_Catalog, true);
                 ac = false;
             }
-            else if (ty == object::ID_ConstantName)
+            else if (ty == object::ID_constant_menu_name)
             {
                 unicode lc = character_left_of_cursor();
                 if (lc == L'Ⓒ' || lc == L'Ⓡ' || lc == L'Ⓢ')
@@ -5689,7 +6509,10 @@ bool user_interface::handle_functions(int key, object_p objp, bool user)
         case PROGRAM:
         case MATRIX:
         insert_object:
-            if (object::is_program_cmd(ty) || object::is_algebraic(ty) || user)
+            if (user                            ||
+                object::is_program_cmd(ty)      ||
+                object::is_algebraic(ty)        ||
+                object::is_special_menu(ty))
             {
                 dirtyEditor = true;
                 edRows = 0;
@@ -5757,8 +6580,8 @@ bool user_interface::handle_functions(int key, object_p objp, bool user)
         alpha = false;
         lowercase = false;
     }
-    xshift = false;
     shift = false;
+    xshift = false;
 
     if (userOnce && usr == Settings.UserMode())
     {
@@ -5869,6 +6692,10 @@ bool user_interface::do_exit()
         rt.clear_error();
         dirtyEditor = true;
         dirtyStack = true;
+    }
+    else if (menuLabel[0][0])
+    {
+        clear_menu();
     }
     else if (validate_input)
     {
@@ -6132,7 +6959,7 @@ bool user_interface::do_decimal_separator()
                 ed = rt.editor();
                 if (cursor + 4 <= edlen &&
                     (memcmp(ed + cursor, "_dms", 4) == 0 ||
-                        memcmp(ed + cursor, "_hms", 4) == 0))
+                     memcmp(ed + cursor, "_hms", 4) == 0))
                     remove(cursor, 4);
             }
             else
@@ -6157,7 +6984,7 @@ bool user_interface::do_decimal_separator()
             ed = rt.editor();
             if (cursor + 4 > edlen ||
                 (memcmp(ed + cursor, "_dms", 4) != 0 &&
-                    memcmp(ed + cursor, "_hms", 4) != 0))
+                 memcmp(ed + cursor, "_hms", 4) != 0))
             {
                 size_t add = insert(cursor, utf8("_dms"), 4);
                 cursor -= add;
@@ -6812,7 +7639,7 @@ void debug_printf(cstring format, ...)
         vsnprintf(buffer + sz, sizeof(buffer) - sz, format, va);
         va_end(va);
         size  h = HelpFont->height();
-        coord y = (debug_printf_row % 8 + 2) * h;
+        coord y = (debug_printf_row % 12) * h;
         coord x = Screen.text(0, y, utf8(buffer), HelpFont,
                               pattern::white, pattern::black);
         Screen.fill(x, y, x+10, y + HelpFont->height(), pattern::gray50);

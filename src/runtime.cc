@@ -42,15 +42,16 @@
 #include <cstring>
 
 
-
 RECORDER(runtime,       16, "RPL runtime");
 RECORDER(runtime_error, 16, "RPL runtime error (anomalous behaviors)");
 RECORDER(editor,        16, "Text editor (command line)");
 RECORDER(errors,        16, "Runtime errors)");
 RECORDER(gc,           256, "Garbage collection events");
+RECORDER(gc_stats,      16, "Garbage collection statistics");
 RECORDER(gc_errors,     16, "Garbage collection errors");
 RECORDER(gc_details,   256, "Details about garbage collection (noisy)");
 RECORDER(cache,        256, "Cached values for the stack");
+RECORDER(available, 16, "Available memory and requests");
 
 
 // ============================================================================
@@ -178,10 +179,10 @@ void runtime::reset()
 //
 // ============================================================================
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC push_options
 #  pragma GCC optimize("-O3")
-#endif // DM42
+#endif // DM42 && FIRMWARE
 
 size_t runtime::available()
 // ----------------------------------------------------------------------------
@@ -198,15 +199,16 @@ size_t runtime::available(size_t size)
 //   Check if we have enough for the given size
 // ----------------------------------------------------------------------------
 {
-    if (available() < size)
+    size_t avail = available();
+    record(available, "Available %u for %u", avail, size);
+    if (avail < size)
     {
         gc();
-        size_t avail = available();
+        avail = available();
         if (avail < size)
             out_of_memory_error();
-        return avail;
     }
-    return size;
+    return avail;
 }
 
 
@@ -451,6 +453,8 @@ size_t runtime::gc()
     lock     it;
     uint     now      = sys_current_ms();
     size_t   recycled = 0;
+    size_t   objcount = 0;
+    size_t   delcount = 0;
     object_p first    = (object_p) Globals;
     object_p last     = Temporaries;
     object_p free     = first;
@@ -481,6 +485,7 @@ size_t runtime::gc()
     for (object_p obj = first; obj < last; obj = next)
     {
         bool found = false;
+        objcount++;
         next = obj->skip();
         record(gc_details, "Scanning object %p (ends at %p)", obj, next);
         for (object_p *s = firstobjptr; s < lastobjptr && !found; s++)
@@ -540,8 +545,12 @@ size_t runtime::gc()
         else
         {
             recycled += next - obj;
-            record(gc_details, "Recycling %p size %u total %u",
-                   obj, next - obj, recycled);
+            record(gc_details,
+                   "Recycling %p size %u total %u",
+                   obj,
+                   next - obj,
+                   recycled);
+            delcount++;
         }
     }
 
@@ -586,6 +595,10 @@ size_t runtime::gc()
     GCLDuration = duration;
     GCPurged += recycled;
     GCDuration += duration;
+    record(gc_stats,
+           "GC has %u bytes in %u objects after "
+           "purging %u bytes from %u objects in %u ms",
+           available(), objcount - delcount, recycled, delcount, duration);
 
     return recycled;
 }
@@ -705,9 +718,9 @@ void runtime::move_globals(object_p to, object_p from)
     uncache(from, moving);
 }
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC pop_options
-#endif // DM42
+#endif // DM42 && FIRMWARE
 
 
 
@@ -768,7 +781,7 @@ size_t runtime::remove(size_t offset, size_t len)
 }
 
 
-text_p runtime::close_editor(bool convert, bool trailing_zero)
+text_p runtime::close_editor(bool trailing_zero)
 // ----------------------------------------------------------------------------
 //   Close the editor and encapsulate its content into a string
 // ----------------------------------------------------------------------------
@@ -802,10 +815,6 @@ text_p runtime::close_editor(bool convert, bool trailing_zero)
 
     // We are no longer editing
     Editing = 0;
-
-    // Import special characters if necessary (importing text file)
-    if (convert)
-        obj = obj->import();
 
     // Return a pointer to a valid C string safely wrapped in a RPL string
     return obj;
@@ -979,7 +988,7 @@ object_p runtime::clone(object_p source)
 }
 
 
-object_p runtime::clone_global(object_p global, size_t sz)
+bool runtime::clone_global(object_p global, size_t sz)
 // ----------------------------------------------------------------------------
 //   Check if any entry in the stack points to a given global, if so clone it
 // ----------------------------------------------------------------------------
@@ -997,11 +1006,15 @@ object_p runtime::clone_global(object_p global, size_t sz)
         if (*s >= global && *s < global + sz)
         {
             if (!cloned)
+            {
                 cloned = clone(global);
+                if (!cloned)
+                    return false;
+            }
             *s = cloned + (*s - global);
         }
     }
-    return cloned;
+    return true;
 }
 
 
@@ -1183,6 +1196,23 @@ bool runtime::stack(uint idx, object_p obj)
 }
 
 
+bool runtime::swap(uint a, uint b)
+// ----------------------------------------------------------------------------
+//    Swap two arbitrary levels of the stack
+// ----------------------------------------------------------------------------
+{
+    runtime_invariants check;
+    uint               d = depth();
+    if  (a >= d || b >= d)
+    {
+        missing_argument_error();
+        return false;
+    }
+    std::swap(Stack[a], Stack[b]);
+    return true;
+}
+
+
 bool runtime::roll(uint idx)
 // ----------------------------------------------------------------------------
 //    Move the object at a given position in the stack
@@ -1239,6 +1269,174 @@ bool runtime::drop(uint count)
         return false;
     }
     Stack += count;
+    return true;
+}
+
+
+bool runtime::drop_at(uint base, uint count)
+// ----------------------------------------------------------------------------
+//   Remove count entries at depth base from the top
+// ----------------------------------------------------------------------------
+{
+    runtime_invariants check;
+    if (count + base > depth())
+    {
+        missing_argument_error();
+        return false;
+    }
+    memmove(Stack + count, Stack, base * sizeof(*Stack));
+    Stack += count;
+    return true;
+}
+
+
+bool runtime::push_at(uint base, object_p obj)
+// ----------------------------------------------------------------------------
+//   Insert one object at depth base from the top
+// ----------------------------------------------------------------------------
+{
+    runtime_invariants check;
+    ASSERT(obj && "Pushing a NULL object");
+    ASSERT((obj->type() < object::NUM_IDS ||
+            object::object_error(obj->type(), obj)) &&
+           "Invalid type pushed");
+    if (available(sizeof(void *)) < sizeof(void *))
+        return false;
+    Stack--;
+    memmove(Stack, Stack + 1, base * sizeof(*Stack));
+    Stack[base] = obj;
+    return true;
+}
+
+
+
+// ============================================================================
+//
+//   Stack buffer implementation
+//
+// ============================================================================
+
+stack_buffer *runtime::Buffers = nullptr;
+
+
+stack_buffer::stack_buffer(size_t sz)
+// ----------------------------------------------------------------------------
+//   Create an empty buffer and link it as the topmost in the chain
+// ----------------------------------------------------------------------------
+    : base(0), count(sz), next(runtime::Buffers)
+{
+    runtime::Buffers = this;
+}
+
+
+stack_buffer::~stack_buffer()
+// ----------------------------------------------------------------------------
+//   Release the buffer and unlink from the chain
+// ----------------------------------------------------------------------------
+{
+    ASSERT(runtime::Buffers == this && "Stack buffers not in order");
+    cleanup();
+    runtime::Buffers = next;
+}
+
+
+static object_p dummy_stack_buffer_result = nullptr;
+object_p &stack_buffer::operator[](size_t i) const
+// ----------------------------------------------------------------------------
+//   Read the object at index i with bounds check
+// ----------------------------------------------------------------------------
+{
+    if (i >= count || base + i >= rt.depth())
+    {
+        rt.index_error();
+        return dummy_stack_buffer_result;
+    }
+    return rt.Stack[base + i];
+}
+
+
+object_p stack_buffer::get(size_t i)
+// ----------------------------------------------------------------------------
+//   Write an object at index i with bounds check
+// ----------------------------------------------------------------------------
+{
+    if (i >= count)
+    {
+        rt.index_error();
+        return nullptr;
+    }
+    return rt.stack(base + i);
+}
+
+
+bool stack_buffer::set(size_t i, object_p obj)
+// ----------------------------------------------------------------------------
+//   Write an object at index i with bounds check
+// ----------------------------------------------------------------------------
+{
+    if (i >= count)
+    {
+        rt.index_error();
+        return false;
+    }
+    return rt.stack(base + i, obj);
+}
+
+
+bool stack_buffer::push(object_p obj)
+// ----------------------------------------------------------------------------
+//   Append one item to this buffer, shifting deeper buffers
+// ----------------------------------------------------------------------------
+{
+    if (!obj || !rt.push_at(base + count, obj))
+        return false;
+    count++;
+    for (stack_buffer *sb = next; sb; sb = sb->next)
+        sb->base++;
+    return true;
+}
+
+
+bool stack_buffer::drop(size_t n)
+// ----------------------------------------------------------------------------
+//   Remove n items from the end of this buffer, shifting deeper buffers
+// ----------------------------------------------------------------------------
+{
+    if (n > count)
+        n = count;
+    if (n)
+    {
+        rt.drop_at(base + count - n, n);
+        count -= n;
+        for (stack_buffer *sb = next; sb; sb = sb->next)
+            sb->base -= n;
+    }
+    return true;
+}
+
+
+bool stack_buffer::grow(size_t n, object_p obj)
+// ----------------------------------------------------------------------------
+//   Grow the buffer by pushing n copies of obj
+// ----------------------------------------------------------------------------
+{
+    if (!obj)
+    {
+        obj = +integer::make(0);
+        if (!obj)
+            return false;
+    }
+    for (size_t i = 0; i < n; i++)
+    {
+        if (!rt.push_at(base + count + i, obj))
+        {
+            rt.drop_at(base + count, i);
+            return false;
+        }
+    }
+    count += n;
+    for (stack_buffer *sb = next; sb; sb = sb->next)
+        sb->base += n;
     return true;
 }
 
@@ -1659,10 +1857,10 @@ bool runtime::constants(size_t nentries)
 //
 // ============================================================================
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC push_options
 #  pragma GCC optimize("-O3")
-#endif // DM42
+#endif // DM42 && FIRMWARE
 
 bool runtime::run_conditionals(object_p truecase, object_p falsecase, bool xeq)
 // ----------------------------------------------------------------------------
@@ -1948,9 +2146,9 @@ void runtime::call_stack_drop()
         s[0] = s[-CALLS_BLOCK];
 }
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC pop_options
-#endif // DM42
+#endif // DM42 && FIRMWARE
 
 
 // ============================================================================

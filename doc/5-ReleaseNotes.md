@@ -1,5 +1,318 @@
 # Release notes
 
+## Release 0.9.20 "Corpus" - Polynomials and algebraic expressions
+
+This release focuses on support for polynomial, root finding and algebraic
+expressions, and on making evaluation of algebraic expressions behave closer to
+algebraic mode on the HP50G, i.e. treat `'` like the HP50G treats a backquote
+expression or an expression entered in algebraic mode.
+
+### New features
+
+* `LU` command generating LU-decomposition for matrices
+* `REF`, `RREF` and `RREFP` commands to put matrices in Echelon form
+* `Order` command to reorder variables in the current directory
+* `PEval`, `PRoot` and `Zeros` commands for polynomials and expressions
+* `Unique` and `QuickUnique` commands to keep unique values in a list
+* `DEPND` and `INDEP` commands to set dependent/independent variables
+* Implicitly recognize `xlib` and `constants` by name, e.g. `c` or `Dedicace`
+* Flags to control the above, `AutomaticConstants` and `AutomaticXLibs`
+* Preserve symbol case for existing variables
+* Creating symbols matching builtin names using the `Ⓥ` prefix, e.g. `ⓋHelp`
+* Value comparison for `Sort` or `Unique` now works with expressions
+* Simplification now factors common ratios, e.g. `A*X+B*X`
+* Primitive and derivative of a polynomial
+* Several new constants lifted from the R47 constant catalog
+* Hyperbolic secant functions `sech`,`csch`, `coth`, and their inverse
+* `CrDir` can now take a list as input to create multiple directories
+
+### Bug fixes
+
+* Crash in solver in case of error evaluating some intermediate step
+* Correctly put parentheses in `'sin(x+1)'` rendered in text mode
+* Occasional `object_error` in `as_text()` on simulator
+* Crash in `IFT` / `IFTE` if given invalid input
+* Detection of expression vs. RPL programs during evaluation
+* Crash in quotient or decimal conversions given erroneous input
+* Parsing of `0+ⅈ`, was incorrectly parsed as `0ⅈ`
+* Negating `0` no longer shows `-0`
+* No longer allow incorrect mixing of ranges and uncertain numbers
+* Dividing a polynomial by a number now divides constant terms
+* Correctly split expressions that contain a single term when testing equations
+* Fix simulator race condition while loading the keymap
+* `STO` will no longer overwrite a directory with a non-directory value
+* `Purge` will no longer erase non-empty directories, `PGDir` is now needed
+* `RAr` constant uncertainty was incorrectly set to 0
+* Swap keyboard legacy and 42k keymaps in simulator
+
+### Improvements
+
+* Purely imaginary values such as `0+3ⅈ` now render as `3ⅈ`
+* The `LNAME` command now returns a list in algebraic expressions
+* `Σ`, `∏`, `∂` and `∫`, `COMB` and `PERM` now partially evaluate as on HP50G
+* Refactor detection of symbolic arguments in functions for scalability
+* Refactor detection of algebraic functions for scalability
+* Signal when `ui_refresh()` takes too long due to internal race condition
+* Do not drop input in multisolver when a wrong value is given
+* Quick exit when parsing empty commands
+* Rounding for `→ℚ` more accurately respects displayed precision
+* Internal factoring with square roots and fractions `to_sqrt`, used in `PRoot`
+* Internal integer and fraction square root, used in simplification
+* Reorganize the polynomials menu to bring useful functions at first level
+* Accept polynomials and tagged expressions in plotting commands
+* Do not default imaginary part to 1 in `complex::make` (was error prone)
+* Optimize the integer power case for range objects
+* Zero detection for expressions and polynomials in simplifications
+* Makefiles no longer emit confusing `mv` output in `make compare`
+* New `stack_buffer` facility in the runtime to keep multiple exansions on stack
+* Add `ISOL` tests for `sec`, `csc`, `cot` functions
+* Consolidate project guidance into `AGENTS.md`
+* Simplify simulator beep control logic: `-N` blocks beeps, `-n` restores them
+* Refresh implementation status
+* Update documentation for `PGDIR`, `STO` and `RCL` new capabilties
+* Internal facility to swap arbitrary stack levels
+* Update man page
+* Add recorder_scope-compatible instrumentation for GC and available memory
+* Accelerate display of constants/equations/library menus
+
+
+## Release 0.9.19 "Spirit" - More constants, more space left
+
+This release includes a larger-than-usual number of changes, mostly to
+make room for more constants. A side effect is that we gained a lot of
+additional space for the DM42, giving us a lot of headroom for future
+developments. On the other hand, this may cause unexpected bugs. If
+you run DB48x on a DM42, please check for anything out of the ordinary
+and report it.
+
+### New features
+
+* Hierarchical constants library, with astronomy data for planets
+* fonts: Add astronomy-related glyphs and a few more
+* simulator: RPL evaluation with -e, to preload the calculator
+* simulator: RPL console evaluation mode with -E (prints to console)
+* simulator: RPL evaluation from file with -f and -F
+* simulator: headless mode with -H (no window showing)
+* simulator: screen capture with -C for scripting
+* simulator: Persist window geometry across runs
+* simulator: Persist calculator state on exit
+* ui: Enhanced behaviour for EEX key (skips to exponent)
+* variables: Store and recall to path
+* GCD (GreatestCommonDenominator) and LCM (LeastCommonMultiple)
+* Quote command
+* Hitting EXIT while editing clears menu
+
+### Bug fixes
+
+* variables: Memory corruption when replacing object with subobject
+* Fix parsing bug causing partial load of .48k keymaps beyond "@"
+* arrays: Strip tags from array and index in `get` and `put`
+* solver: Improve solver precision in Std mode
+* constants: Correcting the standard uncertainty of several constants.
+* constants: Correct the Tau mass relative uncertainty.
+* Make sure simulators get the correct help file (distinct .qrc files)
+* Show empty menu when entering empty directory in 1-line mode
+* Accept decimal / fraction conversions for arrays containing names
+* Make it possible to reload `Demo.48s` after initial run on DM42
+* Correctly show error message while loading files
+* ui: Do not remove `-` when using CHS in an expression like `5-3`.
+* bignum: Remove leftover printf statement
+* menu: Refresh `CustomMenu` if updated while active
+* simulator: Fix race condition in Paste command
+* ci: keep Android AABs under `android/`
+* ci: package db50x Windows simulator from the correct path
+* wasm: bootstrap recorder and host tools correctly
+* ci: use libsystre in Windows packaging
+* doc: Fix description of simulator -m option
+* ids: Fix aliases for EquationValue and XLibValue
+* menus: Connect menu entries incorrectly marked as unimplemented
+* Fix help topics for various constants / constant groups
+
+### Improvements
+
+* fw: Move all C / C++ strings to the QSPI on DM42 (save >80K flash)
+* tests: Replace `LSHIFT, I` with `ID_ConstantsMenu` for readaibility
+* tests: Run cstlib / eqlib tests beyond first error
+* tests: Use `STD` instead of `12 SIG`
+* tests: Do not save state file after running the test suite
+* Do not waste memory while converting`<<`, `>>` and `->`
+* Improve rebuild in case of QSPI CRC mismatch
+* Enable `make TAR_EXTRA_FILES= install` to install only binaries
+* makefile: Generate listing files like the old makefiles
+* makefile: Add image comparison targets like in old makefile
+* makefile: Avoid extraneous / in paths
+* makefile: Pass DB48X_VERSION through the command-line
+* debug: Change debug_printf to use all 12 rows
+* commands: micro-optimize factorization of cmp == 0 test
+* chuck: Make the CHUCK command optional for repeatable builds
+* install: Add `DISK_NAME` variables to specify volume name
+* ui: Simplify display of alpha and user indicators
+* doc: Add information on how to start Fedora on WSL
+* ui: Fix misspelling in comment
+* doc: Make the age-verification LEGAL-NOTICE more general
+* chore(ci): bump packages versions
+* doc: Add Pasquale Pigazzini as an author
+* solver: Fix compiler warning about signed vs unsigned
+* library: Fix comment and remove duplicate entry
+* commands: Add `Γ` alias for `Gamma`
+* menus: Update and reorganize parts menu
+* locals: Detect incorrect argument count in algebraic function calls
+* locals: Do not evaluate algebraic expression passed as argument
+* version: Update copyright year to 2026
+* parser: Accept `,` as a separator in algebraic function calls
+* Reorder the constants menu for efficiency
+
+
+## Release 0.9.18 "Chuck" - Sucess begins inside
+
+This release includes a number of under-the-hood improvements that
+will make the life of maintainers easier in the long run.
+
+### New features
+
+* Implement the `Chuck` command
+* Make `xq` recognize more patterns during simplification
+* List the menus in the help file
+* Support for tables in the help file
+* `ListRecursionDepth` setting for `map`, `reduce`, `filter`
+
+### Bug fixes
+
+* Remove `-fsanitize` option on macOS (hangs on macOS 26.4)
+* Fix incorrect evaluation of constants during simplification
+
+### Improvements
+
+* Switch to the make-it-quick build system
+* Shared cross-platorm clipboard code
+* Automate the build of releases
+* Put the variables naming expression patterns in a namespace
+* Improved instructions for AI agents
+* Repair GitHub actions
+* Improve solver shuffle around singularities and errors
+* Fix path for grep testing in case of example test failure
+
+## Release 0.9.17 - Rational approximation, indexing, Android fixes
+
+This incremental release delivers new features and fixes a number of bugs.
+
+### New features
+
+* Add `→Qπ` command for rational approximation with π, √n, ln(n) and e
+* Apply `→Q` and `→Qπ` to numbers in expressions
+* Add array/list indexing support in algebraic expressions e.g. `'L(1)'`
+* Add ability to `Store` / `Copy` to `L(1)`
+* Add "real" `ConstantName` and `ConstantValue` commands
+
+### Bug fixes
+
+* Fix parentheses around exponents in graph rendering of `'(a+b)^(c+d)'`
+* Fix label for `ToRelativeUncertainty`, `→RelRnd` instead of `→RelUnc`
+* Fix command alias mapping for `RNrm`
+* Improve parsing of implicit multiplication for a number of edge cases
+* Fix `utf8_next` for garbage bytes following ASCII characters
+* Fix unsatisfied symbol errors with gcc/emcc in the WASM build
+* Save Android system state when app is suspended or hidden
+* Ensure Android help resources are extracted and available at runtime
+* Restore image testing functionality in the test framework
+* Updated test images that had become obsolete
+* Report errors when saving reference files in tests
+* Avoid stack corruption / crash when parsing malformed help index
+* Fix computation of `DFC(2.3)`
+* Fix null-pointer crash if the multiple equation solver fails
+
+
+### Enhancements
+
+* Constrain `→Q` and `→Qπ` behavior to FIX/SCI/ENG setting (like HPs)
+* Minor optimization for `program::run`
+* Save about 3.4K of RAM on physical devices
+* Speed up test runs while increasing default wait time for stability
+* Documentation cleanup and additions, add more RPL examples
+* Add clear build-time error message when a help topic exceeds 80 characters
+* Add demo for interactive menu use
+* Optimize away redundant argument checking
+* Documentation for DCF and DCF2F
+
+
+## Release 0.9.16 - Factorization, precision fixes, and documentation
+
+This release adds prime and factorization features, improves numeric precision,
+and expands simulator and user documentation.
+
+### New features
+
+* Add `IsPrime`, `Factors`, `PrevPrime` and `NextPrime` commands
+* Add `MaxFactorsBits` and `MaxFactorIterations` settings for factorization
+* Add `TRIGSIN` command for Pythagorean identity rewrites
+* Add a Unix man page and simulator documentation
+* Add simulator recorder dump on `F16`; move demo playback to `F13`-`F15`
+* Paint navigation arrows in `SHOW`
+* Accept `CR/LF` line endings when reading Windows files
+* Display keyboard access paths in help for commands
+
+### Bug fixes
+
+* Fix `expm1` precision loss for small arguments, including complex values
+* Fix `ln1p` precision loss for small arguments
+* Fix shift behavior after transient alpha, support shift/xshift for transalpha
+* Reset `show_x` and `show_y` when exiting `SHOW`
+* Ensure the simulator creates the `screens` directory when needed
+* Fix an infinity optimization regression in arithmetic
+* Add missing null-dereference checks in factorization code
+* Treat `^` as right-associative like on the HP50G
+
+### Enhancements
+
+* Refactor and optimize the decimal factorization code path, with expanded tests
+* Add conversion support to `float` and `double` in algebraic code
+* Update to recorder v1.2.3
+* Add documentation updates (DeepWiki reference, legal notice updates)
+* Add build preparation for upcoming make-it-quick integration
+* Welcome several new authors to the team, see AUTHORS file
+* Add LEGAL-NOTICE.md about compliance with California and Colorado laws
+* Add menu entries for `hypot` and `atan2`
+
+## Release 0.9.15 "Myriam" - GitHub automation, portability
+
+This release focused on GitHub and GitLab automation
+
+### New features
+
+* GitHub automation automatically builds various packages
+* Preparation for GitLab automation (still largely untested)
+* Windows simulator
+* Android package
+* WebAssembly application (WASM) now has help and configuration files
+* DM42n build (differs from DM32 only in the help files)
+* Dockerfile to create a container with the simulator
+* Add `ρ` in `RangesMenu`
+* Accept units when creating a range from components
+* Add `Range→` command that expands ranges with units
+
+### Bug fixes
+
+* Corrected typos in some builtin constants
+* Spelling and grammar fixes in documentation
+* Build failure for wasm due to use of `source`, a `bash`-only syntax
+* WebAssembly application no longer uses 100% CPU
+* The simulator can now be launched from any directory
+* The macOS simulator correctly launches from the Finder or Dock
+* Portability bug fixes in the DMCP emulation
+* The Settings menu is now correctly refreshed after `ResetModes`
+* Fix double-shifted arrow keys
+* Correctly show help for `Swap`, `Negate`, and `Cycle`
+* Fix order on stack for `Explode` on a range value
+* Android build bug fixes
+
+### Enhancements
+
+* Add osx program in lauch.json
+* The simulator no longer overwrites configuration files by default
+* Builds that use `gcc` now enable more warnings
+* Simplify shift-handling logic
+
+
 ## Release 0.9.14 "Latran" - Android preparation
 
 This is a very minor release with bug fixes notably for Android

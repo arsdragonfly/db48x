@@ -154,7 +154,9 @@ algebraic_p arithmetic::optimize<add>(algebraic_r x, algebraic_r y)
                 rt.undefined_operation_error();
                 return nullptr;
             }
-            return xinf ? x : y;
+            if ((xinf && y->is_algebraic_num()) ||
+                (yinf && x->is_algebraic_num()))
+                return xinf ? x : y;
         }
         if  (x->is_simplifiable() && y->is_simplifiable())
         {
@@ -359,13 +361,15 @@ static bool range_binary(range_g &x, range_g &y,
 //   Check if we deal with an uncertain number or with regular ranges
 // ----------------------------------------------------------------------------
 {
-    if (x->type() == object::ID_uncertain)
+    if (x->type() == object::ID_uncertain || y->type() == object::ID_uncertain)
     {
-        if (y->type() == object::ID_uncertain)
+        if (x->type() == y->type())
         {
             x = ufn((uncertain_r) x, (uncertain_r) y);
             return x;
         }
+        rt.type_error();
+        return false;
     }
     x = rfn(x, y);
     return x;
@@ -401,7 +405,8 @@ algebraic_p arithmetic::optimize<subtract>(algebraic_r x, algebraic_r y)
                 rt.undefined_operation_error();
                 return nullptr;
             }
-            return xinf ? +x : rt.infinity(yinf > 0);
+            if (x->is_algebraic_num() || y->is_algebraic_num())
+              return xinf ? +x : rt.infinity(yinf > 0);
         }
         if  (x->is_simplifiable() && y->is_simplifiable())
         {
@@ -593,7 +598,8 @@ algebraic_p arithmetic::optimize<multiply>(algebraic_r x, algebraic_r y)
                 rt.undefined_operation_error();
                 return nullptr;
             }
-            return rt.infinity(x->is_negative() ^ y->is_negative());
+            if (x->is_algebraic_num() || y->is_algebraic_num())
+              return rt.infinity(x->is_negative(false) ^ y->is_negative(false));
         }
 
         if (x->is_simplifiable() && y->is_simplifiable())
@@ -696,6 +702,7 @@ algebraic_p arithmetic::non_numeric<multiply>(algebraic_r x, algebraic_r y)
     return optimize<multiply>(x, y);
 }
 
+
 bool multiply::integer_ok(object::id &xt, object::id &yt,
                           ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
@@ -787,10 +794,10 @@ algebraic_p arithmetic::optimize<divide>(algebraic_r x, algebraic_r y)
                 rt.undefined_operation_error();
                 return nullptr;
             }
-            if (yinf && x->is_real())
+            if (yinf && x->is_algebraic_num())
                 return integer::make(0);            // 1 / ∞ = 0
-            if (xinf && y->is_real())
-                return rt.infinity((xinf < 0) ^ y->is_negative());
+            if (xinf && y->is_algebraic_num())
+                return rt.infinity((xinf < 0) ^ y->is_negative(false));
         }
 
         if (x->is_simplifiable() && y->is_simplifiable())
@@ -1162,22 +1169,51 @@ algebraic_p arithmetic::optimize<struct pow>(algebraic_r x, algebraic_r y)
         return integer::make(1);
     }
 
-    int xinf = x->is_infinity();
-    int yinf = y->is_infinity();
-    if (xinf || yinf)
+    if (Settings.AutoSimplify())
     {
-        if (xinf > 0 && yinf > 0)
-            return rt.infinity(false);
-        if (xinf > 0 && y->is_real() && !y->is_zero())
-            return y->is_negative()
-                ? algebraic_p(integer::make(0))
-                : +x;
-        if (x->is_real() && !x->is_negative() && !x->is_zero() && yinf)
-            return yinf < 0
-                ? algebraic_p(integer::make(0))
-                : rt.infinity(false);
-        rt.undefined_operation_error();
-        return nullptr;
+        int xinf = x->is_infinity();
+        int yinf = y->is_infinity();
+        if (xinf || yinf)
+        {
+            if ((x->is_negative(false) && yinf) ||
+                (yinf < 0 && (xinf || x->is_zero(false))))
+            {
+                rt.undefined_operation_error();
+                return nullptr;
+            }
+            if (xinf && yinf)
+                return rt.infinity(false);
+            if (y->is_negative(false))
+                return algebraic_p(integer::make(0));
+            if (y->is_algebraic_num())
+            {
+                bool yzero = y->is_zero();
+                if (xinf > 0 && !yzero)
+                {
+                    return +x;
+                }
+                else if (y->is_integer() && !yzero)
+                {
+                    large yi = y->as_int64(0, false);
+                    return rt.infinity(yi % 2);
+                }
+                else
+                {
+                    rt.undefined_operation_error();
+                    return nullptr;
+                }
+            }
+            else if (yinf && x->is_algebraic_num())
+            {
+                if (x->is_zero())
+                {
+                    rt.undefined_operation_error();
+                    return nullptr;
+                }
+                return yinf < 0 ? algebraic_p(integer::make(0))
+                    : rt.infinity(false);
+            }
+        }
     }
 
     // Deal with X^N where N is a positive  or negative integer
@@ -1692,11 +1728,14 @@ algebraic_p arithmetic::evaluate(id          op,
                 xp = polynomial::make(x);
             if (xp)
             {
-                if (!yp && op == ID_pow)
-                    if (integer_g yi = y->as<integer>())
-                        return polynomial::pow(xp, yi);
                 if (!yp)
-                    yp = polynomial::make(y);
+                {
+                    if (op == ID_pow)
+                        if (integer_g yi = y->as<integer>())
+                            return polynomial::pow(xp, yi);
+                    if (op == ID_add || op == ID_subtract || op == ID_multiply)
+                        yp = polynomial::make(y);
+                }
                 if (yp)
                 {
                     switch(op)
@@ -1829,6 +1868,10 @@ template object::result arithmetic::evaluate<struct pow>();
 template object::result arithmetic::evaluate<struct hypot>();
 template object::result arithmetic::evaluate<struct atan2>();
 
+template algebraic_p arithmetic::evaluate<add>(algebraic_r x, algebraic_r y);
+template algebraic_p arithmetic::evaluate<subtract>(algebraic_r x, algebraic_r y);
+template algebraic_p arithmetic::evaluate<multiply>(algebraic_r x, algebraic_r y);
+template algebraic_p arithmetic::evaluate<divide>(algebraic_r x, algebraic_r y);
 template algebraic_p arithmetic::evaluate<struct mod>(algebraic_r x, algebraic_r y);
 template algebraic_p arithmetic::evaluate<struct rem>(algebraic_r x, algebraic_r y);
 template algebraic_p arithmetic::evaluate<struct pow>(algebraic_r x, algebraic_r y);
@@ -1994,6 +2037,15 @@ algebraic_g pow(algebraic_r xr, ularge y)
         if (r && r->is_decimal())
             r = prec(decimal_p(+r));
         return r;
+    }
+    if (x->is_range())
+    {
+        algebraic_g lo = range_p(+x)->lo();
+        algebraic_g hi = range_p(+x)->hi();
+        lo = pow(lo, y);
+        hi = pow(hi, y);
+        range::sort(lo, hi);
+        return range::make(x->type(), lo, hi);
     }
     while (y)
     {

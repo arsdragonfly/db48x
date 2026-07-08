@@ -50,41 +50,35 @@ SECTIONS
     *(.qspi)           /* .qspi sections */
     *(.qspi*)          /* .qspi* sections */
 /* ==== Symbols to QSPI - in direct order === */
-    *(.rodata.__bid_mod10_18_tbl)
-    *(.rodata.__bid_convert_table)
-    *(.rodata.bid_log_table_1)
-    *(.rodata.bid_log_table_2)
-    *(.rodata.bid_decimal128_moduli)
-    *(.rodata.bid_exponents_bid64)
-    *(.rodata.bid_exponents_binary128)
-    *(.rodata.bid_breakpoints_binary128)
-    *(.rodata.bid_breakpoints_bid64)
-    *(.rodata.bid_multipliers1_binary128)
-    *(.rodata.bid_multipliers2_bid64)
-    *(.rodata.bid_multipliers1_bid64)
-    *(.rodata.bid_multipliers2_binary128)
-/* ===== Addition by c3d =================== */
     *(.fonts)
-    *(.rodata._Z*)
+    *(.rodata._Z*)      /* C++ data */
+    *(.rodata.small*)   /* Small primes table */
+    *(.rodata.str*)     /* String constants */
 /* ======================== */
     . = ALIGN(8);
     _qspi_end = .;         /* define a global symbols at end of qspi */
 
   } >QSPI /* AT> FLASH */
 
+ _qspi_init_base = LOADADDR(.qspi);
+ _qspi_init_length = SIZEOF(.qspi);
+
   /* Constant data goes into FLASH */
   .rodata :
   {
     KEEP(*(.rodata.prog_info)) /* Program info */
     KEEP(*(.qspi.qspi_build_id))
+
     . = ALIGN(64);
-    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
-    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    KEEP(*(.flash))     /* Data that needs to be in flash */
+    *(.rodata)          /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)         /* .rodata* sections (constants, strings, etc.) */
+
+    /* Constants declared non const in intel library */
+    . = ALIGN(16);
+    *(.data.__global_locale)
     . = ALIGN(8);
   } >FLASH
-
- _qspi_init_base = LOADADDR(.qspi);
- _qspi_init_length = SIZEOF(.qspi);
 
   /* The program code and other data goes into FLASH */
   .text :

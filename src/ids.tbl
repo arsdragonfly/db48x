@@ -124,6 +124,7 @@ ID_RANGE(is_integer,       based_integer,  neg_integer)
 ID_RANGE(is_based,         based_integer,  based_integer, based_bignum, based_bignum)
 ID_RANGE(is_bignum,        based_bignum,   neg_bignum)
 #endif // CONFIG_FIXED_BASED_OBJECTS
+ID_RANGE(is_small_integer, integer,        neg_integer)
 ID_RANGE(is_fraction,      fraction,       neg_big_fraction)
 ID_RANGE(is_decimal,       decimal,        neg_decimal)
 ID_RANGE(is_fp,            hwfloat,        neg_decimal)
@@ -133,29 +134,23 @@ ID_RANGE(is_range,         range,          uncertain)
 ID_RANGE(is_strict_range,  range,          prange)
 ID_RANGE(is_algebraic_num, unit,           neg_decimal,   range, uncertain)
 ID_RANGE(is_program_cmd,   Drop,           IfErrThenElse)
-ID_RANGE(is_command,       Drop,           ToFraction,    ToList, LastMenu)
+ID_RANGE(is_command,       Drop,           ToQuotient,  ToList, LastMenu)
 ID_RANGE(is_symbolic,      expression,     xlib,
                            polynomial,     relative_uncertainty)
-ID_RANGE(is_algebraic_fn,  Rcl,            ToFraction,
-                           TestFlagSet,    det,
-                           Get,            IFTE,
-                           CurrentClip,    GraphicIntegral,
-                           Mem,            FlagsToBinary,
-                           ConstantArray,  CurrentDirectory,
-                           MatchUp,        errn,
-                           ToTag,          Ticks,
-                           QuickSort,      ListDifferences,
-                           RecallAdd,      TextToUnicode,
-                           Convert,        ToUnit,
-                           RandomNumber,   Random)
 ID_RANGE(is_immediate,     MainMenu,       SelfInsert)
 ID_RANGE(is_unit,          unit,           unit)
 ID_RANGE(is_plot,          Function,       Parametric)
 ID_RANGE(is_program,       program,        funcall)
 ID_RANGE(is_graph,         grob,           bitmap)
-ID_RANGE(is_monochrome,    grob,           grob,        bitmap, bitmap)
-ID_RANGE(is_forced_entry,  IfThen,         CaseWhen,    IfErrThen, IfErrThenElse)
-ID_RANGE(is_menu,          MainMenu,       Catalog,     UnitMenu00, CharactersMenu99)
+ID_RANGE(is_monochrome,    grob,           grob,
+                           bitmap,         bitmap)
+ID_RANGE(is_forced_entry,  IfThen,         CaseWhen,
+                           IfErrThen,      IfErrThenElse)
+ID_RANGE(is_menu,          MainMenu,       Catalog,
+                           UnitMenu00, CharactersMenu99)
+ID_RANGE(is_constant,      constant,       xlib,
+                           standard_uncertainty, relative_uncertainty)
+ID_RANGE(is_special_menu, constant_menu_name, solving_menu_recall)
 
 
 // ============================================================================
@@ -258,7 +253,7 @@ CMD(rem)
 OP(pow, "↑")                    ALIAS(pow, "Power")     ALIAS(pow, "^")
 
 NAMED(neg, "Negate")
-CMD(abs)                        ALIAS(abs, "norm") ALIAS(abs, "modulus") ALIAS(abs, "abs")
+CMD(abs)                        ALIAS(abs, "Modulus")     ALIAS(abs, "abs")
 NAMED(inv, "x⁻¹")               ALIAS(inv, "Invert")      ALIAS(inv, "inv")
 NAMED(sqrt, "√")                ALIAS(sqrt, "SquareRoot") ALIAS(sqrt, "√")
 NAMED(sq,  "x²")                ALIAS(sq,   "Square")     ALIAS(sq, "sq")
@@ -289,6 +284,12 @@ NAMED(atan, "tan⁻¹")            ALIAS(atan, "arctan")   ALIAS(atan, "atan")
 CMD(sin)
 CMD(cos)
 CMD(tan)                        // WARNING: order used in function.cc
+CMD(sec)
+CMD(csc)
+CMD(cot)
+NAMED(asec, "sec⁻¹")           ALIAS(asec, "arcsec")   ALIAS(asec, "asec")
+NAMED(acsc, "csc⁻¹")           ALIAS(acsc, "arccsc")   ALIAS(acsc, "acsc")
+NAMED(acot, "cot⁻¹")           ALIAS(acot, "arccot")   ALIAS(acot, "acot")
 
 // Exp and log
 CMD(ln)
@@ -300,7 +301,10 @@ CMD(exp10)                      ALIAS(exp10, "alog")
 NAMED(ToDecimal, "→Decimal")
 ALIAS(ToDecimal, "→Number")     ALIAS(ToDecimal, "→Num")
 NAMED(ToFraction, "→ℚ")         ALIAS(ToFraction, "→Frac")
-                                ALIAS(ToFraction, "→Q") // Last algebr.
+                                ALIAS(ToFraction, "→Q")
+NAMED(ToQuotient, "→ℚπ")        ALIAS(ToQuotient, "→QPi") // Last algeb.
+                                ALIAS(ToQuotient, "→Qπ")
+                                ALIAS(ToQuotient, "XQ")
 
 
 // ============================================================================
@@ -368,9 +372,15 @@ CMD(TestFlagClear)                      ALIAS(TestFlagClear,    "FC?")
 NAMED(asinh, "sinh⁻¹")
 NAMED(acosh, "cosh⁻¹")
 NAMED(atanh, "tanh⁻¹")
+NAMED(acsch, "csch⁻¹")
+NAMED(asech, "sech⁻¹")
+NAMED(acoth, "coth⁻¹")
 CMD(sinh)
 CMD(cosh)
 CMD(tanh)
+CMD(csch)
+CMD(sech)
+CMD(coth)
 
 CMD(ln1p)       ALIAS(ln1p, "lnp1")             // HP48 compatibility
 CMD(expm1)      ALIAS(expm1, "expm")            // HP48 compatibility
@@ -378,8 +388,8 @@ CMD(log2)
 CMD(exp2)       ALIAS(exp2, "alog2")
 CMD(erf)
 CMD(erfc)
-NAMED(tgamma, "Gamma")
-NAMED(lgamma, "LogGamma")
+NAMED(tgamma, "Γ")              ALIAS(tgamma, "Gamma")
+NAMED(lgamma, "lnΓ")            ALIAS(lgamma, "LnGamma")
 NAMED(fact, "x!")               ALIAS(fact, "factorial") ALIAS(fact, "!")
 NAMED(comb, "Combinations")
 NAMED(perm, "Permutations")
@@ -412,6 +422,8 @@ NAMED(PercentChange,    "%Change")              ALIAS(PercentChange, "%Ch")
 NAMED(PercentTotal,     "%Total")               ALIAS(PercentTotal, "%T")
 CMD(Min)
 CMD(Max)
+NAMED(DFC,              "ContinuedFraction")
+NAMED(DFC2F,            "ContinuedFractionToFraction")
 
 CMD(Extract)                                    ALIAS(Extract, "Sub")
 CMD(NSub)
@@ -427,8 +439,9 @@ CMD(conj)
 OP(dot, "⋅")
 OP(cross, "⨯")
 NAMED(det, "Determinant")
+CMD(norm)
 CMD(ColumnNorm)         ALIAS(ColumnNorm,       "CNrm")
-CMD(RowNorm)            ALIAS(ColumnNorm,       "RNrm")
+CMD(RowNorm)            ALIAS(RowNorm,          "RNrm")
 CMD(MatrixToColumns)    ALIAS(MatrixToColumns,  "→Columns")
                         ALIAS(MatrixToColumns,  "→Col")
 CMD(MatrixToRows)       ALIAS(MatrixToRows,     "→Rows")
@@ -447,6 +460,11 @@ CMD(DeleteColumn)       ALIAS(DeleteColumn,     "Column-")
 CMD(DeleteRow)          ALIAS(DeleteRow,        "Row-")
 CMD(ColumnSwap)         ALIAS(ColumnSwap,       "CSwp")
 CMD(RowSwap)            ALIAS(RowSwap,          "RSwp")
+NAMED(REF,      "RowEchelonForm")
+NAMED(RREF,     "RowReducedEchelonForm")
+NAMED(RREFP,    "RowReducedEchelonFormPivots")  ALIAS(RREFP, "RREFPivots")
+NAMED(RREFMOD,  "RowReducedEchelonFormModulo")
+NAMED(LU,       "LUFactorization")              ALIAS(LU, "LUDecomposition")
 
 
 
@@ -538,6 +556,8 @@ NAMED(XScale,           "PlotScaleX")           ALIAS(XScale, "ScaleX") ALIAS(XS
 NAMED(YScale,           "PlotScaleY")           ALIAS(YScale, "ScaleY") ALIAS(YScale, "ScaleW")
 NAMED(Center,           "PlotCenter")           ALIAS(Center, "Centr")
 NAMED(Res,              "Resolution")
+NAMED(Indep,            "IndependentVariable")  ALIAS(Indep, "INDEP")
+NAMED(Depnd,            "DependentVariable")    ALIAS(Depnd, "DEPND")
 
 CMD(Beep)
 
@@ -603,6 +623,7 @@ NAMED(Home, "HomeDirectory")
 NAMED(CrDir, "CreateDirectory") ALIAS(CrDir, "MkDir")
 NAMED(UpDir, "UpDirectory")
 NAMED(PgDir, "PurgeDirectory")  ALIAS(PgDir, "RmDir")
+CMD(Order)
 
 /// Equations
 NAMED(MatchUp,   "↑Match")
@@ -612,9 +633,15 @@ CMD(Collect)
 CMD(FoldConstants)
 CMD(ReorderTerms)
 CMD(Simplify)
+CMD(TrigSin)                            ALIAS(TrigSin, "TRIGSIN")
 NAMED(ToPolynomial, "→Polynomial")      ALIAS(ToPolynomial, "→Poly")
 NAMED(FromPolynomial, "Polynomial→")    ALIAS(FromPolynomial, "Poly→")
+NAMED(PEval, "PolynomialEvaluation")
+NAMED(PRoot, "PolynomialRoots")
+NAMED(PCoef, "PolynomialCoefficients")
+CMD(Zeros)
 CMD(Apply)
+CMD(Quote)
 CMD(Isolate)                            ALIAS(Isolate, "Isol")
 OP(Derivative, "∂")
 CMD(Primitive)                          ALIAS(Primitive, "Risch")
@@ -686,6 +713,7 @@ OP(ToGrads,     "→Grads")               ALIAS(ToGrads,   "→Grad")
 OP(ToPiRadians, "→PiRadians")           ALIAS(ToPiRadians, "→πr")
 
 // Ranges
+NAMED(FromRange,      "Range→")
 NAMED(ToRange,        "→Range")         ALIAS(ToRange,     "→Interval")
 NAMED(ToDeltaRange,   "→∆Range")
 NAMED(ToPercentRange, "→%Range")
@@ -710,16 +738,29 @@ CMD(Wait)
 CMD(Bytes)
 CMD(ScreenCapture)
 
+#ifdef HAS_CHUCK
+OP(ChuckNorris, "Chuck")
+#endif // HAS_CHUCK
+
 // Special arithmetic
+CMD(Factors)
+CMD(IsPrime)
+NAMED(NextPrime,"NextPr")
+NAMED(PreviousPrime,"PrevPr")
+OP(GCD, "GreatestCommonDenominator")
+OP(LCM, "LeastCommonMultiple")
+
 NAMED(Div2, "QuoRem")                   ALIAS(Div2, "IDiv2")
                                         ALIAS(Div2, "QuotientRemainder")
 
 // Additional list and data sorting functions
 NAMED(FromList, "List→")
-CMD(QuickSort)
+CMD(QuickSort)                          ALIAS(QuickSort, "QSort")
 CMD(ReverseSort)
 CMD(ReverseQuickSort)
 CMD(ReverseList)                        ALIAS(ReverseList, "RevList")
+CMD(Unique)
+CMD(QuickUnique)
 CMD(Head)
 CMD(Tail)
 CMD(Map)
@@ -830,8 +871,11 @@ NAMED(EulerianNumber, "℮")
 NAMED(Infinity, "∞")
 NAMED(NegativeInfinity, "−∞")
 NAMED(Const, "LibraryConstant")
-CMD(ConstantName)
-CMD(ConstantValue)
+CMD(ConstantName)                       ALIAS(ConstantName, "EquationName")
+                                        ALIAS(ConstantName, "XLibName")
+CMD(ConstantValue)                      ALIAS(ConstantValue, "EquationValue")
+                                        ALIAS(ConstantValue, "XLibValue")
+CMD(ConstantRange)
 CMD(StandardUncertainty)                ALIAS(StandardUncertainty, "CstSU")
 CMD(RelativeUncertainty)                ALIAS(RelativeUncertainty, "CstRU")
 NAMED(ToStandardUncertainty, "→Us")     ALIAS(ToStandardUncertainty, "→StdUnc")
@@ -841,12 +885,7 @@ NAMED(RelativeRound, "RelRnd")
 NAMED(PrecisionRound, "PrcRnd")
 
 NAMED(LibEq, "LibraryEquation")
-CMD(EquationName)
-CMD(EquationValue)
-CMD(EquationSolver)
 NAMED(XLib, "LibraryItem")
-CMD(XlibName)
-CMD(XlibValue)
 CMD(Constants)
 CMD(Attach)
 CMD(Detach)
@@ -1023,6 +1062,7 @@ FLAG(VerticalProgramRendering,  HorizontalProgramRendering)
 FLAG(StepByStepAlgebraResults,  FinalAlgebraResults)
 FLAG(ExplicitWildcards,         ImplicitWildcards)
 FLAG(PrefixPolynomialRender,    NormalPolynomialRender)
+FLAG(CompatiblePolynomials,     NewStylePolynomials)
 FLAG(DistinguishSymbolCase,     IgnoreSymbolCase)
 FLAG(FixedWidthDigits,          VariableWidthDigits)
 FLAG(ExitKeepsMenu,             ExitClearsMenu)
@@ -1040,6 +1080,11 @@ FLAG(NumericalIntegration,      SymbolicIntegration)
 FLAG(TVMPayAtBeginningOfPeriod, TVMPayAtEndOfPeriod)
 FLAG(TruthLogicForIntegers,     BitwiseLogicForIntegers)
 FLAG(LaxArrayResizing,          StrictArrayResizing)
+FLAG(EchelonFormKeepLastColumn, EchelonFormReduceLastColumn)
+FLAG(ExplicitConstants,         AutomaticConstants)
+FLAG(ExplicitXLibs,             AutomaticXLibs)
+
+SETTING_BITS(ListRecursionDepth, uint, 16, 0U, 65535U,    1U)
 
 ALIAS(HardwareFloatingPoint,    "HFP")
 ALIAS(HardwareFloatingPoint,    "HardFP")
@@ -1114,14 +1159,22 @@ SETTING(MaxFlags,               8U, 32768U,             128U)
 SETTING(MaxRewrites,            1U, 10000U,             100U)
 SETTING(FractionIterations,     1U, 10000U,             15U)
 ALIAS(FractionIterations,       "→QIterations")
+SETTING(FractionLargestPrime,   2U, 10000U,            100U)
+ALIAS(FractionLargestPrime,     "→QπMaxPrime")
 SETTING_BITS(FractionDigits,  uint, 6,1U, DB48X_MAXDIGITS, 12U)
 ALIAS(FractionDigits,           "→QDigits")
 SETTING(SolverIterations,       1U, 10000U,             256U)
 SETTING_BITS(SolverImprecision, uint, 6,1U, DB48X_MAXDIGITS-2,  6U)
+SETTING_BITS(SolverShuffles,    uint, 8,1U, 255U,        5U)
 SETTING(IntegrationIterations,  1U, 32U,                12U)
 SETTING(IntegrationImprecision, 1U, DB48X_MAXDIGITS,    6U)
 SETTING(MaximumDecimalExponent, 10ULL, ularge(1ULL << 61), ularge(1ULL << 60))
 SETTING(FinanceRounding,        0U, 9999U, 2U)
+SETTING(MaxFactorsBits,         64U, 1024U,             160U)
+SETTING(MaxFactorIterations,  1024U, 16777216U,       10000U)
+SETTING(MaxPolynomialDegree,     5U, 100000U,           100U)
+SETTING(MaxLaguerreIterations,   5U,   1000U,            80U)
+SETTING(MaxRootDivisor,          5U,100000000U,     1000000U)
 
 SETTING_ENUM(SingleRowMenus,    nullptr,        MenuAppearance)
 SETTING_ENUM(FlatMenus,         nullptr,        MenuAppearance)
@@ -1261,14 +1314,6 @@ CMD(DMCPLowBattery)
 CMD(LowBattery)
 
 CMD(Unimplemented)              // Last command in catalog
-
-CMD(VariablesMenuExecute)
-CMD(VariablesMenuRecall)
-CMD(VariablesMenuStore)
-
-CMD(SolvingMenuStore)
-CMD(SolvingMenuSolve)
-CMD(SolvingMenuRecall)
 
 
 
@@ -1600,6 +1645,21 @@ ID(case_when_conditional)
 ID(case_skip_conditional)
 ID(case_end_conditional)
 ID(need_conditional)
+
+ID(constant_menu_name)
+ID(constant_menu_value)
+ID(constant_menu_range)
+ID(equation_menu_name)
+ID(equation_menu_value)
+ID(equation_menu_solver)
+ID(library_menu_name)
+ID(library_menu_value)
+ID(variable_menu_execute)
+ID(variable_menu_recall)
+ID(variable_menu_store)
+ID(solving_menu_store)
+ID(solving_menu_solve)
+ID(solving_menu_recall)
 
 #undef ID
 #undef OP

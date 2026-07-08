@@ -31,6 +31,14 @@ CONFIG += color
 
 include(db48x.pro)
 
+# Use the correct help file
+RESOURCES-=help-db48x.qrc
+RESOURCES+=help-db50x.qrc
+
+# Put help/ directory at end of resources, otherwise ctors are out of order
+RESOURCES-=help/img.qrc
+RESOURCES+=help/img.qrc
+
 DEFINES-=HELPFILE_NAME=\\\"help/db48x.md\\\"
 DEFINES-=HELPINDEX_NAME=\\\"help/db48x.idx\\\"
 DEFINES+=HELPFILE_NAME=\\\"help/db50x.md\\\"
@@ -40,8 +48,7 @@ DEFINES+=MEMORY=500
 INCLUDEPATH -= ../src/dm42
 INCLUDEPATH += ../src/dm32
 
-OBJECTS_DIR=db50x-build
-android:        OBJECT_DIR=db50x-android-build
+isEmpty(OBJECTS_DIR):OBJECTS_DIR=db50x-build
 
 ICON = db50x.icns
 
@@ -50,5 +57,3 @@ DISTFILES += \
     android/build.gradle \
     android/res/values/libs.xml \
     android/res/xml/qtprovider_paths.xml
-
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

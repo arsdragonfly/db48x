@@ -81,6 +81,12 @@ struct polynomial : expression
     static polynomial_p make(symbol_p expr);
     static polynomial_p make(expression_p expr, bool error = false);
     static polynomial_p make(algebraic_r factor, symbol_r sym, ularge exp);
+    static polynomial_p from_coefficients(object_p coeffs, bool error = false);
+    array_p             coefficients(bool error = false) const;
+    size_t              expand(bool error = false) const;
+    size_t              expand(stack_buffer &sbuf, bool error = false) const;
+    static size_t       expand(object_p obj, bool error = false);
+    static polynomial_p get(object_p obj);
 
     // Write in the scratchpad a combination of the variables of two polynoms
     static byte *copy_variables(polynomial_r x, byte *previous = nullptr);
@@ -97,6 +103,17 @@ struct polynomial : expression
                                polynomial_g &q, polynomial_g &r);
     static polynomial_p pow(polynomial_r x, integer_r y);
     static polynomial_p pow(polynomial_r x, ularge y);
+    polynomial_p        derivative() const;
+    polynomial_p        derivative(size_t vidx) const;
+    polynomial_p        derivative(symbol_p vname) const;
+    polynomial_p        primitive() const;
+    polynomial_p        primitive(size_t vidx) const;
+    polynomial_p        primitive(symbol_p vname) const;
+    algebraic_p         evaluate(algebraic_r x) { return horner(x); }
+    static algebraic_p  horner(stack_buffer &sbuf, algebraic_r x);
+    algebraic_p         horner(algebraic_r x);
+    list_p              roots(id ty, symbol_p var) const;
+    list_p              roots_internal(id ty, symbol_p var) const;
 
     // Return total length of the polynomial in bytes
     size_t length() const
@@ -106,11 +123,12 @@ struct polynomial : expression
 
     // Access variables in the polynomial
     size_t   variables() const;
-    symbol_g variable(size_t index) const;
+    symbol_p variable(size_t index) const;
     utf8     variable(size_t index, size_t *len) const;
     size_t   variable(utf8 name, size_t len) const;
     size_t   variable(symbol_p name) const;
     ularge   order(size_t *var = nullptr) const;
+    bool     is_zero(bool error = true) const;
 
     // Convert polynomial to expression
     algebraic_p as_expression() const;
@@ -159,8 +177,13 @@ struct polynomial : expression
 };
 
 
-FUNCTION(ToPolynomial);
+FUNCTION_EXT(ToPolynomial,
+             static const uint seqtypes = ((1UL << ID_array)
+                                         | (1UL << ID_list)););
 COMMAND_DECLARE(FromPolynomial,         1);
+COMMAND_DECLARE(PEval,                  2);
+COMMAND_DECLARE(PRoot,                  1);
+COMMAND_DECLARE(PCoef,                  1);
 COMMAND_DECLARE(AlgebraConfiguration,   0);
 COMMAND_DECLARE(AlgebraVariable,        0);
 COMMAND_DECLARE(StoreAlgebraVariable,   1);

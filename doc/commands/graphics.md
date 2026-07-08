@@ -299,7 +299,7 @@ In addition to this HP50G-compatible usage, `DispXY` will also accept:
 ## Show
 
 Display the first level of the stack using the entire screen, with a possible
-scroll using the 4, 8, 6 and 2 keys if the object is larger than fits on screen.
+scroll using the 4, 8, 6 and 2 keys if the object is larger than the screen.
 This makes it possible to comfortably examine very large objects, like `300!`, a
 large program or a complicated equation. Arrow keys can also be used for
 horizontal or vertical scrolling.
@@ -602,27 +602,4 @@ Generate an integral sign of the given size
 @ 45-pixel Sigma sign
 45 GraphicIntegral
 @ Image check
-```
-
-
-## Header
-
-The `Header` command updates a special variable also called `Header`.
-
-When that variable is present, it must evaluate to something that can render
-graphically, either directly a graphic object or a (possibly multi-line) text.
-
-When a header is provided, the normal content of the header, i.e. date, time and
-name of the state file, is no longer shown.  However, annunciators and battery
-status are still overimposed.
-
-It is the responsibility of the programmer to ensure that the header program
-does not draw important data at these locations, and also to make sure that the
-header program is "well behaved", i.e. does not leave things on stack. If the
-header program generates an error, then that error may get in the way of normal
-calculator operations.
-
-```rpl
-« TIME " " PATH TAIL TOTEXT + + "
-" + DATE + " Mem: " + MEM + » HEADER
 ```

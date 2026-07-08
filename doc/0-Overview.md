@@ -57,7 +57,7 @@ RPL commands in the HP50G and in DB48X into
 The objective is to re-create an RPL-like experience, but to optimize it for the
 existing DM42 physical hardware.
 <!--- DM42 --->
-Ideally, DB48X should be fully usable without a keyboard overlay. though one is
+Ideally, DB48X should be fully usable without a keyboard overlay, though one is
 [being worked on](https://github.com/c3d/db48x/blob/stable/Keyboard-Layout.png).
 
 Compared to the original HP48, the DM42 has a much larger screen, but no
@@ -247,14 +247,14 @@ converted to an arrow key, along with the DM32 _XEQ_ key.
 Here are a few of the interesting RPL-specific key mappings:
 
 * _A_ (_⚙️_, DM-42 _Σ+_, DM-32 _√x_) is used to invoke a context-sensitive
-  [ToolsMenu](#ToolsMenu), which select a softkey menu based on what is on the
+  [ToolsMenu](#ToolsMenu), which selects a softkey menu based on what is on the
   stack and other context.
 
 * 🟨 _A_ (_←MENU_, DM-42 _Σ-_, DM-32 _x²_) selects the [LastMenu](#LastMenu)
   command, which displays the previously selected menu.
 
 * 🟦 _A_ (_MAIN_, DM-32 _PARTS_) selects the [MainMenu](#MainMenu), a top-level
-  menu giving indicrect access to all other menus and features in DB48X (see
+  menu giving indirect access to all other menus and features in DB48X (see
   also the [Catalog](#Catalog) feature).
 
 * _F_ (_' ()_, DM-42 _XEQ_, DM-32 _Σ+_) opens an algebraic expression, i.e. it
@@ -360,7 +360,7 @@ a `▶︎`, and 🟨 _F6_ turns into `◀`︎. These keys can be used to
 navigate across the available menu entries. This replaces the _NXT_ and _PREV_
 keys on HP calculators.
 
-The [VariablesMenu](#VariablesMenu) is used to access global varibales. It is
+The [VariablesMenu](#VariablesMenu) is used to access global variables. It is
 invoked using the _H_ key, which is labeled _RCL_ on SwissMicros hardware. This
 menu is special in the sense that:
 
@@ -369,6 +369,11 @@ menu is special in the sense that:
 * The 🟨 function *recalls* its name without evaluating it.
 
 * The 🟦 function *stores* into the variable.
+
+### Menu Tree
+
+The complete hierarchy of all built-in menus is documented in the
+[Menu Tree](#soft-menus-tree).
 
 
 ## Differences with other RPLs
@@ -432,7 +437,9 @@ unintentional differences, since the implementation is completely new.
 * Local names are evaluated on DB48X, unlike in the HP versions of RPL. This
   makes it easier to use local subprograms in larger programs as if they were
   normal operations. In the less frequent case where you do not want evaluation,
-  you need to use `RCL` like for global variables.
+  you need to quote the name and use `RCL` like for global variables. However,
+  as a convenience in algebraic mode, expressions are not evaluated. See the
+  `Quote` command for details.
 
 * Lists do not evaluate as programs by default, like on the HP28, but unlike on
   the HP48 and later HP models. This can be controlled using the
@@ -505,7 +512,7 @@ unintentional differences, since the implementation is completely new.
   hardware-accelerated binary floating-point.
 
 <!--- DM32 --->
-* Based numbers with an explicit base, like `#123h` keep their base, which makes
+* Based numbers with an explicit base, like `#123h`, keep their base, which makes
   it possible to show on stack binary and decimal numbers side by side. Mixed
   operations convert to the base in stack level X, so that `#10d #A0h +`
   evaluates as `#AAh`. Based numbers without an explicit base change base
@@ -631,6 +638,9 @@ operate on these items when it makes sense. Therefore:
 * As indicated [earlier](#representation-of-objects), quoted names in lists
   remain quoted, whereas on HP calculators, the quotes are removed.
 
+* The `MAP` operation on the HP50G recurses on inner lists. On DB48x, it does
+  not by default. This is controlled by the `ListDepthIteration` setting.
+  A value of `0` restores HP50G-style infinite recursion.
 
 ### Vectors and matrices differences
 
@@ -667,11 +677,11 @@ operate on these items when it makes sense. Therefore:
   produces a matrix with infinities. DB48X by default produces a `Divide by
   zero` error.
 
-* DB48X accept matrices and vectors as input to algebraic functions, and returns
+* DB48X accepts matrices and vectors as input to algebraic functions, and returns
   a matrix or vector with the function applied to all elements. For example,
   `[a b c] sin ` returns `[ 'sin a' 'sin b' 'sin c' ]`.
 
-* Similarly, DB48X accept operations between a constant and a vector or matrix.
+* Similarly, DB48X accepts operations between a constant and a vector or matrix.
   This applies the same binary operation to all components of the vector or
   matrix. `[ a b c ] x +` returns `[ 'a+x' 'b+x' 'c+x' ]`. Consistent with that
   logic, `inv` works on vectors, and inverts each component, so that
@@ -687,6 +697,12 @@ operate on these items when it makes sense. Therefore:
   words it returns `[[ 'a²+b·c' 'a·b+b·d' ] [ 'c·a+d·c' 'c·b+d²' ]]`. However,
   `[[a b][c d] 2. ^` performs the operation element-wise and returns
   `[[ 'a↑2.' 'b↑2.' ] [ 'c↑2.' 'd↑2.' ]]`.
+
+* When applied to a matrix or vector, `abs` returns a matrix or vector with the
+  `abs` of elements, whereas HP calcualtors compute the Euclidean norm. The
+  `norm` command performs like `abs` on HP calculators, computing the absolute
+  value for real numbers, the modulus for complex numbers, and the Euclidean
+  norm for arrays and vectors
 
 ### Mathematics
 
@@ -791,7 +807,7 @@ To navigate the help on the calculator, use the following keys:
   next link respectively. The keys _÷_ and _9_ also select the previous
   link, while the keys _×_ and _3_ can also be used to select the next link.
 
-* The _F6_ key correspond to the `←Menu` label, and returns one step back in
+* The _F6_ key corresponds to the `←Menu` label, and returns one step back in
   the help history. The _←_ key achieves the same effect.
 
 * To follow a highlighted link, click on the _ENTER_ key.
@@ -823,6 +839,14 @@ Additional contributors to the project include (in order of appearance):
 * LdBeth (andpuke@foxmail.com) (Bug fixes)
 * Thomas Eberhardt (sneakywumpus@gmail.com) (Bug fixes)
 * Ed van Gasteren (Ed@vanGasteren.net) (Bug fixes)
+* Jerome Ibanes (jibanes@gmail.com) (Dockerfile)
+* Jesus Cano (jcanovel@gmail.com) (bug fixes)
+* Riccardo Lucatuorto (gnuduncan@gmail.com)
+* Ralf Ahlbrink (raprism@users.noreply.github.com)
+* Mikael Djurfeldt (mikael@djurfeldt.com)
+* Pasquale Pigazzini (pasquale.pigazzini@gmail.com)
+* Wolf (wolfwings@wolfwings.us)
+- Alex Sergeev (alexander.sergeev@live.com)
 
 The authors would like to acknowledge
 
@@ -840,13 +864,13 @@ This work was placed by Christophe de Dinechin under the patronage of
 
 ### Hewlett and Packard
 
-Hand-held scientific calculators changed forever when Hewlett and Packard asked
+Hand-held scientific calculators changed forever when Bill Hewlett and Dave Packard asked
 their engineers to design and produce the HP35, then again when their company
 introduced the first programmable hand-held calculator with the HP65, and
 finally when they introduced the RPL programming language with the HP28.
 
 Christophe de Dinechin, the primary author of DB48X, was lucky enough to meet
-both Hewlett and Packard in person, and this was a truly inspiring experience.
+both Bill Hewlett and Dave Packard in person, and this was a truly inspiring experience.
 Launching the Silicon Valley is certainly no small achievement, but this pales
 in comparison to bringing RPN and RPL to the world.
 
@@ -928,7 +952,7 @@ The DB48X took several ideas and some inspiration from the
 [WP43](https://gitlab.com/rpncalculators/wp43) and
 [C47](https://47calc.com) projects.
 
-Walter Bonin initiated the WP43 firwmare for the DM42 as a "superset of the
+Walter Bonin initiated the WP43 firmware for the DM42 as a "superset of the
 legendary HP42S RPN Scientific".
 
 C47 (initially called C43) is a variant of that firmware initiated by Jaco

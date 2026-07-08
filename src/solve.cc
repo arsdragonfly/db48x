@@ -64,7 +64,7 @@ static inline void solver_command_error()
 //   Report `EquationSolver` as the failing command
 // ----------------------------------------------------------------------------
 {
-    rt.command(object::static_object(object::ID_EquationSolver));
+    rt.command(object::static_object(object::ID_Root));
 }
 
 
@@ -823,13 +823,14 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
     size_t depth = rt.depth();
 
     // Compute the desired precision
-    int            impr  = Settings.SolverImprecision();
-    algebraic_g    eps   = algebraic::epsilon(impr);
-    algebraic_g    oeps  = decimal::make(101,-2);
-    uint           max   = Settings.SolverIterations();
-    uint           iter  = 0;
-    int            errs  = 0;
-    bool           back  = false; // Go backwards
+    int            impr          = Settings.SolverImprecision();
+    algebraic_g    eps           = algebraic::epsilon(impr);
+    algebraic_g    oeps          = decimal::make(101, -2);
+    uint           max           = Settings.SolverIterations();
+    uint           maxerrs       = Settings.SolverShuffles();
+    uint           iter          = 0;
+    uint           errs          = 0;
+    bool           back          = false; // Go backwards
     array_g        j, v, d;
     algebraic_g    magnitude, last, forward;
 
@@ -845,18 +846,27 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
 
         // Set all variables to current value of guesses
         list::iterator gi = guesses->begin();
-        for (object_p varo : *vars)
+        algebraic_g    shuffle;
+        if (errs)
         {
+            // Shuffle slightly around current position (same for all variables)
+            shuffle = pow(oeps, errs) + eps;
+            if (!shuffle)
+                goto error;
+        }
+        size_t varidx = 0;
+        for (object_g varo : *vars)
+        {
+            varidx++;
             object_p valo = *gi;
             if (errs)
             {
                 if (algebraic_g valg = valo->as_algebraic())
                 {
-                    // Shuffle slightly around current position
-                    algebraic_g pw = pow(oeps, errs) + eps;
-                    if (!pw)
-                        goto error;
-                    valo = pw;
+                    valg = valg * shuffle;
+                    if ((errs * varidx) & 1)
+                        valg = -valg;
+                    valo = valg;
                 }
             }
             if (!directory::store_here(varo, valo))
@@ -865,8 +875,10 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
         }
 
         // Evaluate all equations at current values of variables
-        size_t neqs = 0;
-        magnitude = nullptr;
+        size_t neqs    = 0;
+        bool   errored = false;
+        magnitude      = nullptr;
+
         for (object_p eqo : *eqs)
         {
             expression_p eq = expression::get(eqo);
@@ -876,8 +888,9 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
             if (!value)
             {
                 // Possibly a transient domain error, try shuffling around
-                if (errs++ == 0)
+                if (!errored)
                 {
+                    errored = true;
                     if (last)
                     {
                         // Return to a known good position
@@ -885,10 +898,12 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
                         guesses = +v;
                     }
                 }
-                // Try shuffling around the known good position a few times
-                if (errs < 5)
-                    continue;
             }
+
+            // Try shuffling around the known good position a few times
+            if (errored && errs++ < maxerrs)
+                continue;
+
             if (!value || !(neqs >= n || rt.push(value)))
                 goto error;
             while (unit_p u = value->as<unit>())
@@ -941,7 +956,9 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
             if (!val)
                 goto error;
             algebraic_g dx = val;
-            val = val * oeps;
+            val            = val * oeps;
+            if (!val)
+                goto error;
             if (val->is_same_as(*gi))
                 val = val + oeps;
             dx = dx - val;
@@ -979,13 +996,26 @@ bool Root::jacobi_solver(list_g &eqs, list_g &vars, list_g &guesses)
         j = array::from_stack(n, n, true);
         v = array::from_stack(n, 0);
         d = v / j;
-        record(jsolve, "Jacobian %t values %t delta %t", +j, +v, +d);
-        v = array_p(+guesses);
-        v = v - d;
+        if (!d)
+        {
+            record(jsolve, "Jacobian error %u: %s", errs, rt.error());
+            if (errs++ >= maxerrs)
+                goto error;
+            rt.clear_error();
+            last = nullptr;
+            back = false;
+        }
+        else
+        {
+            errs = 0;
+            record(jsolve, "Jacobian %t values %t delta %t", +j, +v, +d);
+            v = array_p(+guesses);
+            v = v - d;
+        }
         if (!v)
             goto error;
 
-        // This is the new guesses
+        // The values in v are the new guesses for next iteration
         guesses = +v;
     } // while (iter < max)
 
@@ -1004,8 +1034,7 @@ expression_p Root::isolate(expression_p eq, symbol_p name)
 // ----------------------------------------------------------------------------
 {
     settings::SavePrincipalSolution sps(true);
-    error_save ers;
-    return eq->isolate(name);
+    return eq->isolate(name, false);
 }
 
 
@@ -1098,7 +1127,7 @@ COMMAND_BODY(MultipleVariablesSolver)
         algebraic_g result = Root::solve(eqs, vars, guesses);
         if (!result)
             solver_command_error();
-        if (rt.top(+result))
+        else if (rt.top(+result))
             return OK;
     }
     else
@@ -1265,7 +1294,7 @@ bool SolvingMenu::build(menu_info &mi, list_p expr, bool withcmds)
         menu::items(mi, "EvalEq", ID_EvalEq);
     for (auto name : *vars)
         if (symbol_p sym = name->as<symbol>())
-            menu::items(mi, sym, menu::ID_SolvingMenuStore);
+            menu::items(mi, sym, menu::ID_solving_menu_store);
 
     // Second row: Solve for variables
     mi.plane  = 1;
@@ -1276,7 +1305,7 @@ bool SolvingMenu::build(menu_info &mi, list_p expr, bool withcmds)
         menu::items(mi, "NextEq", ID_NextEq);
     for (auto name : *vars)
         if (symbol_p sym = name->as<symbol>())
-            menu::items(mi, sym, menu::ID_SolvingMenuSolve);
+            menu::items(mi, sym, menu::ID_solving_menu_solve);
 
     // Third row: Recall variable
     mi.plane  = 2;
@@ -1295,7 +1324,7 @@ bool SolvingMenu::build(menu_info &mi, list_p expr, bool withcmds)
                 value = symbol::make("?");
             if (value)
                 sym = value->as_symbol(false);
-            menu::items(mi, sym, menu::ID_SolvingMenuRecall);
+            menu::items(mi, sym, menu::ID_solving_menu_recall);
         }
     }
 
@@ -1362,11 +1391,12 @@ static uint solver_menu_index(int key)
 }
 
 
-COMMAND_BODY(SolvingMenuRecall)
+EVAL_BODY(solving_menu_recall)
 // ----------------------------------------------------------------------------
 //   Recall a variable from the SolvingMenu
 // ----------------------------------------------------------------------------
 {
+    rt.command(static_object(ID_Rcl));
     int key = ui.evaluating;
     if (key >= KEY_F1 && key <= KEY_F6)
     {
@@ -1383,7 +1413,16 @@ COMMAND_BODY(SolvingMenuRecall)
 }
 
 
-INSERT_BODY(SolvingMenuRecall)
+HELP_BODY(solving_menu_recall)
+// ----------------------------------------------------------------------------
+//   Find the topic for the recall feature in a solver menu
+// ----------------------------------------------------------------------------
+{
+    return utf8("Solving Menu Recall Key");
+}
+
+
+INSERT_BODY(solving_menu_recall)
 // ----------------------------------------------------------------------------
 //   Insert the name of a variable with `Recall` after it
 // ----------------------------------------------------------------------------
@@ -1407,18 +1446,19 @@ static bool assign(symbol_r name, algebraic_p value)
 }
 
 
-COMMAND_BODY(SolvingMenuStore)
+EVAL_BODY(solving_menu_store)
 // ----------------------------------------------------------------------------
 //   Store a variable from the SolvingMenu
 // ----------------------------------------------------------------------------
 {
+    rt.command(static_object(ID_Sto));
     int key = ui.evaluating;
     if (key >= KEY_F1 && key <= KEY_F6)
     {
         uint index = solver_menu_index(key);
         if (algebraic_p entry = expression_variable_or_unit(index))
         {
-            if (object_p obj = strip(rt.pop()))
+            if (object_p obj = strip(rt.top()))
             {
                 algebraic_g value = obj->as_algebraic();
                 if (!value)
@@ -1461,7 +1501,7 @@ COMMAND_BODY(SolvingMenuStore)
                     }
                 }
 
-                if (value && assign(name, value))
+                if (value && rt.drop() && assign(name, value))
                     return OK;
             }
         }
@@ -1470,7 +1510,7 @@ COMMAND_BODY(SolvingMenuStore)
 }
 
 
-INSERT_BODY(SolvingMenuStore)
+INSERT_BODY(solving_menu_store)
 // ----------------------------------------------------------------------------
 //   Insert the name of a variable with `Store` after it
 // ----------------------------------------------------------------------------
@@ -1480,7 +1520,7 @@ INSERT_BODY(SolvingMenuStore)
 }
 
 
-HELP_BODY(SolvingMenuStore)
+HELP_BODY(solving_menu_store)
 // ----------------------------------------------------------------------------
 //   Help for storing in a solver variable
 // ----------------------------------------------------------------------------
@@ -1496,11 +1536,12 @@ HELP_BODY(SolvingMenuStore)
 }
 
 
-COMMAND_BODY(SolvingMenuSolve)
+EVAL_BODY(solving_menu_solve)
 // ----------------------------------------------------------------------------
 //  Solve for a given variable
 // ----------------------------------------------------------------------------
 {
+    rt.command(static_object(ID_MultipleVariablesSolver));
     int key = ui.evaluating;
     if (key >= KEY_F1 && key <= KEY_F6)
     {
@@ -1524,11 +1565,20 @@ COMMAND_BODY(SolvingMenuSolve)
 }
 
 
-INSERT_BODY(SolvingMenuSolve)
+INSERT_BODY(solving_menu_solve)
 // ----------------------------------------------------------------------------
 //   Insert the name of a variable
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
     return ui.insert_softkey(key, " EQ '", "'  0 Root ", false);
+}
+
+
+HELP_BODY(solving_menu_solve)
+// ----------------------------------------------------------------------------
+//   Find the topic for the recall feature in a solver menu
+// ----------------------------------------------------------------------------
+{
+    return utf8("Solving Menu Solve Key");
 }

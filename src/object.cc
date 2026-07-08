@@ -40,11 +40,13 @@
 #include "complex.h"
 #include "conditionals.h"
 #include "constants.h"
+#include "continued-fraction.h"
 #include "custom.h"
 #include "datetime.h"
 #include "decimal.h"
 #include "equations.h"
 #include "expression.h"
+#include "factor.h"
 #include "finance.h"
 #include "font.h"
 #include "fraction.h"
@@ -176,6 +178,7 @@ const object::dispatch object::handler[NUM_IDS] =
         .menu_marker  = (menu_marker_fn) id::do_menu_marker, \
         .arity        = id::ARITY,                           \
         .precedence   = id::PRECEDENCE,                      \
+        .symbolic     = id::SYMBOLIC_ARGS,                   \
     },
 #include "ids.tbl"
 };
@@ -193,7 +196,8 @@ static inline unicode tolow(unicode cp)
 object_p object::parse(utf8    source,
                        size_t &size,
                        int     precedence,
-                       unicode separator)
+                       unicode separator,
+                       bool    truenames)
 // ----------------------------------------------------------------------------
 //  Try parsing the object as a top-level temporary
 // ----------------------------------------------------------------------------
@@ -216,7 +220,7 @@ object_p object::parse(utf8    source,
     result  r      = SKIP;
     bool    is_fp  = false;
     unicode cp     = utf8_codepoint(source);
-    parser  p(source, size, precedence, separator);
+    parser  p(source, size, precedence, separator, truenames);
 
 retry:
     switch (cp)
@@ -308,6 +312,9 @@ retry:
     case L'Ⓟ':                  // Polynomials
         r = polynomial::do_parse(p);
         break;
+    case L'Ⓥ':
+        r = symbol::do_parse(p);
+        break;
     case ':':                   // Tagged objects
         r = tag::do_parse(p);
         break;
@@ -366,6 +373,13 @@ retry:
             }
             if (r == SKIP)
                 r = local::do_parse(p);
+            if (!p.truenames)
+            {
+                if (r == SKIP && Settings.AutomaticXLibs())
+                    r = xlib::do_parse(p);
+                if (r == SKIP && Settings.AutomaticConstants())
+                    r = constant::do_parse(p);
+            }
             if (r == SKIP)
                 r = symbol::do_parse(p);
         }
@@ -513,10 +527,11 @@ text_p object::as_text(bool edit, bool equation) const
     if (type() == ID_text && !equation)
         return text_p(this);
 
-    record(render, "Rendering %+s %p into text", name(), this);
+    object_g o = this;
+    record(render, "Rendering %+s %p into text", o->name(), this);
     renderer r(equation, edit);
-    size_t size = render(r);
-    record(render, "Rendered %+s as size %u [%s]", name(), size, r.text());
+    size_t size = o->render(r);
+    record(render, "Rendered %+s as size %u [%s]", o->name(), size, r.text());
     if (!size)
         return nullptr;
     id type = equation ? ID_symbol : ID_text;
@@ -829,7 +844,7 @@ object_p object::at(object_p index, object_p value) const
     list_g   tail = nullptr;
     object_g item = value;
 
-    if (list_p idxlist = index->as<list>())
+    if (list_p idxlist = index->as_array_or_list())
     {
         head = idxlist->head();
         tail = idxlist->tail();
@@ -1109,8 +1124,8 @@ GRAPH_BODY(object)
 //  The default for rendering is to render the text using default font
 // ----------------------------------------------------------------------------
 {
-    renderer r(nullptr, ~0U, g.stack, true, g.expression);
-    using pixsize  = blitter::size;
+    renderer r(g.expression, !g.stack, g.stack, true, true);
+    using pixsize = blitter::size;
     size_t  sz     = o->render(r);
     gcutf8  txt    = r.text();
     font_p  font   = Settings.font(g.font);
@@ -1360,6 +1375,8 @@ INSERT_BODY(object)
 //   Default insertion is as a program object
 // ----------------------------------------------------------------------------
 {
+    if (o->is_algebraic_fn())
+        return ui.insert_object(o, o->arity() ? ui.ALGEBRAIC : ui.CONSTANT);
     return ui.insert(o->name(), ui.PROGRAM);
 }
 
@@ -1461,6 +1478,15 @@ algebraic_p object::as_algebraic() const
 }
 
 
+complex_p object::as_complex() const
+// ----------------------------------------------------------------------------
+//   Return rectangular or polar as complex, or nullptr
+// ----------------------------------------------------------------------------
+{
+    return is_complex() ? complex_p(this) : nullptr;
+}
+
+
 object_p object::strip(object_p obj)
 // ----------------------------------------------------------------------------
 //   Strip the object of tags and assignments
@@ -1535,6 +1561,10 @@ bool object::is_zero(bool error) const
         return uncertain_p(this)->is_zero();
     case ID_unit:
         return unit_p(this)->value()->is_zero(error);
+    case ID_expression:
+        return expression_p(this)->is_zero(error);
+    case ID_polynomial:
+        return polynomial_p(this)->is_zero(error);
 
     default:
         if (error)
@@ -1831,7 +1861,7 @@ object_p object::static_object(id i)
 //   Return a pointer to a static object representing the command
 // ----------------------------------------------------------------------------
 {
-    static byte cmds[] =
+    static const byte cmds[] =
     {
 #define ID(id)                                                \
     object::ID_##id < 0x80 ? (object::ID_##id & 0x7F) | 0x00  \
@@ -1914,7 +1944,6 @@ int object::type_value(id ty)
     return ~int(ty);
 }
 
-
 #if DEBUG || SIMULATOR
 cstring object::debug() const
 // ----------------------------------------------------------------------------
@@ -1979,4 +2008,4 @@ cstring debug()
 {
     return debug(0U);
 }
-#endif // SIMULATOR
+#endif

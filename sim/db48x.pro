@@ -19,20 +19,21 @@
 #  This software is licensed under the terms described in LICENSE.txt
 #******************************************************************************
 
-QT += core gui quick widgets quickcontrols2 quickwidgets multimedia
+QT += core gui widgets multimedia openglwidgets
 TEMPLATE = app
 
-CONFIG += debug warn_off
+CONFIG += debug warn_off c++17
 
-# Qt support code
+# Qt support code (RPL engine is in libdb48x.a, built by make-it-quick)
 SOURCES +=                                      \
+        sim-main.cpp                            \
+        sim-eval.cpp                            \
+        sim-window.cpp                          \
+        sim-screen.cpp                          \
+        sim-rpl.cpp                             \
+	dmcp.cpp                                \
 	../recorder/recorder.c                  \
 	../recorder/recorder_ring.c             \
-        sim-main.cpp                            \
-        sim-window.cpp                          \
-	sim-screen.cpp                          \
-	sim-rpl.cpp                             \
-	dmcp.cpp                                \
         ../fonts/EditorFont.cc                  \
         ../fonts/HelpFont.cc                    \
         ../fonts/ReducedFont.cc                 \
@@ -49,6 +50,7 @@ SOURCES +=                                      \
         ../src/complex.cc                       \
         ../src/conditionals.cc                  \
         ../src/constants.cc                     \
+        ../src/continued-fraction.cc            \
         ../src/custom.cc                        \
         ../src/datetime.cc                      \
         ../src/decimal.cc                       \
@@ -57,6 +59,7 @@ SOURCES +=                                      \
         ../src/dmcp/target.cc                   \
         ../src/equations.cc                     \
         ../src/expression.cc                    \
+        ../src/factor.cc                        \
         ../src/file.cc                          \
         ../src/files.cc                         \
         ../src/finance.cc                       \
@@ -107,7 +110,7 @@ RESOURCES +=                    \
         config.qrc              \
         state.qrc 		\
 	library.qrc             \
-	help.qrc		\
+	help-db48x.qrc		\
 	help/img.qrc
 
 
@@ -129,19 +132,20 @@ DEFINES +=      MEMORY=100
 color:DEFINES += CONFIG_COLOR
 
 # Additional external library HIDAPI linked statically into the code
-INCLUDEPATH += ../src/dm42 ../src/dmcp ../src
+INCLUDEPATH += ../src/dm42 ../src/dmcp ../src ..
 
-win32:   LIBS += -lsetupapi
+win32:   LIBS += -lsetupapi -lgnurx
 android: LIBS +=
 freebsd: LIBS += -lthr -liconv
 macx:    LIBS += -framework CoreFoundation -framework IOKit
-macx:    QMAKE_CFLAGS += -fsanitize=address
-macx:    LIBS += -fsanitize=address
+macx:    QMAKE_CFLAGS +=
+macx:    LIBS +=
 clang:   QMAKE_CFLAGS   += -Wall -Wno-unknown-pragmas
-clang:   QMAKE_CXXFLAGS += -Wall -Wno-unknown-pragmas -Wno-vla-cxx-extension
+clang:   QMAKE_CXXFLAGS += -Wall -Wno-unknown-pragmas -Wno-vla-extension
+gcc:     QMAKE_CFLAGS   += -Wall -Wno-unknown-warning-option -Wno-packed-bitfield-compat
+gcc:     QMAKE_CXXFLAGS += -Wall -Wno-unknown-warning-option -Wno-packed-bitfield-compat
 
-OBJECTS_DIR=db48x-build
-android:        OBJECT_DIR=db48x-android-build
+isEmpty(OBJECTS_DIR): OBJECTS_DIR=db48x-build
 
 ICON = db48x.icns
 

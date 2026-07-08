@@ -111,6 +111,8 @@ RECORDER_DECLARE(run);
 RECORDER_DECLARE(object_errors);
 
 struct algebraic;
+struct complex;
+struct integer;
 struct menu_info;
 struct object;
 struct parser;
@@ -125,6 +127,8 @@ struct list;
 struct user_interface;
 
 typedef const algebraic *algebraic_p;
+typedef const complex   *complex_p;
+typedef const integer   *integer_p;
 typedef const object    *object_p;
 typedef const program   *program_p;
 typedef const symbol    *symbol_p;
@@ -202,7 +206,8 @@ struct object
         menu_fn         menu;           // Build menu entries
         menu_marker_fn  menu_marker;    // Show marker
         uint            arity;          // Number of input arguments
-        uint            precedence;     // Precedence in equations
+        uint            precedence;     // Precedence in expressions
+        uint            symbolic;       // Which arguments are symbolic
     };
 
 
@@ -234,7 +239,7 @@ struct object
     }
 
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC push_options
 #  pragma GCC optimize("-O3")
 #endif // DM42
@@ -362,7 +367,7 @@ struct object
     //   Render like for the `Show` command
     // ------------------------------------------------------------------------
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC pop_options
 #endif
 
@@ -403,6 +408,21 @@ struct object
     // ------------------------------------------------------------------------
     {
         return is_real() ? algebraic_p(this) : nullptr;
+    }
+
+
+    complex_p as_complex() const;
+    // ------------------------------------------------------------------------
+    //   Return rectangular or polar as complex, or nullptr
+    // ------------------------------------------------------------------------
+
+
+    integer_p as_small_integer() const
+    // ------------------------------------------------------------------------
+    //   Return the object as a small integer (positive or negative)
+    // ------------------------------------------------------------------------
+    {
+        return is_small_integer() ? integer_p(this) : nullptr;
     }
 
 
@@ -468,7 +488,8 @@ struct object
     static object_p parse(utf8    source,
                           size_t &size,
                           int     precedence = 0,
-                          unicode separator  = 0);
+                          unicode separator  = 0,
+                          bool    truenames  = false);
     // ------------------------------------------------------------------------
     //  Try parsing the object as a top-level temporary
     // ------------------------------------------------------------------------
@@ -565,7 +586,7 @@ struct object
     //
     // ========================================================================
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC push_options
 #  pragma GCC optimize("-O3")
 #endif
@@ -687,6 +708,24 @@ struct object
     }
 
 
+    static bool is_algebraic_fn(id ty)
+    // ------------------------------------------------------------------------
+    //   True if this can be used in algebraic expressions
+    // ------------------------------------------------------------------------
+    {
+        return handler[ty].precedence != NONE;
+    }
+
+
+    bool is_algebraic_fn() const
+    // ------------------------------------------------------------------------
+    //   True if can be used in algebraic expressions
+    // ------------------------------------------------------------------------
+    {
+        return is_algebraic_fn(type());
+    }
+
+
     static bool is_algebraic(id ty)
     // ------------------------------------------------------------------------
     //    Check if a type denotes an algebraic value or function
@@ -793,6 +832,35 @@ struct object
     }
 
 
+    static bool is_sequence(id ty)
+    // ------------------------------------------------------------------------
+    //   Check if we have a sequence of objects (array, list, program, expr, …)
+    // ------------------------------------------------------------------------
+    {
+        return ty == ID_array || ty == ID_list || is_program(ty);
+    }
+
+
+    bool is_sequence() const
+    // ------------------------------------------------------------------------
+    //   Return true if this is a sequence of objects
+    // ------------------------------------------------------------------------
+    {
+        return is_sequence(type());
+    }
+
+
+    list_p as_sequence() const
+    // ------------------------------------------------------------------------
+    //   Convert to list if this is a sequence (array, list, program, expr, …)
+    // ------------------------------------------------------------------------
+    {
+        if (is_sequence())
+            return list_p(this);
+        return nullptr;
+    }
+
+
     algebraic_p as_extended_algebraic() const
     // ------------------------------------------------------------------------
     //   Return an object as an algebraic if possible, or nullptr
@@ -844,7 +912,7 @@ struct object
         return nullptr;
     }
 
-#ifdef DM42
+#if DM42 && FIRMWARE
 #  pragma GCC pop_options
 #endif
 
@@ -962,6 +1030,9 @@ struct object
 #define MARKER_DECL(D)  static unicode  do_menu_marker(const D *o UNUSED)
 #define ARITY_DECL(A)   enum { ARITY = A }
 #define PREC_DECL(P)    enum { PRECEDENCE = precedence::P }
+#define SYMARGS_DECL(n) enum { SYMBOLIC_ARGS = n 0U }
+#define SYMARG(n)       (1<<(n)) |
+#define SYMARGS         enum { SYMBOLIC_ARGS = ~0U };
 
     OBJECT_DECL(object);
     PARSE_DECL(object);
@@ -975,6 +1046,9 @@ struct object
     MARKER_DECL(object);
     ARITY_DECL(0);
     PREC_DECL(NONE);
+
+    // Default is for arguments to be evaluated during function evaluation
+    enum { SYMBOLIC_ARGS = 0 };
 
     template <typename T, typename U>
     static intptr_t ptrdiff(T *t, U *u)

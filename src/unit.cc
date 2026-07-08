@@ -71,6 +71,7 @@ PARSE_BODY(unit)
     if (!umark)
         return SKIP;
     offs = utf8_next(p.source, offs, max);
+    save<bool> tn(p.truenames, true);
     size_t   usz  = max - offs;
     object_p uobj = parse_uexpr(p.source + offs, usz);
     if (!uobj)
@@ -1142,6 +1143,9 @@ bool unit::convert(unit_g &x, bool error) const
                 o = o * cfu;
         }
 
+        if (!o)
+            return false;
+
         if (!o->is_real())
         {
             if (error)
@@ -1203,6 +1207,33 @@ algebraic_p unit::convert_to_real() const
         if (unit_g unity = unit::make(one, one))
             if (unity->convert(u))
                 return u;
+    return nullptr;
+}
+
+
+algebraic_p unit::map(algebraic_fn fn) const
+// ----------------------------------------------------------------------------
+//   Map an algebraic function to the value part of the unit
+// ----------------------------------------------------------------------------
+{
+    algebraic_g x = value();
+    algebraic_g u = uexpr();
+    x             = fn(x);
+    if (x)
+        return unit::simple(x, u);
+    return nullptr;
+}
+
+
+algebraic_p unit::map(bool (*fn)(algebraic_g &x)) const
+// ----------------------------------------------------------------------------
+//   Map an algebraic function to an algebraic conversion function
+// ----------------------------------------------------------------------------
+{
+    algebraic_g x = value();
+    algebraic_g u = uexpr();
+    if (fn(x))
+        return unit::simple(x, u);
     return nullptr;
 }
 

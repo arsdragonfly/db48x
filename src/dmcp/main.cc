@@ -43,6 +43,7 @@
 #include "util.h"
 
 #if SIMULATOR
+#  include "sim-eval.h"
 #  include "tests.h"
 #endif
 
@@ -367,6 +368,21 @@ bool load_saved_keymap(cstring name)
 }
 
 
+uint slowdown(uint random)
+// ----------------------------------------------------------------------------
+//   Artificial slow-down for QSPI acceess
+// ----------------------------------------------------------------------------
+//   The reason for slowing down is that the QSPI occasionally feeds bad bytes
+//   if read too fast. See also issue #12, issue #304, #1532, and
+//   commit 63eb8efabd1 introducing DEOPTIMIZE_CATALOG.
+{
+    char buffer[8];
+    for (uint i = 0; i < sizeof(buffer); i++)
+        buffer[i] = random++;
+    return buffer[0] ^ buffer[sizeof(buffer)-1];
+}
+
+
 extern uint memory_size;
 void program_init()
 // ----------------------------------------------------------------------------
@@ -541,6 +557,7 @@ extern const uint prog_build_id;
 extern const uint qspi_build_id;
 #endif
 
+
 extern "C" void program_main()
 // ----------------------------------------------------------------------------
 //   DMCP main entry point and main loop
@@ -552,11 +569,12 @@ extern "C" void program_main()
 #ifndef SIMULATOR
     if (prog_build_id != qspi_build_id)
     {
-        msg_box(t24,
-                "Incompatible " PROGRAM_NAME " build ID\n"
-                "Please reload program and QSPI\n"
-                "from the same build",
-                true);
+        static const char __attribute__((section(".flash"))) msg[] =
+            "Incompatible " PROGRAM_NAME
+            " build ID\n"
+            "Please reload program and QSPI\n"
+            "from the same build";
+        msg_box(t24, msg, true);
         lcd_refresh();
         wait_for_key_press();
         return;
@@ -565,6 +583,9 @@ extern "C" void program_main()
 
     // Initialization
     program_init();
+#if SIMULATOR && !WASM
+    rplcmds.process_commands();
+#endif // SIMULATOR && !WASM
     redraw_lcd(true);
     last_keystroke_time = program::read_time();
 
@@ -591,10 +612,12 @@ extern "C" void program_main()
                    key, last_key, test_command);
             if (key == tests::EXIT_PGM || key == tests::SAVE_PGM)
             {
-                cstring path = get_reset_state_file();
-                printf("Exit: saving state to %s\n", path);
-                if (path && *path)
-                    save_state_file(path);
+                if (key != tests::EXIT_PGM || !rplcmds.headless)
+                {
+                    cstring path = get_reset_state_file();
+                    if (path && *path && !tests::running)
+                        save_state_file(path);
+                }
                 if (key == tests::EXIT_PGM)
                     break;
             }
@@ -690,10 +713,9 @@ extern "C" void program_main()
 
 #if WASM
 uint            memory_size           = 100;
-volatile uint   test_command          = 0;
 bool            noisy_tests           = false;
 bool            no_beep               = false;
-bool            tests::running        = false;
+// test_command and tests::running are defined in tests.cc (same as Qt sim).
 
 static void *rpl_thread(void *)
 // ----------------------------------------------------------------------------

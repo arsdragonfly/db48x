@@ -1,0 +1,360 @@
+.\" ****************************************************************************
+.\"  db48x.1                                                     DB48X project
+.\" ****************************************************************************
+.\"
+.\"   File Description:
+.\"
+.\"     Man page for DB48x
+.\"
+.\"     This documents
+.\"       db48x(1)
+.\"
+.\"
+.\"
+.\"
+.\" ****************************************************************************
+.\"  (C) 2019-2020 Christophe de Dinechin <christophe@dinechin.org>
+.\" %%%LICENSE_START(LGPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU Lesser General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU Lesser General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU Lesser General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\" ****************************************************************************
+
+.TH db48x 1  "2026-06-07" "0.9.20" "DB48x RPL scientific calculator"
+
+.\" ----------------------------------------------------------------------------
+.SH NAME
+.\" ----------------------------------------------------------------------------
+db48x \- A modern implementation of RPL, in the spirit of the HP48
+
+
+.\" ----------------------------------------------------------------------------
+.SH SYNOPSIS
+.\" ----------------------------------------------------------------------------
+.B db48x
+[\fIoptions\fR]
+[\fIsetting=value\fR ...]
+
+
+.\" ----------------------------------------------------------------------------
+.SH DESCRIPTION
+.\" ----------------------------------------------------------------------------
+The
+.B db48x
+program starts the desktop simulator for the DB48X project, a modern
+implementation of an RPL calculator inspired by the HP48 family.
+
+.PP
+The simulator runs as a Qt application and supports:
+.IP \[bu] 2
+interactive calculator usage from a computer keyboard and mouse;
+.IP \[bu] 2
+headless (console-oriented) mode for scripting;
+.IP \[bu] 2
+RPL command evaluation from the command line or a file;
+.IP \[bu] 2
+running integrated tests from the command line;
+.IP \[bu] 2
+recorder-based tracing for debugging and diagnostics;
+.IP \[bu] 2
+overriding initial RPL settings using
+.I setting=value
+arguments.
+
+
+.\" ----------------------------------------------------------------------------
+.SH OPTIONS
+.\" ----------------------------------------------------------------------------
+
+.PP
+The program accepts the following options.
+For options that take a value, the value may be attached directly to the
+option letter (for example
+.BR \-w1000 )
+or given as the next command-line argument (for example
+.BR \-w\ 1000 ).
+
+.TP
+.B \-d\fR[\fIms\fR]
+Set test key delay time in milliseconds (default: 0).
+
+.TP
+.B \-e \fIcmd\fR
+Evaluate RPL commands from
+.I cmd
+at startup.
+The option may be repeated to run several commands in order.
+
+.TP
+.B \-f \fIfile\fR
+Evaluate RPL commands from
+.I file
+at startup.
+Using
+.B \-
+as the file name reads from standard input.
+
+.TP
+.B \-h
+.BR \-\-help
+Show command-line usage and exit.
+
+.TP
+.B \-i\fR[\fIms\fR]
+Set the maximum time to wait for an image match during tests, in
+milliseconds (default: 500).
+
+.TP
+.B \-k \fIkeymap\fR
+Load a keyboard map file. The default keyboard map is
+.BR config/db48x.48s .
+
+.TP
+.B \-l
+When used with
+.BR \-E " or " \-F ,
+prefix each printed stack line with its level number.
+
+.TP
+.B \-m\fR[\fIsize\fR]
+Set calculator memory size in kilobytes.
+
+.TP
+.B \-n
+Enable beeps during tests (noisy testing).
+
+.TP
+.B \-r\fR[\fIms\fR]
+Set screen refresh wait time in milliseconds during tests (default: 20).
+
+.TP
+.B \-s \fIscale\fR
+Set window scaling factor (floating-point value).
+
+.TP
+.B \-t \fItrace\fR
+Enable recorder traces matching
+.IR trace .
+The trace name may be a regular expression.
+This option may be repeated.
+
+.TP
+.B \-w\fR[\fIms\fR]
+Set default test command wait time in milliseconds (default: 1000).
+
+.TP
+.B \-C \fIfile\fR
+Create a screen snapshot in
+.I file
+after executing preceding commands, if any.
+
+.TP
+.B \-D \fIpattern\fR
+Set the recorder trace pattern to dump when a test fails.
+
+.TP
+.B \-E \fIcmd\fR
+Like
+.BR \-e ,
+but print each stack level to the console after evaluation.
+The option may be repeated.
+With
+.BR \-H ,
+output goes to standard output; otherwise it goes to standard error.
+
+.TP
+.B \-F \fIfile\fR
+Like
+.BR \-f ,
+but print each stack level to the console after evaluation.
+Using
+.B \-
+as the file name reads from standard input.
+With
+.BR \-H ,
+output goes to standard output; otherwise it goes to standard error.
+
+.TP
+.B \-H
+Headless mode: do not show a window, and exit when startup commands finish.
+
+.TP
+.B \-I
+Initialize the user environment by copying bundled resources (help, library,
+state and config files) into the user data location.
+This may overwrite existing user configuration.
+
+.TP
+.B \-K
+Simulate typing individual keys during tests.
+
+.TP
+.B \-N
+Disable beeps.
+
+.TP
+.B \-O\fR[\fItest\fR|\fBall\fR]
+Configure test-suite recorder traces (for
+.BR est_\fItest\fR " or " est_.*
+when
+.I test
+is
+.BR all )
+without running tests.
+
+.TP
+.B \-T\fR[\fItest\fR|\fBall\fR]
+Run tests and then exit.
+For example,
+.BR \-Tmatrices
+runs one test suite and
+.BR \-Tall
+runs all tests.
+
+
+.\" ----------------------------------------------------------------------------
+.SH ARGUMENTS
+.\" ----------------------------------------------------------------------------
+.PP
+Any non-option argument in the form
+.I setting=value
+sets an initial DB48X setting or flag before entering the main UI loop.
+Values
+.B yes
+or
+.B true
+(case-insensitive) are interpreted as true.
+Positive integer values are also accepted.
+
+.PP
+Examples:
+.IP \[bu] 2
+DecimalDot=false ShowMonthName=true
+.IP \[bu] 2
+AngleMode=1
+
+.PP
+These assignments set startup defaults and may later be overridden by a loaded
+state file.
+
+.\" ----------------------------------------------------------------------------
+.SH EXAMPLES
+.\" ----------------------------------------------------------------------------
+.PP
+.EX
+    db48x
+.EE
+
+.PP
+Start simulator with additional tracing:
+
+.PP
+.EX
+    db48x -trenderer
+.EE
+
+.PP
+Run all simulator tests:
+
+.PP
+.EX
+    db48x -Tall
+.EE
+
+.PP
+Run one test group with custom timing:
+
+.PP
+.EX
+    db48x -Tmatrices -w2000 -r50
+.EE
+
+.PP
+Run all simulator tests headlessly:
+
+.PP
+.EX
+    db48x -H -Tall
+.EE
+
+.PP
+Evaluate RPL at startup and print the stack:
+
+.PP
+.EX
+    db48x -H -E "1 2 +"
+.EE
+
+.PP
+Show command-line usage:
+
+.PP
+.EX
+    db48x -h
+.EE
+
+.PP
+Start with initial settings overridden:
+
+.PP
+.EX
+    db48x DecimalDot=false ShowMonthName=true
+.EE
+
+
+.\" ----------------------------------------------------------------------------
+.SH ENVIRONMENT VARIABLES
+.\" ----------------------------------------------------------------------------
+.PP
+The following environment variables are recognized:
+
+.TP
+.B DB48X_TRACES
+Initial recorder trace filter.
+If unset, the simulator uses
+\fB\&.*(error\fR|\fBwarn(ing)?\fR)s?\fR.
+
+.TP
+.B DB48X_INSTALL
+If set to any value, behaves like
+.BR \-I ,
+forcing installation of bundled resources into the user data directory.
+
+
+.\" ----------------------------------------------------------------------------
+.SH BUGS
+.\" ----------------------------------------------------------------------------
+.PP
+Bugs should be reported at:
+.br
+https://github.com/c3d/db48x/issues
+
+
+.\" ----------------------------------------------------------------------------
+.SH SEE ALSO
+.\" ----------------------------------------------------------------------------
+Project documentation is available at:
+.br
+https://github.com/c3d/db48x
+
+
+.\" ----------------------------------------------------------------------------
+.SH AUTHOR
+.\" ----------------------------------------------------------------------------
+Written by Christophe de Dinechin

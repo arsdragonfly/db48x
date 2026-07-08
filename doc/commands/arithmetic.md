@@ -112,12 +112,15 @@ Fractional part of a number
 ## Abs
 
 Return the absolute value for a real number.
-Return the Euclidean norm for a complex number, vector or matrix.
+Return the modulus for a complex number
+Return the absolute value of elements for a matrix or a vector, which is different from HP calculators, see `NORM`
 
 
 # Integer arithmetic and polynomials
 
-This section documents newRPL commands that are not implemented yet in DB48X.
+This section documents integer arithmetic commands, including prime-related
+operations. Some commands (e.g. MODSTO, GETPREC) are planned but not yet
+implemented in DB48X.
 
 ## SETPREC
 Set the current system precision
@@ -147,16 +150,8 @@ Remainder of the integer division
 Square of the input
 
 
-## NEXTPRIME
-Smallest prime number larger than the input
-
-
 ## Factorial
 Factorial of a number
-
-
-## ISPRIME
-Return true/false (1/0) if a number is prime or not
 
 
 ## MANT
@@ -215,18 +210,20 @@ Get percentage of a total
 
 
 ## GCD
-Greatest common divisor
+Greatest common divisor of two integers.
+
+`Y` `X` `GCD` → `gcd(X,Y)`
+
+The result is always non-negative. `gcd(0,0)` is `0`.
 
 
 ## LCM
-Least common multiple
+Least common multiple of two integers.
 
+`Y` `X` `LCM` → `lcm(X,Y)`
 
-## IDIV2
-Integer division, get quotient and remainder.
-On DB48X, this is an alias for [div2](#div2).
+The result is always non-negative. If either argument is `0`, the result is `0`.
 
-`Y` `X` ▶ `IP(Y/X)` `Y rem X`
 
 ## IQUOT
 Quotient of the integer division
@@ -244,12 +241,69 @@ Subtraction operator MOD the current system modulo
 Multiplication operator MOD the current system modulo
 
 
-## PEVAL
-Evaluation of polynomial given as vector of coefficients
+## PEval
+
+Evaluate a polynomial at a point (Horner’s method).
+
+`Poly` `X` ▶ `Value`
+
+* `Poly` (level 2) is a coefficient array, list, polynomial, or
+  univariate expression (same inputs as `PRoot`; converted to descending
+  coefficients).
+* `X` (level 1) is the evaluation point (any algebraic).
+* Coefficients may be numbers or symbols (e.g. `[ 'A' 'B' 'C' ]` for
+  `A·X²+B·X+C` in descending degree order).
+* Degree is limited by [MaxPolynomialDegree](#maxpolynomialdegree) (default 100).
+* Returns `Value`, the polynomial evaluated at `X`.
+
+```rpl
+[ 1 -5 6 ] 2 PEval
+@ Expecting 0
+```
+
+```rpl
+'X^2-5*X+6' 3 PEval
+@ Expecting 0
+```
+
+```rpl
+'x↑4+2·x↑3-25·x↑2-26·x+120' 3 PEval
+@ Expecting -48
+```
 
 
-## PCOEF
-Coefficients of monic polynomial with the given roots
+## PCoef
+
+Build the monic polynomial whose roots are the given values.
+
+`Roots` ▶ `Poly` or `Coeffs`
+
+* `Roots` is an array or list of algebraic values (integers, fractions,
+  decimals, or complex numbers). Each entry is one root of the polynomial.
+* Degree after expansion is limited by
+  [MaxPolynomialDegree](#maxpolynomialdegree) (default 100).
+* Returns the monic polynomial ∏(x − rᵢ) over all roots rᵢ.
+* With [NewStylePolynomials](#newstylepolynomials) active (default), the result
+  is a polynomial object. Use `ToArray` to obtain coefficients in
+  descending degree order (highest power first).
+* With [CompatiblePolynomials](#compatiblepolynomials) active, the result is a
+  coefficient array in that same order, as on HP calculators.
+* Coefficient order matches `PEval`, `PDIV2`, and `PRoot`.
+
+```rpl
+CompatiblePolynomials
+[ 2 -3 4 -5 ] PCoef
+@ Expecting [ 1 2 -25 -26 120 ]
+```
+
+```rpl
+NewStylePolynomials
+[ 2 -3 4 -5 ] PCoef
+@ Expecting x↑4+2·x↑3-25·x↑2-26·x+120
+```
+
+The compatible-mode vector is the coefficient list of
+`x⁴+2x³−25x²−26x+120`. Use `PRoot` on that vector to recover the roots.
 
 
 ## IEGCD
@@ -338,13 +392,144 @@ Truncate a number to the given number of figures
 Extract digits from a real number
 
 
-## PROOT
-All roots of a polynomial
+## PRoot
+
+Find all roots of a polynomial given by its coefficients.
+
+`Coeffs` ▶ `Roots`
+
+* `Coeffs` is an array, list, polynomial, or univariate expression
+  (same inputs as `PEval`; polynomials are converted via `ToArray`) whose
+  coefficients are in descending degree order (same convention as `PEval`
+  and `PCoef`). The leading coefficient must be non-zero; trailing zeros at the
+  high end are ignored.
+* Returns `Roots`, an array containing every root, sorted in ascending order.
+* Degree is limited by [MaxPolynomialDegree](#maxpolynomialdegree) (default 100).
+  Coefficients must be real or complex numbers (not symbolic names).
+* Rational root search is bounded by [MaxRootDivisor](#maxrootdivisor); numerical
+  roots use Laguerre’s method with at most
+  [MaxLaguerreIterations](#maxlaguerreiterations) per root.
+
+For low degrees, roots are found by closed forms (linear and quadratic). For
+higher degrees, the implementation tries exact rational candidates (when the
+constant term allows), then uses Laguerre’s method with deflation for remaining
+roots.
+
+Numeric results are cleaned up using the same imprecision rules as the equation
+solver: values within `SolverImprecision` of an integer are snapped to that
+integer, and negligible imaginary parts are dropped.
+
+```rpl
+[ 1 2 -25 -26 120 ] PRoot
+@ Expecting [ -5 -3 2 4 ]
+```
+
+```rpl
+[ 1 -5 6 ] PRoot
+@ Expecting [ 2 3 ]
+```
+
+To obtain coefficients from a symbolic expression in one variable, use
+`ToPolynomial` and then `ToArray`, or use `Zeros` on the expression directly.
+See [NewStylePolynomials](#newstylepolynomials) for how `PCoef` formats its
+result.
 
 
-## PREVPRIME
-Largest prime smaller than the input
+## IsPrime
+
+Test whether an integer is prime.
+
+`n` ▶ `True` or `False`
+
+* Returns `True` if the integer `n` is prime, `False` if composite.
+* Accepts integer inputs, including bignums. The maximum size is controlled by
+  the `MaxFactorsBits` setting.
+* Uses trial division by small primes first, then Miller-Rabin for larger
+  values.
+* Deterministic for numbers up to about 82 bits; probabilistic beyond that with
+  negligible error probability.
+
+```rpl
+17 IsPrime
+@ Expecting True
+```
+
+```rpl
+15 IsPrime
+@ Expecting False
+```
+
+```rpl
+561 IsPrime
+@ Expecting False
+```
 
 
-## FACTORS
-Factorize a polynomial or number
+## Factors
+
+Decompose an integer into its prime factorization.
+
+`n` ▶ `{ p₁ e₁ p₂ e₂ … }`
+
+* Returns a list of alternating prime-exponent pairs: each prime factor followed
+  by its multiplicity.
+* Accepts integer inputs, including bignums. Zero and one return an empty list.
+  The maximum size is controlled by the `MaxFactorsBits` setting.
+* Uses trial division by small primes, then Pollard's Rho for larger factors.
+* The `MaxFactorIterations` setting limits Pollard's
+  Rho iterations per attempt; lowering it can avoid long runs on hard semiprimes.
+* The product of all `pᵢ^eᵢ` equals the original number.
+
+```rpl
+12 Factors
+@ Expecting { 2 2 3 1 }
+```
+
+```rpl
+100 Factors
+@ Expecting { 2 2 5 2 }
+```
+
+
+## NextPr
+
+Return the smallest prime strictly greater than the input.
+
+`n` ▶ `p`
+
+* Returns the next prime number after `n`.
+* Accepts integers ≥ 1. The maximum input size is controlled by the
+  `MaxFactorsBits` setting.
+* If no prime exists (e.g. search limit reached), returns an error.
+
+```rpl
+10 NextPrime
+@ Expecting 11
+```
+
+```rpl
+2 NextPrime
+@ Expecting 3
+```
+
+
+## PrevPr
+
+Return the largest prime strictly smaller than the input.
+
+`n` ▶ `p`
+
+* Returns the previous prime number before `n`.
+* Accepts integers > 2 (no prime exists below 2). The maximum input size is
+  controlled by the `MaxFactorsBits` setting.
+* If no prime exists or the search limit is reached, returns an error.
+
+```rpl
+10 PreviousPrime
+@ Expecting 7
+```
+
+```rpl
+3 PreviousPrime
+@ Expecting 2
+```

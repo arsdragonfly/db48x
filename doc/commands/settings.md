@@ -213,6 +213,66 @@ This is the opposite of `CompatibleBasedNumbers`.
 Display based numbers using the HP syntax, i.e. `#12ABh` for hexadecimal.
 This is the opposite of `ModernBasedNumbers`.
 
+# Polynomial settings
+
+Settings for `PRoot`, `PCoef`, `PEval`, `Zeros`, and related polynomial commands.
+Numeric limits apply to coefficient vectors, expressions converted to
+polynomials, and internal root-finding. Assign a new value on the command line
+(e.g. `200 MaxPolynomialDegree`) or use `{ MaxPolynomialDegree } Purge Std` to
+restore defaults after tests.
+
+## NewStylePolynomials
+
+Use DB48X polynomial objects for polynomial-oriented commands where the result
+is a polynomial in one variable (typically `X` from `AlgebraVariable`).
+
+With this flag active (the default), `PCoef` returns a polynomial built from
+the given roots. Coefficient vectors in descending degree order—the form expected
+by `PEval`, `PRoot`, and related commands—are obtained with `ToArray` on that
+polynomial, or by building the vector directly.
+
+`PRoot`, `PCoef`, and `PEval` accept a coefficient array, list,
+polynomial, or univariate expression as input; non-vectors are converted
+internally to a coefficient vector.
+
+This is the opposite of [CompatiblePolynomials](#compatiblepolynomials).
+
+## CompatiblePolynomials
+
+Use HP-style coefficient vectors for polynomial root and coefficient commands.
+
+With this flag active, `PCoef` returns a coefficient array in descending
+degree order, matching classic RPL calculators. `PRoot` still accepts arrays,
+lists, and polynomials; use `ToPolynomial` to turn a coefficient vector into a
+polynomial object for symbolic work.
+
+This is the opposite of [NewStylePolynomials](#newstylepolynomials).
+
+## MaxPolynomialDegree
+
+Maximum degree accepted by `PRoot`, `PCoef`, `PEval`, `Zeros`, and coefficient
+conversion (`ToPolynomial`, `ToArray` on a polynomial). The value is the highest
+power in the univariate polynomial (e.g. `[ 1 2 1 ]` has degree 2).
+
+Range 5 to 100,000; default 100. Inputs with more coefficients than
+`MaxPolynomialDegree + 1` report a dimension error.
+
+## MaxLaguerreIterations
+
+Maximum iterations of Laguerre’s method per root when `PRoot` or `Zeros` uses
+numerical root finding (after low-degree formulas and rational root search).
+
+Range 5 to 1000; default 80. Increasing the value may help difficult
+polynomials converge; lowering it fails faster on pathological cases.
+
+## MaxRootDivisor
+
+Largest integer tested as a candidate divisor when `PRoot` or `Zeros` searches
+for rational roots (via divisors of the constant term).
+
+Range 5 to 100,000,000; default 1,000,000. Larger values allow more exact
+rational roots on polynomials with big constant terms, at higher cost.
+
 ## ShowAsDecimal
 
 Show integer numbers like `25` and fractions like `3/2` as decimal values.
@@ -392,15 +452,15 @@ Display comands using the long form, for example `Store`.
 
 Display names using the short form in lower case, for example `varName` will show as `varname`.
 
-## UpperCase
+## UpperCaseNames
 
 Display names using the short form in upper case, for example `varName` will show as `VARNAME`.
 
-## Capitalized
+## CapitalizedNames
 
 Display names using the short form capitalized, for example `varName` will show as `VarName`.
 
-## LongForm
+## LongFormNames
 
 Display names using the long form, for example `varName` will show as `varName`.
 
@@ -441,6 +501,42 @@ applies separately for the numerator and denominator in a fraction, or for the
 real and imaginary part in a complex number. A complex number made of two
 fractions can therefore take up to four times the number of bits specified by
 this setting.
+
+## MaxFactorsBits
+
+Maximum number of bits for integers accepted by prime-related commands:
+`IsPrime`, `Factors`, `NextPr`, and `PrevPr`.
+
+The value can range from 64 to 1024 bits (default 160). Integers exceeding this
+limit trigger a `Number is too big` error. Raising the value allows factoring
+larger numbers but increases memory use and computation time for Pollard's Rho
+and Miller-Rabin. Lowering it can prevent excessive CPU usage on large inputs.
+
+## MaxFactorIterations
+
+Maximum number of Pollard's Rho iterations per attempt when factoring integers
+with `Factors`.
+
+The value can range from 1024 to 16,777,216 (default 4,194,304). If no factor
+is found within this limit for a given Rho attempt, the algorithm tries the
+next random starting point. Exhausting all attempts yields a `Bad argument
+value` error. Lowering the value speeds up failure detection for numbers that
+are hard to factor (e.g. products of two large primes); raising it allows
+factoring tougher semiprimes at the cost of longer run time.
+
+## SolverIterations
+
+Number of times the solver will try to find a solution.
+
+## SolverImprecision
+
+Relative imprecision that is tolerated by the solver
+
+## SolverShuffles
+
+Number of times the solver will shuffle the test vector around errors and
+singularities.
+
 
 ## MathModesMenu
 
@@ -489,20 +585,11 @@ bits is limited only by memory and performance.
 
 Return the current [word size](#wordsize) in bits.
 
-## STWS
-
-`STWS` is a compatibility spelling for the [WordSize](#wordsize) command.
-
-## RCWS
-
-`RCWS` is a compatibility spelling for the [RecallWordSize](#recallwordsize)
-command.
-
 
 # Command tuning
 
 Various settings can be used to tune specific commands.
-See also `IntegrationIterations`
+See also `IntegrationIterations` and [Polynomial settings](#polynomial-settings).
 
 ## MaxRewrites
 
@@ -523,6 +610,16 @@ whereas `3 →FracIterations 3.1415926 →Frac` will give `355/113`.
 Define the maximum number of digits of precision converting a decimal value to a
 fraction. For example, `2 →FracDigits 3.1415926 →Frac` will give `355/113`.
 
+## →QπMaxPrime
+
+Define the largest prime used when extracting square factors during [→Qπ](#toqπ)
+conversion. When converting a decimal to a rational form with π, √*n*, ln, or *e*
+factors, the algorithm squares the value, converts to a fraction, then factors out
+perfect squares from the numerator and denominator. This setting limits which
+primes are tried (2 to 10000, default 100). Lower values speed up conversion on
+DM32/DM42 at the cost of missing some √*n* simplifications for numbers whose
+square has large prime factors.
+
 
 # User interface
 
@@ -533,9 +630,20 @@ labels, rounded or square.
 
 ## Header
 
-This command can be used to define a program that is evaluated when drawing the
-header, i.e. what is shown above the stack. The header should be returned as a
-text, and leave room for the battery to display.
+The `Header` command updates a special variable also called `Header`.
+
+When that variable is present, it must evaluate to something that can render
+graphically, either directly a graphic object or a (possibly multi-line) text.
+
+When a header is provided, the normal content of the header, i.e. date, time and
+name of the state file, is no longer shown.  However, annunciators and battery
+status are still overimposed.
+
+It is the responsibility of the programmer to ensure that the header program
+does not draw important data at these locations, and also to make sure that the
+header program is "well behaved", i.e. does not leave things on stack. If the
+header program generates an error, then that error may get in the way of normal
+calculator operations.
 
 For example, the following shows the current time, the current path, the date
 and free memory in a two-line header, with a 10 second `CustomHeaderRefresh`.
@@ -565,7 +673,7 @@ Display menus on a single row, with labels changing using shift.
 
 Display menus on a single row, flattened across multiple pages.
 
-## RoundedMenu
+## RoundedMenus
 
 Display menus using rounded black or white tabs.
 
@@ -635,9 +743,9 @@ rendering.
 
 This is the opposite of [TextStackDisplay](#textstackdisplay)
 
-## TextStacktDisplay
+## TextStackDisplay
 
-Display the stack levels above the first one using a text-only representations.
+Display the stack levels above the first one using a text-only representation.
 
 This is the opposite of [GraphicStackDisplay](#graphicstackdisplay)
 
@@ -691,10 +799,65 @@ editing.
 Show empty menu entries. For example, when selecting the `VariablesMenu` and
 there is no variable defined, an empty menu shows up.
 
-## HideEmptyMenu.
+## HideEmptyMenu
 
 Restore the default behaviour where empty menus entries are not shown, leaving
 more space for the stack display.
+
+## ExplicitConstants
+
+Require an explicit marker to identify a constant from the constant library.
+This is the opposite of `AutomaticConstants`
+
+## AutomaticConstants
+
+When parsing, identify the constants from the constants library without an
+explicit `Ⓒ` constant marker. For example, `G` will parse as `ⒸG`.
+
+Note that constants, unlike symbols or commands, are always case sensitive,
+because there are constants that differ only in case, such as `ⒸG`
+(gravitational constant) and `Ⓒg` (gravitational acceleration on Earth).
+
+If a global variable with the same name exists at the time of parsing, it takes
+precedence over the constant.
+
+This is the opposite of `ExplicitConstants`
+
+## ExplicitXLibs
+
+Require an explicit marker to identify a library item from the library.
+This is the opposite of `AutomaticConstants`
+
+## AutomaticXLibs
+
+When parsing, identify the library entries from the library without an
+explicit `Ⓛ` library marker.
+
+```rpl
+AutomaticXlibs
+```
+
+With this setting, a named library entry like `SiDensity` will work as if it
+were a built-in command, and will invoke the library-provided `SiDensity` entry.
+
+
+```rpl
+255_°C SiDensity
+@ Expecting 5.11894 93475 7⁳¹⁴ (cm↑3)⁻¹
+```
+
+The `AutomaticXLibs` flag is the opposite of `ExplicitXLibs`:
+
+```rpl
+ExplicitXLibs
+```
+
+With `ExplicitXLibs`, typing `'SiDensity'` will simply produce a name:
+
+```rpl
+SiDensity
+@ Expecting 'SiDensity'
+```
 
 
 # Statistics settings
@@ -793,9 +956,9 @@ This is the way RPL in HP calculators works.
 
 When this setting is set, DB48X behaves like the HP48S and later HP devices and
 evaluates lists as if they were programs. For example, `{ 1 2 + } EVAL` returns
-`3`. The default is [ListsAsData](#listsasdata).
+`3`. The default is [ListAsData](#listasdata).
 
-## ListsAsData
+## ListAsData
 
 When this setting is set, DB48X behaves like the HP28 and evaluates lists as
 data. For example, `{ 1 2 + } EVAL` returns `{ 1 2 + }`.
@@ -829,6 +992,17 @@ or `not` applied to integers return a bitwise numerical result, which deviates
 from the HP implementations of RPL.
 
 The opposite setting is `TruthLogicForIntegers`.
+
+## ListRecursionDepth
+
+This setting selects the depth of recursion for `Map`, `Reduce` or `Filter`.
+By default, it is set to `1`, indicating that recursion only applies to the
+top-level of the list. This matches the way `Map`, `Reduce` and `Filter` work in
+most programming languages.
+
+A value larger than `1` can be used to recurse beyond the first level.
+On the HP50G, `Map` applies recursively to all levels. This can be achieved by
+setting `ListRecursionDepth` to `0`.
 
 
 # Evaluation settings

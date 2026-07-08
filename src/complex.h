@@ -78,9 +78,11 @@ struct complex : algebraic
     algebraic_g         re() const;
     algebraic_g         im() const;
     algebraic_g         mod() const;
+    algebraic_g         arg() const;
     algebraic_g         arg(angle_unit unit) const;
     algebraic_g         pifrac() const;
     complex_g           conjugate() const;
+    algebraic_g         conj() const { return +conjugate(); }
     algebraic_p         is_real() const;
 
     polar_g             as_polar() const;
@@ -90,7 +92,17 @@ struct complex : algebraic
     static complex_p    make(id type,
                              algebraic_r x, algebraic_r y,
                              angle_unit polar_unit);
-    static rectangular_p make(int re = 0, int im = 1);
+    static rectangular_p make(int re = 0, int im = 0);
+    static complex_g    zero();
+    static complex_g    one();
+    static complex_g    from_algebraic(algebraic_r x);
+
+    bool                is_zero() const;
+    bool                is_one() const;
+    bool                is_integer(algebraic_g &re) const;
+    bool                near(complex_r other) const;
+    bool                has_imaginary() const;
+    algebraic_p         as_rounded_result(int impr = -1) const;
 
     enum { I_MARK = L'ⅈ', ANGLE_MARK = L'∡' };
 
@@ -112,9 +124,15 @@ public:
     COMPLEX_FUNCTION(sin);
     COMPLEX_FUNCTION(cos);
     COMPLEX_FUNCTION(tan);
+    COMPLEX_FUNCTION(sec);
+    COMPLEX_FUNCTION(csc);
+    COMPLEX_FUNCTION(cot);
     COMPLEX_FUNCTION(asin);
     COMPLEX_FUNCTION(acos);
     COMPLEX_FUNCTION(atan);
+    COMPLEX_FUNCTION(asec);
+    COMPLEX_FUNCTION(acsc);
+    COMPLEX_FUNCTION(acot);
 
     COMPLEX_FUNCTION(sinh);
     COMPLEX_FUNCTION(cosh);
@@ -122,6 +140,12 @@ public:
     COMPLEX_FUNCTION(asinh);
     COMPLEX_FUNCTION(acosh);
     COMPLEX_FUNCTION(atanh);
+    COMPLEX_FUNCTION(csch);
+    COMPLEX_FUNCTION(sech);
+    COMPLEX_FUNCTION(coth);
+    COMPLEX_FUNCTION(acsch);
+    COMPLEX_FUNCTION(asech);
+    COMPLEX_FUNCTION(acoth);
 
     COMPLEX_FUNCTION(ln1p);
     COMPLEX_FUNCTION(expm1);

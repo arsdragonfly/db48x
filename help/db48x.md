@@ -56,7 +56,7 @@ RPL commands in the HP50G and in DB48X into
 
 The objective is to re-create an RPL-like experience, but to optimize it for the
 existing DM42 physical hardware.
-Ideally, DB48X should be fully usable without a keyboard overlay. though one is
+Ideally, DB48X should be fully usable without a keyboard overlay, though one is
 [being worked on](https://github.com/c3d/db48x/blob/stable/Keyboard-Layout.png).
 
 Compared to the original HP48, the DM42 has a much larger screen, but no
@@ -199,14 +199,14 @@ if you prefer.
 Here are a few of the interesting RPL-specific key mappings:
 
 * _A_ (_⚙️_, DM-42 _Σ+_, DM-32 _√x_) is used to invoke a context-sensitive
-  [ToolsMenu](#ToolsMenu), which select a softkey menu based on what is on the
+  [ToolsMenu](#ToolsMenu), which selects a softkey menu based on what is on the
   stack and other context.
 
 * 🟨 _A_ (_←MENU_, DM-42 _Σ-_, DM-32 _x²_) selects the [LastMenu](#LastMenu)
   command, which displays the previously selected menu.
 
 * 🟦 _A_ (_MAIN_, DM-32 _PARTS_) selects the [MainMenu](#MainMenu), a top-level
-  menu giving indicrect access to all other menus and features in DB48X (see
+  menu giving indirect access to all other menus and features in DB48X (see
   also the [Catalog](#Catalog) feature).
 
 * _F_ (_' ()_, DM-42 _XEQ_, DM-32 _Σ+_) opens an algebraic expression, i.e. it
@@ -312,7 +312,7 @@ a `▶︎`, and 🟨 _F6_ turns into `◀`︎. These keys can be used to
 navigate across the available menu entries. This replaces the _NXT_ and _PREV_
 keys on HP calculators.
 
-The [VariablesMenu](#VariablesMenu) is used to access global varibales. It is
+The [VariablesMenu](#VariablesMenu) is used to access global variables. It is
 invoked using the _H_ key, which is labeled _RCL_ on SwissMicros hardware. This
 menu is special in the sense that:
 
@@ -321,6 +321,11 @@ menu is special in the sense that:
 * The 🟨 function *recalls* its name without evaluating it.
 
 * The 🟦 function *stores* into the variable.
+
+### Menu Tree
+
+The complete hierarchy of all built-in menus is documented in the
+[Menu Tree](#soft-menus-tree).
 
 
 ## Differences with other RPLs
@@ -384,7 +389,9 @@ unintentional differences, since the implementation is completely new.
 * Local names are evaluated on DB48X, unlike in the HP versions of RPL. This
   makes it easier to use local subprograms in larger programs as if they were
   normal operations. In the less frequent case where you do not want evaluation,
-  you need to use `RCL` like for global variables.
+  you need to quote the name and use `RCL` like for global variables. However,
+  as a convenience in algebraic mode, expressions are not evaluated. See the
+  `Quote` command for details.
 
 * Lists do not evaluate as programs by default, like on the HP28, but unlike on
   the HP48 and later HP models. This can be controlled using the
@@ -573,6 +580,9 @@ operate on these items when it makes sense. Therefore:
 * As indicated [earlier](#representation-of-objects), quoted names in lists
   remain quoted, whereas on HP calculators, the quotes are removed.
 
+* The `MAP` operation on the HP50G recurses on inner lists. On DB48x, it does
+  not by default. This is controlled by the `ListDepthIteration` setting.
+  A value of `0` restores HP50G-style infinite recursion.
 
 ### Vectors and matrices differences
 
@@ -609,11 +619,11 @@ operate on these items when it makes sense. Therefore:
   produces a matrix with infinities. DB48X by default produces a `Divide by
   zero` error.
 
-* DB48X accept matrices and vectors as input to algebraic functions, and returns
+* DB48X accepts matrices and vectors as input to algebraic functions, and returns
   a matrix or vector with the function applied to all elements. For example,
   `[a b c] sin ` returns `[ 'sin a' 'sin b' 'sin c' ]`.
 
-* Similarly, DB48X accept operations between a constant and a vector or matrix.
+* Similarly, DB48X accepts operations between a constant and a vector or matrix.
   This applies the same binary operation to all components of the vector or
   matrix. `[ a b c ] x +` returns `[ 'a+x' 'b+x' 'c+x' ]`. Consistent with that
   logic, `inv` works on vectors, and inverts each component, so that
@@ -629,6 +639,12 @@ operate on these items when it makes sense. Therefore:
   words it returns `[[ 'a²+b·c' 'a·b+b·d' ] [ 'c·a+d·c' 'c·b+d²' ]]`. However,
   `[[a b][c d] 2. ^` performs the operation element-wise and returns
   `[[ 'a↑2.' 'b↑2.' ] [ 'c↑2.' 'd↑2.' ]]`.
+
+* When applied to a matrix or vector, `abs` returns a matrix or vector with the
+  `abs` of elements, whereas HP calcualtors compute the Euclidean norm. The
+  `norm` command performs like `abs` on HP calculators, computing the absolute
+  value for real numbers, the modulus for complex numbers, and the Euclidean
+  norm for arrays and vectors
 
 ### Mathematics
 
@@ -733,7 +749,7 @@ To navigate the help on the calculator, use the following keys:
   next link respectively. The keys _÷_ and _9_ also select the previous
   link, while the keys _×_ and _3_ can also be used to select the next link.
 
-* The _F6_ key correspond to the `←Menu` label, and returns one step back in
+* The _F6_ key corresponds to the `←Menu` label, and returns one step back in
   the help history. The _←_ key achieves the same effect.
 
 * To follow a highlighted link, click on the _ENTER_ key.
@@ -765,6 +781,14 @@ Additional contributors to the project include (in order of appearance):
 * LdBeth (andpuke@foxmail.com) (Bug fixes)
 * Thomas Eberhardt (sneakywumpus@gmail.com) (Bug fixes)
 * Ed van Gasteren (Ed@vanGasteren.net) (Bug fixes)
+* Jerome Ibanes (jibanes@gmail.com) (Dockerfile)
+* Jesus Cano (jcanovel@gmail.com) (bug fixes)
+* Riccardo Lucatuorto (gnuduncan@gmail.com)
+* Ralf Ahlbrink (raprism@users.noreply.github.com)
+* Mikael Djurfeldt (mikael@djurfeldt.com)
+* Pasquale Pigazzini (pasquale.pigazzini@gmail.com)
+* Wolf (wolfwings@wolfwings.us)
+- Alex Sergeev (alexander.sergeev@live.com)
 
 The authors would like to acknowledge
 
@@ -782,13 +806,13 @@ This work was placed by Christophe de Dinechin under the patronage of
 
 ### Hewlett and Packard
 
-Hand-held scientific calculators changed forever when Hewlett and Packard asked
+Hand-held scientific calculators changed forever when Bill Hewlett and Dave Packard asked
 their engineers to design and produce the HP35, then again when their company
 introduced the first programmable hand-held calculator with the HP65, and
 finally when they introduced the RPL programming language with the HP28.
 
 Christophe de Dinechin, the primary author of DB48X, was lucky enough to meet
-both Hewlett and Packard in person, and this was a truly inspiring experience.
+both Bill Hewlett and Dave Packard in person, and this was a truly inspiring experience.
 Launching the Silicon Valley is certainly no small achievement, but this pales
 in comparison to bringing RPN and RPL to the world.
 
@@ -870,7 +894,7 @@ The DB48X took several ideas and some inspiration from the
 [WP43](https://gitlab.com/rpncalculators/wp43) and
 [C47](https://47calc.com) projects.
 
-Walter Bonin initiated the WP43 firwmare for the DM42 as a "superset of the
+Walter Bonin initiated the WP43 firmware for the DM42 as a "superset of the
 legendary HP42S RPN Scientific".
 
 C47 (initially called C43) is a variant of that firmware initiated by Jaco
@@ -933,7 +957,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Introduction to RPL
 
 The original RPL (*Reverse Polish Lisp*) programming language was designed and
-implemented by Hewlett Packard for their calculators from the mid-1980s until
+implemented by Hewlett-Packard for their calculators from the mid-1980s until
 2015 (the year the HP50g was discontinued). It is based on older calculators
 that used RPN (*Reverse Polish Notation*). Whereas RPN had a limited stack size
 of 4, RPL has a stack size only limited by memory and also incorporates
@@ -996,7 +1020,7 @@ DB48X keyboard overlay, this key is also marked as `=` for that reason.
 
 Since introducing the first scientific pocket calculator, the HP-35, in 1972,
 and with it the reverse polish notation (RPN), Hewlett-Packard perfected its
-line-up for decades. This led to such powerhouses pocket computers such as as
+line-up for decades. This led to such powerhouse pocket computers as
 the HP-41C series, or tiny wonders of pocket efficiency such as the HP-15C. Many
 of these calculators, including the models we just cited, were capable of
 advanced mathematics, including dealing with complex numbers, matrix operations,
@@ -3439,29 +3463,48 @@ The following is the same program using an algebraic expression for readability:
 Instead of local variables, a program can take input from global variables.
 The following program, `SPH`, calculates the volume of a spherical cap of height
 *h* within a sphere of radius *R* using values stored in variables `H` and `R`.
-We can then use assignments like `R=10` and `H=3` to set the values before we
-run the program.
+
+We can use the `STO` command sto initialize the values for `R` and `H`:
 
 ```rpl
-« '1/3*Ⓒπ*H^2*(3*R-H)' →NUM »
-'SPH' STO
-
-R=10 H=3 SPH
-@ Expecting 254.46900 4941
-```
-
-Alternatively, we can use the `STO` command sto initialize the values for `R`
-and `H`:
-
-```rpl
-« '1/3*Ⓒπ*H^2*(3*R-H)' →NUM »
-'SPH' STO
-
 10 'R' STO
 3 'H' STO
+@ Keep these variables for the next step
+```
+
+Once this is done, we can enter the `SPH` program to compute the volume of a
+epherical cap:
+
+
+```rpl
+« '1/3*Ⓒπ*H^2*(3*R-H)' →NUM »
+'SPH' STO
+@ Keep this variable for the next step
+```
+
+Finally, we can execute that program using its name:
+
+```rpl
 SPH
 @ Expecting 254.46900 4941
+@ Keep SPH for the next step
 ```
+
+We can also use assignments such as `R=20` or `H=18` to change the value of global variables, and then evaluate the `SPHP` program with the new values:
+
+```rpl
+R=20 H=18 SPH
+@ Expecting 14 250.26427 67
+```
+
+Note that `R` is also the name of a built-in constant. If you type `R` and there
+is no variable by that name, this will be interpreted as the constant `ⒸR`.
+Setting the `ExplicitConstants` flag disables that automatic lookup of
+constants. Alternatively, you can use `Ⓥ` as a prefix to ensure that the
+following name is interpreted as a variable name. For example, while `Clone` is
+a built-in command, you can use a global variable named `ⓋClone`.
+
+
 
 ## Viewing and editing programs
 
@@ -3815,12 +3858,12 @@ stack into global variable `A` without removing it from the stack..
 
 Using global variables is rarely the most efficient, but it has the benefit that
 it leaves the inputs and output of the program avaiable for later use. This can
-be beneficial if these values are precious and should be preserved.
+be useful if these values are precious and should be preserved.
 
 ```rpl
 «
   'R' Store 'H' Store
-  2 Ⓒπ →Num * R * R H + *
+  2 Ⓒπ →Num * r * r H + *
   'A' Copy
 »
 'ACyl' Store
@@ -3830,7 +3873,19 @@ be beneficial if these values are precious and should be preserved.
 ```
 
 Note that global variables stick around in the current directory after the
-program executes. They can be purged using `{ R H A } Purge`.
+program executes. They can be purged using `{ r H A } Purge`.
+
+Also note that we can retrieve the value stored in `R` using `r`. Unlike the
+HP50G, DB48x is case-independent by default. Set the `DistinguishSymbolCase`
+flag if you prefer the HP50G behavior of distinguishing `r` from `R`.
+
+Furthermore, `R` is also the name of a [built-in constant](#r-constant).  If no
+global by that name exists, `R` will be interpreted as that constant, unless you
+set the flag `ExplicitConstants`. This matches the behaviour of the HP50G with
+constants such as `e` or `π`. Unlike for variables, case always matters for
+constants. For example, `ⒸG` is the gravitational constant, whereas`Ⓒg` is the
+gravity acceleration on Earth.
+
 
 ### ACyl: Using algebraic expressions
 
@@ -3839,8 +3894,8 @@ and global variables. Using algebraic expressions can make programs easier to
 read, since the operations look similar to normal mathematical expressions.
 
 ```rpl
-« 'R' Store 'H' Store
-'2*Ⓒπ*R*(R+H)' →Num 'A' Copy »
+« 'r' Store 'H' Store
+'2*Ⓒπ*r*(r+H)' →Num 'A' Copy »
 'ACyl' Store
 
 3_m 2_m ACyl
@@ -4332,6 +4387,319 @@ To enter `IFTE` in a program, select the `TestsMenu` (🟦 _3_) and then
 the _IFTE_ command (🟨 _F6_).
 # Release notes
 
+## Release 0.9.20 "Corpus" - Polynomials and algebraic expressions
+
+This release focuses on support for polynomial, root finding and algebraic
+expressions, and on making evaluation of algebraic expressions behave closer to
+algebraic mode on the HP50G, i.e. treat `'` like the HP50G treats a backquote
+expression or an expression entered in algebraic mode.
+
+### New features
+
+* `LU` command generating LU-decomposition for matrices
+* `REF`, `RREF` and `RREFP` commands to put matrices in Echelon form
+* `Order` command to reorder variables in the current directory
+* `PEval`, `PRoot` and `Zeros` commands for polynomials and expressions
+* `Unique` and `QuickUnique` commands to keep unique values in a list
+* `DEPND` and `INDEP` commands to set dependent/independent variables
+* Implicitly recognize `xlib` and `constants` by name, e.g. `c` or `Dedicace`
+* Flags to control the above, `AutomaticConstants` and `AutomaticXLibs`
+* Preserve symbol case for existing variables
+* Creating symbols matching builtin names using the `Ⓥ` prefix, e.g. `ⓋHelp`
+* Value comparison for `Sort` or `Unique` now works with expressions
+* Simplification now factors common ratios, e.g. `A*X+B*X`
+* Primitive and derivative of a polynomial
+* Several new constants lifted from the R47 constant catalog
+* Hyperbolic secant functions `sech`,`csch`, `coth`, and their inverse
+* `CrDir` can now take a list as input to create multiple directories
+
+### Bug fixes
+
+* Crash in solver in case of error evaluating some intermediate step
+* Correctly put parentheses in `'sin(x+1)'` rendered in text mode
+* Occasional `object_error` in `as_text()` on simulator
+* Crash in `IFT` / `IFTE` if given invalid input
+* Detection of expression vs. RPL programs during evaluation
+* Crash in quotient or decimal conversions given erroneous input
+* Parsing of `0+ⅈ`, was incorrectly parsed as `0ⅈ`
+* Negating `0` no longer shows `-0`
+* No longer allow incorrect mixing of ranges and uncertain numbers
+* Dividing a polynomial by a number now divides constant terms
+* Correctly split expressions that contain a single term when testing equations
+* Fix simulator race condition while loading the keymap
+* `STO` will no longer overwrite a directory with a non-directory value
+* `Purge` will no longer erase non-empty directories, `PGDir` is now needed
+* `RAr` constant uncertainty was incorrectly set to 0
+* Swap keyboard legacy and 42k keymaps in simulator
+
+### Improvements
+
+* Purely imaginary values such as `0+3ⅈ` now render as `3ⅈ`
+* The `LNAME` command now returns a list in algebraic expressions
+* `Σ`, `∏`, `∂` and `∫`, `COMB` and `PERM` now partially evaluate as on HP50G
+* Refactor detection of symbolic arguments in functions for scalability
+* Refactor detection of algebraic functions for scalability
+* Signal when `ui_refresh()` takes too long due to internal race condition
+* Do not drop input in multisolver when a wrong value is given
+* Quick exit when parsing empty commands
+* Rounding for `→ℚ` more accurately respects displayed precision
+* Internal factoring with square roots and fractions `to_sqrt`, used in `PRoot`
+* Internal integer and fraction square root, used in simplification
+* Reorganize the polynomials menu to bring useful functions at first level
+* Accept polynomials and tagged expressions in plotting commands
+* Do not default imaginary part to 1 in `complex::make` (was error prone)
+* Optimize the integer power case for range objects
+* Zero detection for expressions and polynomials in simplifications
+* Makefiles no longer emit confusing `mv` output in `make compare`
+* New `stack_buffer` facility in the runtime to keep multiple exansions on stack
+* Add `ISOL` tests for `sec`, `csc`, `cot` functions
+* Consolidate project guidance into `AGENTS.md`
+* Simplify simulator beep control logic: `-N` blocks beeps, `-n` restores them
+* Refresh implementation status
+* Update documentation for `PGDIR`, `STO` and `RCL` new capabilties
+* Internal facility to swap arbitrary stack levels
+* Update man page
+* Add recorder_scope-compatible instrumentation for GC and available memory
+* Accelerate display of constants/equations/library menus
+
+
+## Release 0.9.19 "Spirit" - More constants, more space left
+
+This release includes a larger-than-usual number of changes, mostly to
+make room for more constants. A side effect is that we gained a lot of
+additional space for the DM42, giving us a lot of headroom for future
+developments. On the other hand, this may cause unexpected bugs. If
+you run DB48x on a DM42, please check for anything out of the ordinary
+and report it.
+
+### New features
+
+* Hierarchical constants library, with astronomy data for planets
+* fonts: Add astronomy-related glyphs and a few more
+* simulator: RPL evaluation with -e, to preload the calculator
+* simulator: RPL console evaluation mode with -E (prints to console)
+* simulator: RPL evaluation from file with -f and -F
+* simulator: headless mode with -H (no window showing)
+* simulator: screen capture with -C for scripting
+* simulator: Persist window geometry across runs
+* simulator: Persist calculator state on exit
+* ui: Enhanced behaviour for EEX key (skips to exponent)
+* variables: Store and recall to path
+* GCD (GreatestCommonDenominator) and LCM (LeastCommonMultiple)
+* Quote command
+* Hitting EXIT while editing clears menu
+
+### Bug fixes
+
+* variables: Memory corruption when replacing object with subobject
+* Fix parsing bug causing partial load of .48k keymaps beyond "@"
+* arrays: Strip tags from array and index in `get` and `put`
+* solver: Improve solver precision in Std mode
+* constants: Correcting the standard uncertainty of several constants.
+* constants: Correct the Tau mass relative uncertainty.
+* Make sure simulators get the correct help file (distinct .qrc files)
+* Show empty menu when entering empty directory in 1-line mode
+* Accept decimal / fraction conversions for arrays containing names
+* Make it possible to reload `Demo.48s` after initial run on DM42
+* Correctly show error message while loading files
+* ui: Do not remove `-` when using CHS in an expression like `5-3`.
+* bignum: Remove leftover printf statement
+* menu: Refresh `CustomMenu` if updated while active
+* simulator: Fix race condition in Paste command
+* ci: keep Android AABs under `android/`
+* ci: package db50x Windows simulator from the correct path
+* wasm: bootstrap recorder and host tools correctly
+* ci: use libsystre in Windows packaging
+* doc: Fix description of simulator -m option
+* ids: Fix aliases for EquationValue and XLibValue
+* menus: Connect menu entries incorrectly marked as unimplemented
+* Fix help topics for various constants / constant groups
+
+### Improvements
+
+* fw: Move all C / C++ strings to the QSPI on DM42 (save >80K flash)
+* tests: Replace `LSHIFT, I` with `ID_ConstantsMenu` for readaibility
+* tests: Run cstlib / eqlib tests beyond first error
+* tests: Use `STD` instead of `12 SIG`
+* tests: Do not save state file after running the test suite
+* Do not waste memory while converting`<<`, `>>` and `->`
+* Improve rebuild in case of QSPI CRC mismatch
+* Enable `make TAR_EXTRA_FILES= install` to install only binaries
+* makefile: Generate listing files like the old makefiles
+* makefile: Add image comparison targets like in old makefile
+* makefile: Avoid extraneous / in paths
+* makefile: Pass DB48X_VERSION through the command-line
+* debug: Change debug_printf to use all 12 rows
+* commands: micro-optimize factorization of cmp == 0 test
+* chuck: Make the CHUCK command optional for repeatable builds
+* install: Add `DISK_NAME` variables to specify volume name
+* ui: Simplify display of alpha and user indicators
+* doc: Add information on how to start Fedora on WSL
+* ui: Fix misspelling in comment
+* doc: Make the age-verification LEGAL-NOTICE more general
+* chore(ci): bump packages versions
+* doc: Add Pasquale Pigazzini as an author
+* solver: Fix compiler warning about signed vs unsigned
+* library: Fix comment and remove duplicate entry
+* commands: Add `Γ` alias for `Gamma`
+* menus: Update and reorganize parts menu
+* locals: Detect incorrect argument count in algebraic function calls
+* locals: Do not evaluate algebraic expression passed as argument
+* version: Update copyright year to 2026
+* parser: Accept `,` as a separator in algebraic function calls
+* Reorder the constants menu for efficiency
+
+
+## Release 0.9.18 "Chuck" - Sucess begins inside
+
+This release includes a number of under-the-hood improvements that
+will make the life of maintainers easier in the long run.
+
+### New features
+
+* Implement the `Chuck` command
+* Make `xq` recognize more patterns during simplification
+* List the menus in the help file
+* Support for tables in the help file
+* `ListRecursionDepth` setting for `map`, `reduce`, `filter`
+
+### Bug fixes
+
+* Remove `-fsanitize` option on macOS (hangs on macOS 26.4)
+* Fix incorrect evaluation of constants during simplification
+
+### Improvements
+
+* Switch to the make-it-quick build system
+* Shared cross-platorm clipboard code
+* Automate the build of releases
+* Put the variables naming expression patterns in a namespace
+* Improved instructions for AI agents
+* Repair GitHub actions
+* Improve solver shuffle around singularities and errors
+* Fix path for grep testing in case of example test failure
+
+## Release 0.9.17 - Rational approximation, indexing, Android fixes
+
+This incremental release delivers new features and fixes a number of bugs.
+
+### New features
+
+* Add `→Qπ` command for rational approximation with π, √n, ln(n) and e
+* Apply `→Q` and `→Qπ` to numbers in expressions
+* Add array/list indexing support in algebraic expressions e.g. `'L(1)'`
+* Add ability to `Store` / `Copy` to `L(1)`
+* Add "real" `ConstantName` and `ConstantValue` commands
+
+### Bug fixes
+
+* Fix parentheses around exponents in graph rendering of `'(a+b)^(c+d)'`
+* Fix label for `ToRelativeUncertainty`, `→RelRnd` instead of `→RelUnc`
+* Fix command alias mapping for `RNrm`
+* Improve parsing of implicit multiplication for a number of edge cases
+* Fix `utf8_next` for garbage bytes following ASCII characters
+* Fix unsatisfied symbol errors with gcc/emcc in the WASM build
+* Save Android system state when app is suspended or hidden
+* Ensure Android help resources are extracted and available at runtime
+* Restore image testing functionality in the test framework
+* Updated test images that had become obsolete
+* Report errors when saving reference files in tests
+* Avoid stack corruption / crash when parsing malformed help index
+* Fix computation of `DFC(2.3)`
+* Fix null-pointer crash if the multiple equation solver fails
+
+
+### Enhancements
+
+* Constrain `→Q` and `→Qπ` behavior to FIX/SCI/ENG setting (like HPs)
+* Minor optimization for `program::run`
+* Save about 3.4K of RAM on physical devices
+* Speed up test runs while increasing default wait time for stability
+* Documentation cleanup and additions, add more RPL examples
+* Add clear build-time error message when a help topic exceeds 80 characters
+* Add demo for interactive menu use
+* Optimize away redundant argument checking
+* Documentation for DCF and DCF2F
+
+
+## Release 0.9.16 - Factorization, precision fixes, and documentation
+
+This release adds prime and factorization features, improves numeric precision,
+and expands simulator and user documentation.
+
+### New features
+
+* Add `IsPrime`, `Factors`, `PrevPrime` and `NextPrime` commands
+* Add `MaxFactorsBits` and `MaxFactorIterations` settings for factorization
+* Add `TRIGSIN` command for Pythagorean identity rewrites
+* Add a Unix man page and simulator documentation
+* Add simulator recorder dump on `F16`; move demo playback to `F13`-`F15`
+* Paint navigation arrows in `SHOW`
+* Accept `CR/LF` line endings when reading Windows files
+* Display keyboard access paths in help for commands
+
+### Bug fixes
+
+* Fix `expm1` precision loss for small arguments, including complex values
+* Fix `ln1p` precision loss for small arguments
+* Fix shift behavior after transient alpha, support shift/xshift for transalpha
+* Reset `show_x` and `show_y` when exiting `SHOW`
+* Ensure the simulator creates the `screens` directory when needed
+* Fix an infinity optimization regression in arithmetic
+* Add missing null-dereference checks in factorization code
+* Treat `^` as right-associative like on the HP50G
+
+### Enhancements
+
+* Refactor and optimize the decimal factorization code path, with expanded tests
+* Add conversion support to `float` and `double` in algebraic code
+* Update to recorder v1.2.3
+* Add documentation updates (DeepWiki reference, legal notice updates)
+* Add build preparation for upcoming make-it-quick integration
+* Welcome several new authors to the team, see AUTHORS file
+* Add LEGAL-NOTICE.md about compliance with California and Colorado laws
+* Add menu entries for `hypot` and `atan2`
+
+## Release 0.9.15 "Myriam" - GitHub automation, portability
+
+This release focused on GitHub and GitLab automation
+
+### New features
+
+* GitHub automation automatically builds various packages
+* Preparation for GitLab automation (still largely untested)
+* Windows simulator
+* Android package
+* WebAssembly application (WASM) now has help and configuration files
+* DM42n build (differs from DM32 only in the help files)
+* Dockerfile to create a container with the simulator
+* Add `ρ` in `RangesMenu`
+* Accept units when creating a range from components
+* Add `Range→` command that expands ranges with units
+
+### Bug fixes
+
+* Corrected typos in some builtin constants
+* Spelling and grammar fixes in documentation
+* Build failure for wasm due to use of `source`, a `bash`-only syntax
+* WebAssembly application no longer uses 100% CPU
+* The simulator can now be launched from any directory
+* The macOS simulator correctly launches from the Finder or Dock
+* Portability bug fixes in the DMCP emulation
+* The Settings menu is now correctly refreshed after `ResetModes`
+* Fix double-shifted arrow keys
+* Correctly show help for `Swap`, `Negate`, and `Cycle`
+* Fix order on stack for `Explode` on a range value
+* Android build bug fixes
+
+### Enhancements
+
+* Add osx program in lauch.json
+* The simulator no longer overwrites configuration files by default
+* Builds that use `gcc` now enable more warnings
+* Simplify shift-handling logic
+
+
 ## Release 0.9.14 "Latran" - Android preparation
 
 This is a very minor release with bug fixes notably for Android
@@ -4534,13 +4902,13 @@ HP48 implementation.
 
 ## Implemented commands
 
-
-The following is an extensive list of commands.
+The following is an extensive list of implemented commands, some with multiple
+spellings.
 
 * `!`
 * `%`
+* `%Ch`
 * `%T`
-* `%Total`
 * `*`
 * `+`
 * `-`
@@ -4553,6 +4921,8 @@ The following is an extensive list of commands.
 * `abs`
 * `acos`
 * `acosh`
+* `acot`
+* `acsc`
 * `AlarmMenu`
 * `AlgebraMenu`
 * `AllEquationVariables`
@@ -4561,7 +4931,7 @@ The following is an extensive list of commands.
 * `AlphaForeground`
 * `Amort`
 * `AmortTable`
-* `and`
+* `And`
 * `AngleMode`
 * `AnglesMenu`
 * `Apply`
@@ -4570,6 +4940,7 @@ The following is an extensive list of commands.
 * `arg`
 * `ArithmeticMenu`
 * `Arry→`
+* `asec`
 * `asin`
 * `asinh`
 * `Asn`
@@ -4638,6 +5009,7 @@ The following is an extensive list of commands.
 * `Col+`
 * `Col-`
 * `Collect`
+* `Color`
 * `ColΣ`
 * `Col→`
 * `comb`
@@ -4647,6 +5019,7 @@ The following is an extensive list of commands.
 * `CompareMenu`
 * `CompatibleBasedNumbers`
 * `CompatibleGROBs`
+* `CompatiblePolynomials`
 * `CompatibleTypes`
 * `ComplexIAfterImaginary`
 * `ComplexIBeforeImaginary`
@@ -4656,9 +5029,8 @@ The following is an extensive list of commands.
 * `conj`
 * `ConLib`
 * `Const`
-* `ConstantName`
+* `ConstantRange`
 * `Constants`
-* `ConstantValue`
 * `cont`
 * `Convert`
 * `ConvertToUnit`
@@ -4666,9 +5038,11 @@ The following is an extensive list of commands.
 * `Corr`
 * `cos`
 * `cosh`
+* `cot`
 * `CountBits`
 * `Cov`
 * `CrDir`
+* `csc`
 * `Cst`
 * `CstRU`
 * `CstSU`
@@ -4692,6 +5066,7 @@ The following is an extensive list of commands.
 * `C→R`
 * `Date`
 * `Date+`
+* `Date-`
 * `DateDash`
 * `DateDot`
 * `DateForeground`
@@ -4702,7 +5077,6 @@ The following is an extensive list of commands.
 * `DateTime`
 * `DayBeforeMonth`
 * `dbug`
-* `DDays`
 * `DebugMenu`
 * `DebugOnError`
 * `Dec`
@@ -4715,6 +5089,8 @@ The following is an extensive list of commands.
 * `det`
 * `Detach`
 * `DetailedTypes`
+* `DFC`
+* `DFC2F`
 * `DifferentialSolverMenu`
 * `Disp`
 * `DisplayDigits`
@@ -4770,9 +5146,6 @@ The following is an extensive list of commands.
 * `Eng`
 * `Eq`
 * `EqnLib`
-* `EquationName`
-* `EquationSolver`
-* `EquationValue`
 * `equiv`
 * `erf`
 * `erfc`
@@ -4786,7 +5159,7 @@ The following is an extensive list of commands.
 * `ErrorForeground`
 * `Eval`
 * `EvalEq`
-* `excludes`
+* `Excludes`
 * `ExitClearsMenu`
 * `ExitKeepsMenu`
 * `exp`
@@ -4797,6 +5170,7 @@ The following is an extensive list of commands.
 * `ExpLogIdentitiesMenu`
 * `ExpLogMenu`
 * `expm`
+* `Factors`
 * `False`
 * `FancyExponent`
 * `FC?`
@@ -4827,9 +5201,9 @@ The following is an extensive list of commands.
 * `FS?C`
 * `FS?S`
 * `Function`
-* `Gamma`
 * `GAnd`
 * `GC`
+* `GCD`
 * `GCIconForeground`
 * `GCStats`
 * `GCStatsClearAfterRead`
@@ -4881,6 +5255,7 @@ The following is an extensive list of commands.
 * `HideSeconds`
 * `HideTime`
 * `HideVoltage`
+* `Histogram`
 * `HMS+`
 * `HMS-`
 * `HMS→`
@@ -4888,6 +5263,7 @@ The following is an extensive list of commands.
 * `HorizontalLists`
 * `HorizontalProgramRendering`
 * `HorizontalVectors`
+* `HSV`
 * `HyperbolicMenu`
 * `Idn`
 * `IFT`
@@ -4913,6 +5289,7 @@ The following is an extensive list of commands.
 * `IOMenu`
 * `IP`
 * `Isol`
+* `IsPrime`
 * `JDN`
 * `JDN→`
 * `Keys`
@@ -4925,10 +5302,10 @@ The following is an extensive list of commands.
 * `LaxArrayResizing`
 * `LazyEvaluation`
 * `LCD→`
+* `LCM`
 * `LeadingZero`
 * `LeftShiftBackground`
 * `LeftShiftForeground`
-* `lgamma`
 * `LibEq`
 * `Library`
 * `Libs`
@@ -4940,10 +5317,12 @@ The following is an extensive list of commands.
 * `ListAsData`
 * `ListAsProgram`
 * `ListMenu`
+* `ListRecursionDepth`
 * `List→`
 * `ln`
 * `ln1p`
 * `LName`
+* `lnΓ`
 * `log`
 * `log2`
 * `LogFit`
@@ -4965,6 +5344,11 @@ The following is an extensive list of commands.
 * `MathModesMenu`
 * `MatrixMenu`
 * `Max`
+* `MaxFactorIterations`
+* `MaxFactorsBits`
+* `MaxLaguerreIterations`
+* `MaxPolynomialDegree`
+* `MaxRootDivisor`
 * `MaxFlags`
 * `MaxH`
 * `MaximumDecimalExponent`
@@ -4998,12 +5382,13 @@ The following is an extensive list of commands.
 * `MultipleSteps`
 * `MultiSolverMenu`
 * `NameDisplayMode`
-* `NAnd`
+* `nand`
 * `NDupN`
 * `NeedToClearErrors`
 * `neg`
 * `NegativeUnderflowIndicator`
 * `NextEq`
+* `NextPr`
 * `Nip`
 * `NoAngleUnits`
 * `NoAutoSimplify`
@@ -5020,6 +5405,7 @@ The following is an extensive list of commands.
 * `NoPositiveUnderflow`
 * `NoProgramLastArguments`
 * `NOr`
+* `norm`
 * `NormalPolynomialRender`
 * `NoStackAutoScale`
 * `NoStackSave`
@@ -5027,6 +5413,7 @@ The following is an extensive list of commands.
 * `NoTrailingDecimal`
 * `NoUndefinedResult`
 * `NSub`
+* `NewStylePolynomials`
 * `Num`
 * `NumberDotOrComma`
 * `NumberedVariables`
@@ -5058,7 +5445,9 @@ The following is an extensive list of commands.
 * `Path`
 * `PCov`
 * `perm`
+* `PgAll`
 * `PgDir`
+* `Pi`
 * `Pick`
 * `Pick3`
 * `Pict`
@@ -5084,6 +5473,7 @@ The following is an extensive list of commands.
 * `PredX`
 * `PredY`
 * `PrefixPolynomialRender`
+* `PrevPr`
 * `PrincipalSolution`
 * `PrintingMenu`
 * `ProbabilitiesMenu`
@@ -5092,7 +5482,6 @@ The following is an extensive list of commands.
 * `Prompt`
 * `PSDev`
 * `Purge`
-* `PurgeAll`
 * `PushEvaluatedAssignment`
 * `PushOriginalAssignment`
 * `Put`
@@ -5101,12 +5490,14 @@ The following is an extensive list of commands.
 * `PwrFit`
 * `P→R`
 * `QuickSort`
+* `Quote`
 * `Rad`
 * `rand`
 * `Random`
 * `RandomGeneratorBits`
 * `RandomGeneratorOrder`
 * `RangeMenu`
+* `Range→`
 * `RanM`
 * `RcEq`
 * `Rcl`
@@ -5129,6 +5520,7 @@ The following is an extensive list of commands.
 * `rem`
 * `ReorderTerms`
 * `ReportPrecisionLoss`
+* `Res`
 * `ResetModes`
 * `ResultBackground`
 * `ResultFont`
@@ -5145,6 +5537,7 @@ The following is an extensive list of commands.
 * `RLB`
 * `RLC`
 * `Rnd`
+* `RNrm`
 * `Roll`
 * `RollD`
 * `Root`
@@ -5154,7 +5547,6 @@ The following is an extensive list of commands.
 * `RoundMenuForeground`
 * `Row+`
 * `Row-`
-* `RowNorm`
 * `Row→`
 * `RR`
 * `RRB`
@@ -5184,6 +5576,7 @@ The following is an extensive list of commands.
 * `SDev`
 * `SearchBackground`
 * `SearchForeground`
+* `sec`
 * `SelectedMenuForeground`
 * `SelectionBackground`
 * `SelectionForeground`
@@ -5234,10 +5627,8 @@ The following is an extensive list of commands.
 * `SoftwareDisplayRefresh`
 * `SolverImprecision`
 * `SolverIterations`
+* `SolverShuffles`
 * `SolvingMenu`
-* `SolvingMenuRecall`
-* `SolvingMenuSolve`
-* `SolvingMenuStore`
 * `Sort`
 * `sq`
 * `SquareMenuBackground`
@@ -5259,6 +5650,7 @@ The following is an extensive list of commands.
 * `StandardExponent`
 * `StateNameForeground`
 * `StatisticsMenu`
+* `StatsPlotBins`
 * `Std`
 * `StdRnd`
 * `StepByStepAlgebraResults`
@@ -5333,6 +5725,7 @@ The following is an extensive list of commands.
 * `ToolsMenu`
 * `TooManyDigitsErrors`
 * `ToPolar`
+* `ToRange`
 * `ToSpherical`
 * `ToStr`
 * `Tot`
@@ -5341,9 +5734,11 @@ The following is an extensive list of commands.
 * `TrailingDecimal`
 * `Tran`
 * `TrigIdentitiesMenu`
+* `TrigSin`
 * `Trn`
 * `Trnc`
 * `True`
+* `Truth`
 * `TruthLogicForIntegers`
 * `TVars`
 * `TVM`
@@ -5405,9 +5800,6 @@ The following is an extensive list of commands.
 * `UVal`
 * `Var`
 * `VariablesMenu`
-* `VariablesMenuExecute`
-* `VariablesMenuRecall`
-* `VariablesMenuStore`
 * `VariableWidthDigits`
 * `Vars`
 * `VectorMenu`
@@ -5421,13 +5813,15 @@ The following is an extensive list of commands.
 * `Wait`
 * `XCol`
 * `XLib`
-* `XlibName`
-* `XlibValue`
-* `Xor`
+* `XLibName`
+* `XLibValue`
+* `xor`
 * `xpon`
+* `XQ`
 * `XRng`
 * `xroot`
 * `XVars`
+* `XYPlotBins`
 * `x³`
 * `YCol`
 * `YearFirst`
@@ -5438,6 +5832,7 @@ The following is an extensive list of commands.
 * `ZeroPowerZeroIsOne`
 * `ZeroPowerZeroIsUndefined`
 * `|`
+* `Γ`
 * `Σ`
 * `Σ+`
 * `Σ-`
@@ -5450,6 +5845,8 @@ The following is an extensive list of commands.
 * `ΣXY`
 * `ΣY`
 * `ΣY2`
+* `℮`
+* `→%Range`
 * `→2D`
 * `→3D`
 * `→Cartesian`
@@ -5461,19 +5858,26 @@ The following is an extensive list of commands.
 * `→Q`
 * `→QDigits`
 * `→QIterations`
+* `→QπMaxPrime`
 * `→Rad`
 * `→Row`
+* `→Un`
 * `→Ur`
 * `→Us`
 * `→πr`
+* `→∆Range`
 * `↓Match`
 * `∂`
 * `∆List`
 * `∏`
 * `∏List`
+* `−∞`
 * `√`
 * `∛`
+* `∞`
 * `∠`
+* `∩`
+* `∪`
 * `∫`
 * `≠`
 * `≤`
@@ -5575,7 +5979,6 @@ implemented by the time the project reaches version 1.0.
 * `F0λ`
 * `FACTOR`
 * `FACTORMOD`
-* `FACTORS`
 * `FANNING`
 * `FAST3D`
 * `FCOEF`
@@ -5628,7 +6031,6 @@ implemented by the time the project reaches version 1.0.
 * `IQUOT`
 * `IREMAINDER`
 * `ISOM`
-* `ISPRIME?`
 * `I→R`
 * `JORDAN`
 * `KER`
@@ -5677,7 +6079,6 @@ implemented by the time the project reaches version 1.0.
 * `MULTMOD`
 * `MUSER`
 * `NDIST`
-* `NEXTPRIME`
 * `NOVAL`
 * `NUMX`
 * `NUMY`
@@ -5687,12 +6088,10 @@ implemented by the time the project reaches version 1.0.
 * `PARSURFACE`
 * `PARTFRAC`
 * `PCAR`
-* `PCOEF`
 * `PCONTOUR`
 * `PDIM`
 * `PERINFO`
 * `PERTBL`
-* `PEVAL`
 * `PICTURE`
 * `PLOT`
 * `PLOTADD`
@@ -5705,9 +6104,7 @@ implemented by the time the project reaches version 1.0.
 * `POWMOD`
 * `PREDV`
 * `PREVAL`
-* `PREVPRIME`
 * `PROMPTSTO`
-* `PROOT`
 * `PROPFRAC`
 * `PSDEV`
 * `PSI`
@@ -5717,7 +6114,6 @@ implemented by the time the project reaches version 1.0.
 * `PUSH`
 * `PVIEW`
 * `PX→C`
-* `→Qπ`
 * `qr`
 * `QR`
 * `QUAD`
@@ -5730,7 +6126,6 @@ implemented by the time the project reaches version 1.0.
 * `RCIJ`
 * `RCLALARM`
 * `RCLF`
-* `RCLVX`
 * `RDM`
 * `REF`
 * `REMAINDER`
@@ -5789,7 +6184,6 @@ implemented by the time the project reaches version 1.0.
 * `SREPL`
 * `STOALARM`
 * `STOF`
-* `STOVX`
 * `STREAM`
 * `STURM`
 * `STURMAB`
@@ -5820,7 +6214,6 @@ implemented by the time the project reaches version 1.0.
 * `TRIG`
 * `TRIGCOS`
 * `TRIGO`
-* `TRIGSIN`
 * `TRIGTAN`
 * `TRN`
 * `TRUNC`
@@ -5849,7 +6242,6 @@ implemented by the time the project reaches version 1.0.
 * `YSLICE`
 * `YVOL`
 * `YYRNG`
-* `ZEROS`
 * `ZFACTOR`
 * `ZVOL`
 * `;` (Semicolon)
@@ -5923,8 +6315,9 @@ This sections tracks some performance measurements across releases.
 # Constants library
 
 The DB48X calculator features a library of constants covering mathematics,
-physics, chemistry and computer science. The built-in constants can be extended
-using the `config/constants.csv` configuration file.
+physics, chemistry, astronomy, materials science and computer science.
+The built-in constants can be extended using the `config/constants.csv`
+configuration file.
 
 ## Mathematics constants
 
@@ -5971,34 +6364,96 @@ This constant defines corresponds to one radian.
 
 This constant holds the value of two times [π](#π-constant).
 
+### τ constant
+
+The circle constant tau, equal to 2π (approximately 6.28318). An alias for
+[twoπ](#twoπ-constant), tau represents the ratio of a circle's circumference
+to its radius. Some mathematicians argue that τ is more natural than π for many
+formulas, particularly in trigonometry and angular mathematics.
+
 ### angl constant
 
 This constants holds one half-turn expressed in degrees.
 
+### −∞ constant
 
-## Chemistry constant
+Minus infinity, the negative counterpart of ∞.
+Its numerical value is an arbitrary large negative number that
+is not really infinite.
+
+### γ constant
+
+The Euler-Mascheroni constant is a mathematical constant
+approximately equal to 0.5772, appearing in analysis and
+number theory, notably in the Laurent expansion of the Riemann
+zeta function and in integrals involving the natural logarithm.
+Its exact nature (rational or irrational) remains unknown.
+
+### ϕ constant
+
+The golden ratio, approximately 1.618033988749895. This is the positive solution
+to the equation x² = x + 1, which can also be expressed as (1 + √5)/2. The golden
+ratio appears frequently in geometry, art, architecture, and nature. It is the
+most irrational of all irrational numbers in the sense that it has the slowest
+converging continued fraction expansion.
+
+### Gⓒ constant
+
+Catalan's constant, approximately 0.9159655941772191. This constant appears in
+combinatorics and is defined as the alternating sum: G = 1 - 1/9 + 1/25 - 1/49 + ...
+= Σ((-1)ⁿ/(2n+1)²). It appears in various mathematical contexts including the
+evaluation of certain integrals and series.
+
+### K₀ constant
+
+Khinchin's constant, approximately 2.6854520010653. For almost all real numbers,
+the geometric mean of the first n terms in the continued fraction representation
+tends to Khinchin's constant as n approaches infinity. This is a remarkable result
+in number theory discovered by Aleksandr Khinchin.
+
+### Fα constant
+
+Feigenbaum's alpha constant, approximately 2.5029078750959. This is the
+ratio between the diameters of successive circles in the bifurcation diagram
+of the logistic map. It is one of the two Feigenbaum constants in chaos theory.
+
+### Fδ constant
+
+Feigenbaum's delta constant, approximately 4.6692016091030. This is the
+limiting ratio of each bifurcation interval to the next in the period-doubling
+cascade of the logistic map. Together with Fα, this universal constant appears
+in many chaotic systems, not just the logistic map.
+
+### δₛ constant
+
+The silver ratio, approximately 2.4142135623731, equal to 1 + √2. Like the golden
+ratio, the silver ratio appears in various geometric and mathematical contexts.
+It is the positive solution to x² = 2x + 1 and represents the ratio of sides in
+a silver rectangle.
+
+
+## Chemistry constants
 
 ### NA constant
 
 Avogradro constant is the number of constituent particles per mole.
 
 Since the redefinition of the mole in 2019, the `NA` constant is therefore
-defined as an exact value.
+defined as an exact value. [CODATA](#codata)
 
 ### k constant
 
-The Boltzmann constant is the proportionality factor that relates the average
-relative thermal energy of particles in a gas with the thermodynamic temperature
-of the gas.
+The Boltzmann constant is the proportionality factor that relates the average relative thermal
+energy of particles in a gas with the thermodynamic temperature of the gas.
 
 Since the 2019 redefinition of the SI units, the `k` constant is therefore
-defined as an exact value.
+defined as an exact value. [CODATA](#codata)
 
 ### Vm constant
 
 Molar volume of an ideal gas at 1 atmosphere of pressure and 0°C.
 
-By convention, it is chosen as to be the exact result of `R*StdT/StdP`.
+By convention, it is chosen as to be the exact result of `R·StdT/StdP`.
 
 ### R constant
 
@@ -6009,19 +6464,15 @@ rather than energy per temperature increment per particle.
 Since the 2019 redefinition of the SI units, the `R` constant is therefore
 defined as an exact quantity.
 
-### σ constant
-
-Stefan-Boltzmann constant, the factor of proportionality in the Stefan-Boltzmann
-law describing the intensity of the thermal radiation emitted by matter in terms
-of that matter's temperature.
-
-For an ideal absorber/emitter or black body, the Stefan–Boltzmann law states
-that the total energy radiated per unit surface area per unit time (also known
-as the radiant exitance) is directly proportional to the fourth power of the
-black body's temperature, T:`M°=σ·T⁴`
-
 Since the 2019 redefinition of the SI units, the `σ` constant is defined as an
-exact result.
+exact result. [CODATA](#codata)
+
+### F constant
+
+Faraday constant. In physical chemistry, the Faraday constant is a
+physical constant defined as the quotient of the total electric charge
+(`qe`) by the amount (`n`) of elementary charge carriers in any given
+sample of matter. It's an exact constant. [CODATA](#codata)
 
 ### StdT constant
 
@@ -6033,7 +6484,7 @@ measurements used to allow comparisons to be made between different sets of
 data. The most used standards are those of the International Union of Pure and
 Applied Chemistry (IUPAC, used by DB48X) and the National Institute of Standards
 and Technology (NIST). Other organizations have established a variety of other
-definitions. By convention, it is chosen as the exact value StdT=273.15_K`.
+definitions. By convention, it is chosen as the exact value `StdT=273.15_K`.
 
 ### StdP constant
 
@@ -6047,13 +6498,6 @@ Applied Chemistry (IUPAC, used by DB48X) and the National Institute of Standards
 and Technology (NIST). Other organizations have established a variety of other
 definitions. By convention, it is chosen as the exact value `StdP=101.325_kPa`.
 
-### F constant
-
-Faraday constant. In physical chemistry, the Faraday constant is a
-physical constant defined as the quotient of the total electric charge
-(`q`) by the amount (`n`) of elementary charge carriers in any given
-sample of matter. It's an exact constant.
-
 ### Mu constant
 
 Molar mass constant, defined as one twelfth of the molar mass of carbon-12.
@@ -6066,7 +6510,7 @@ Following the 2019 revision of the SI system, the
 [Avogadro constant](#NA-constant) became exact. As a result the molar mass
 constant is no longer exactly `1_g/mol`. For internal consistency this value
 depends therefore on the mass unit `u` [u-constant](#u-constant) and is
-calculated by the following expression: `NA·u`.
+calculated by the following expression: `NA·u`. [CODATA](#codata)
 
 ### MC12 constant
 
@@ -6076,14 +6520,20 @@ a system which contains as many elementary entities as there are atoms in
 that the molar mass of carbone-12 remains nearly but no longer exactly
 12 g/mol. For internal consistency this value depends therefore on the
 mass unit `u` [u-constant](#u-constant) and is calculated by the following
-expression: `12·Mu`.
+expression: `12·Mu`. [CODATA](#codata)
+
+### Da constant
+
+The Dalton constant is the unit mass defined as one twelfth the mass of an
+unbound neutral atom of carbon-12 in its nuclear and electronic ground state and
+at rest. [CODATA](#codata)
 
 ### n0 constant
 
 Loschmidt constant or Loschmidt's number is the number of particles
 (atoms or molecules) of an ideal gas per volume (the number density),
 and usually quoted at standard temperature and pressure. Since 2019 with
-the redifinition of the mole, it is calculated exactly as: `NA·Vm`.
+the redifinition of the mole, it is calculated exactly as: `NA·Vm`. [CODATA](#codata)
 
 ### SoR constant
 
@@ -6092,13 +6542,7 @@ of `T=1_K` and standard atmospheric pressure `StdP` for one mole of an ideal
 monoatomic gas composed of particles of mass equal to the atomic mass constant.
 
 This constant is used in the Sakur-Tetrode equation expression the entropy of a
-monoatomic ideal gas in terms of its thermodynamic state.
-
-### Da constant
-
-The Dalton constant is the unit mass defined as one twelfth the mass of an
-unbound neutral atom of carbon-12 in its nuclear and electronic ground state and
-at rest.
+monoatomic ideal gas in terms of its thermodynamic state. [CODATA](#codata)
 
 ### kq constant
 
@@ -6110,7 +6554,7 @@ elementary charge [qe](#qe-constant). It has the exact value `kq=k/qe`.
 
 ### ⅉ constant
 
-Notation often used in physics for the imaginary verifying ⅉ²=-1.
+Notation often used in physics for the imaginary verifying  `ⅉ²=-1`.
 
 ### c constant
 
@@ -6140,22 +6584,26 @@ According to Newton's law of universal gravitation, the magnitude of the
 attractive force `F` between two bodies each with a spherically symmetric
 density distribution is directly proportional to the product of their masses,
 `m₁` and `m₂`, and inversely proportional to the square of the distance, `r`,
-directed along the line connecting their centres of mass:
+directed along the line connecting their centres of mass [CODATA](#codata):
 
 ![Newton Gravitation](img/NewtonGravitation.bmp)
 
 ### g constant
 
 Acceleration of Earth gravity, equivalent to the free-fall acceleration.
-Its value is exactly defined by convention as `g=9.80665_m/s²`.
+Its value is exactly defined by convention as `g=9.80665_m/s²`.  It is also
+a comparative units for the common concept of g-force.
 
-### Z₀ constant
+### σ constant
 
-Vaccuum characteristic impedance, also called impedance of free space.
+Stefan-Boltzmann constant, the factor of proportionality in the Stefan-Boltzmann
+law describing the intensity of the thermal radiation emitted by matter in terms
+of that matter's temperature.
 
-This constant relates the magnitudes of the electric and magnetic fields of
-electromagnetic radiation travelling through free space: `Zo=|E|/|H|`. Its
-value depends on the vacuum permittivity `μ0`.
+For an ideal absorber/emitter or black body, the Stefan–Boltzmann law states
+that the total energy radiated per unit surface area per unit time (also known
+as the radiant exitance) is directly proportional to the fourth power of the
+black body's temperature, T:`M°=σ·T⁴`. [CODATA](#codata)
 
 ### ε₀ constant
 
@@ -6166,7 +6614,7 @@ the electric constant, or the distributed capacitance of the vacuum. It is an
 ideal (baseline) physical constant. It is a measure of how dense of an electric
 field is "permitted" to form in response to electric charges and relates the
 units for electric charge to mechanical quantities such as length and force.
-Its value depends on the vaccuum permeability constant `μ0`.
+Its value depends on the vaccuum permeability constant `μ0`. [CODATA](#codata)
 
 ### μ₀ constant
 
@@ -6175,15 +6623,60 @@ free space, permeability of vacuum, magnetic constant) is the magnetic
 permeability in a classical vacuum. It is a physical constant, conventionally
 written as μ₀ (pronounced "mu nought" or "mu zero"). It quantifies the strength
 of the magnetic field induced by an electric current. Its value depends on the
-fine structure constant measurement `α`.
+fine structure constant measurement `α`. [CODATA](#codata)
 
 ### ke constant
 
 Coulomb constant as it appears in the expression of the Coulomb force:
-`Fe=ke·q1·q2/r^2`. Its value depends on the vacuum permittivity `ε0`.
+`Fe=ke·q1·q2/r^2`. Its value depends on the vacuum permittivity `ε0`. [CODATA](#codata)
+
+### Z₀ constant
+
+Vaccuum characteristic impedance, also called impedance of free space.
+
+This constant relates the magnitudes of the electric and magnetic fields of
+electromagnetic radiation travelling through free space: `Zo=|E|/|H|`. Its
+value depends on the vacuum permittivity `μ0`. [CODATA](#codata)
+
+### ε₀q constant
+
+Ratio of the vacuum permittivity to the elementary charge: `ε₀q=ε₀/qe`.
+Its uncertainty is inherited from `ε₀`. [CODATA](#codata)
+
+### qε₀ constant
+
+Product of the vacuum permittivity by the elementary charge: `qε₀=ε₀·qe`.
+Its uncertainty inherited from `ε₀`. [CODATA](#codata)
+
+### I₀ constant
+
+The reference sound intensity corresponds to the level of the intensity
+of a sound relative to a minimal reference value, most often expressed
+in decibels `dB`. `I₀=1E-12 w/m²` corresponds then to `β=0_dB` in the
+definition `β=10·LOG10(I/I₀)`. By convention it has an exact value.
 
 
 ## Mass constants
+
+This section documents the mass of fundamental particles.
+
+### u constant
+
+Unified atomic mass unit.
+
+A unit of mass defined as one twelfth of the mass of an unbound neutral atom of
+carbon-12 in its nuclear and electronic ground state and at rest. It is a non-SI
+unit accepted for use with SI. It is identical to the
+[Dalton](#dalton constant). [CODATA](#codata)
+
+### uc² constant
+
+Energy equivalent of the atomic mass unit. This is the energy equivalent of
+one atomic mass unit (u) according to Einstein's mass-energy equivalence
+E = mc². The value is calculated exactly as `u·c²` where c is the speed of
+light. This constant is useful for converting between mass units and energy
+units in nuclear and particle physics, with a value of approximately
+1.492×10⁻¹⁰ J or about 931.5 MeV. [CODATA](#codata)
 
 ### me constant
 
@@ -6193,17 +6686,17 @@ one of the fundamental constants of physics. Its value is closely related to
 the unit mass measurement through the electron relative atomic mass:
 `me=u·Ar(e)` where `Ar(e)`, i.e. [Are](#Are-constant), is determined
 iteratively by frequency measurements using Penning trap. Its value can also be
-calculated with the fine structure constant `α` and the Rysberg constant `R∞`.
+calculated with the fine structure constant `α` and the Rysberg constant `R∞`. [CODATA](#codata)
 
 ### mn constant
 
 Neutron mass measurement. Its value is determined experimentally by mass
-spectrometry.
+spectrometry. [CODATA](#codata)
 
 ### mp constant
 
 Proton mass measurement which is the hydrogen H-1 nucleus. Its value is
-determined by particle drag race experiments.
+determined by particle drag race experiments. [CODATA](#codata)
 
 ### mH constant
 
@@ -6212,19 +6705,10 @@ atom contains a single positively charged proton in the nucleus, and
 a single negatively charged electron bound to the nucleus by the Coulomb
 force. Its value is measured by spectrometry.
 
-### u constant
-
-Unified atomic mass unit.
-
-A unit of mass defined as one twelfth of the mass of an unbound neutral atom of
-carbon-12 in its nuclear and electronic ground state and at rest. It is a non-SI
-unit accepted for use with SI. It is identical to the
-[Dalton](#dalton constant).
-
 Its value can be determined from the calculation of the electron rest mass `me`
 and the measurement of the electron relative atomic mass `Ar(e)`
 [Are-constant](#Are-constant) (that is, the mass of electron divided by the
-atomic mass constant).
+atomic mass constant). [CODATA](#codata)
 
 ### mD constant
 
@@ -6233,162 +6717,121 @@ The electrically neutral deuterium atom H-2 (also known as heavy hydrogen)
 contains a single positively charged proton and a neutron in the nucleus,
 and a single negatively charged electron bound to the nucleus by the
 Coulomb force. Precise measurements of deuterium is obtained by
-spectrometry.
+spectrometry. [CODATA](#codata)
 
 ### mT constant
 
 Mass of the neutral tritium atom which is an unstable isotope of hydrogen
 H-3 . Its nucleus contains a single positively charged proton and two
 neutrons, surrounded by a single negatively charged electron bound to
-the nucleus by the Coulomb force. Its mass is measured by spectrometry.
+the nucleus by the Coulomb force. Its mass is measured by spectrometry. [CODATA](#codata)
 
 ### mHe constant
 
 Mass of the neutral helium atom. The electrically neutral helium atom
 He-4 contains two positively charged protons and two neutrons, and two
 negatively charged electrons bound to the nucleus by the Coulomb force.
-Its mass is measured by spectrometry.
+Its mass is measured by spectrometry. [CODATA](#codata)
 
 ### mμ constant
 
 Mass of the muon which is an unstable elementary particle similar
 to the electron (both are classified as leptons), with an electric
 charge of `−qe` and spin -1/2, but with a much greater mass. Its mass
-is evaluated from energy conservation budget in pair creation reaction.
+is evaluated from energy conservation budget in pair creation reaction. [CODATA](#codata)
 
 ### mτ constant
 
 Mass of the tau which is an elementary particle similar to the
 electron (both are classidief as leptons), with an electric charge
 of `−qe` and spin -1/2, but it is heaviest of leptons. Its mass is
-evaluated from energy conservation budget in pair creation reaction.
+evaluated from energy conservation budget in pair creation reaction. [CODATA](#codata)
 
 ### mpme constant
 
 Dimensionless ratio between the mass of the proton `mp` and the mass
 of the electron `me`. Currently, the most precise measurements of the
 charge-to-mass ratio of a proton still use a magnetic field like Thompson
-did, but rely on measuring (cyclotron) frequencies rather than deflection.
+did, but rely on measuring (cyclotron) frequencies rather than deflection. [CODATA](#codata)
+
+### mnmp constant
+
+Neutron-to-proton mass ratio. This dimensionless constant represents
+the ratio of the neutron mass `mn` to the proton mass `mp`, with a value
+of approximately 1.00137841946. This ratio is slightly greater than 1,
+reflecting that the neutron is slightly heavier than the proton. This
+mass difference is crucial in nuclear physics and explains why free neutrons
+are unstable and undergo beta decay with a half-life of about 10 minutes,
+while protons bound in nuclei are stable. [CODATA](#codata)
 
 ### Are constant
 
 Electron relative atomic mass. The experimental value of the electron
-relative atomic mass is an important constant (usually noted as
-`Ar(e)`) which is needed to calculate the unit mass value `u`
-[u-constant](#u-constant). According to COTATA2022, it is a dimensionless
-quantity which is determined iteratively by frequency measurements using
-Penning trap.
+relative atomic mass is an important dimensionless constant (usually noted
+as `Ar(e)`) which is needed to calculate the unit mass value `u`
+[u-constant](#u-constant). According to COTATA2022, it is a quantity which
+is determined iteratively by frequency measurements using Penning trap. [CODATA](#codata)
 
+### mQtop constant
 
-## Quantum constants
+The top quark is the heaviest known elementary particle and decays before
+it can hadronize. Its mass is measured at particle colliders via decay
+product reconstruction. [Particle Data Group 2024](#particle-data-group-2024)
 
-### h constant
+### mQbot constant
 
-The Planck constant is a fundamental physical constant that appears in quantum
-mechanics. A photon's energy is equal to its frequency multiplied by the Planck
-constant (`E=h·ν`), and the wavelength of a matter wave equals the Planck
-constant divided by the associated particle momentum (`λ=h/p`). Since the 2019
-SI redefinition, it has an exact value.
+Bottom quark mass (also called beauty quark). It is a heavy quark whose
+mass is determined from quarkonium spectroscopy and lattice QCD
+calculations. [Particle Data Group 2024](#particle-data-group-2024)
 
-### ℏ constant
+### mQcha constant
 
-The reduced Planck constant, ℏ, also known as the Dirac Constant, is
-exactly defined as `ℏ=h/2π`.
+Charm quark mass. A heavy quark whose mass is determined from charmonium
+spectroscopy and QCD sum rules. [Particle Data Group 2024](#particle-data-group-2024)
 
-### α constant
+### mQstr constant
 
-Fine-structure constant. In physics, the fine-structure constant, also known as
-the Sommerfeld constant, commonly denoted by α (the Greek letter alpha), is a
-fundamental physical constant which quantifies the strength of the
-electromagnetic interaction between elementary charged particles. It is measured
-by observing the recoil frequency of atoms, like cesium or rubidium, when they
-absorb a photon, essentially gauging how strongly the atoms recoil, which
-provides an accurate determination of the constant's value using high precision
-measurements achieved through techniques like matter-wave interferometry.
+Strange quark mass. A light quark whose mass is determined from QCD sum
+rules and lattice calculations. Value in `MeV/c²`. [Particle Data Group 2024](#particle-data-group-2024)
 
-It is a dimensionless quantity, independent of the system of units used, which
-is related to the strength of the coupling of an elementary charge `qe` with
-the electromagnetic field.
+### mQdwn constant
 
-### ΔfCs constant
+Down quark mass. One of the two lightest quarks forming ordinary matter.
+Its mass is determined from lattice QCD calculations. Value in `MeV/c²`. [Particle Data Group 2024](#particle-data-group-2024)
 
-Caesium (Cs) hyperfine transition. It is the transition between the two
-hyperfine ground states of the caesium atom. The frequency `ΔfCs` of this
-transition is used to define the second as the official time unit of the
-International System of Units (SI): one second is therefore the duration
-of exactly 9192631770 cycles of this radiation. It represents the "tick"
-of an extremely accurate atomic clock based on the properties of the
-Caesium atom. By convention this constant is exact.
+### mQup constant
 
-### θw constant
+Up quark mass. The lightest quark and a constituent of protons and neutrons.
+Its mass is determined from lattice QCD calculations. Value in `MeV/c²`. [Particle Data Group 2024](#particle-data-group-2024)
 
-The weak mixing angle or Weinberg angle. It is a parameter in the
-Weinberg–Salam theory of the electroweak interaction, part of the
-Standard Model of particle physics. It is the angle by which spontaneous
-symmetry breaking rotates the original W0 and B0 vector boson plane,
-producing as a result the Z0 boson, and the photon. Its value is
-calculated from the mesurement of the following dimensionless parameter
-for the W and Z bosons: `(sinθw)^2 = 1 - (mW/mZ)^2 = 0.22305 ± 0.00023`.
+### mνmax constant
 
-### Lpl constant
+Maximum neutrino mass upper bound from the KATRIN experiment (April 2025),
+expressed in `eV/c²`. Neutrino mass is non-zero but extremely small; only
+upper bounds are currently measurable. [Particle Data Group 2024](#particle-data-group-2024)
 
-Planck length unit. As an attempt to devise a universal and natural units
-system, the Planck units are combinations of basic universal constants. It
-is the smallest distance that can be measured, and it represents the
-scale at which quantum gravity effects become dominant. It is the distance
-travelled by light during one Planck time `Tpl`. Its value depends on the
-measured value of the gravitational constant `G`.
+### mνmin constant
 
-### Tpl constant
+Minimum neutrino mass lower bound consistent with neutrino oscillation
+experiments, expressed in `eV/c²`. [Particle Data Group 2024](#particle-data-group-2024)
 
-Planck time unit. As an attempt to devise a universal and natural units
-system, the Planck units are combinations of basic universal constants.
-It is the shortest time interval that can be measured and it is fundamental
-in the study of the universe beginning. It is the time required for light
-to travel one Planck length `Lpl`. Its value depends on the measured value
-of the gravitational constant `G`.
+### mHig constant
 
-### Mpl constant
+Combined measurement of the Higgs boson mass from the `H → γγ` and
+`H → ZZ* → 4ℓ` (4 leptons) decay channels with the ATLAS detector using 7,
+8 and 13 TeV proton-proton collision data. [Reference 15](#reference-15)
 
-Planck mass unit. As an attempt to devise a universal and natural units
-system, the Planck units are combinations of basic universal constants.
-It can be viewed as the mass of a black hole with a Swarzhchild radius
-of 2 Planck lengths (`rs=2·Lpl`) or, the minimum mass of a black hole
-is one half of the Planck mass, the latter having a Planck Length radius.
-Its value depends on the measured value of the gravitational constant
-`G`.
+### mW constant
 
-### Epl constant
+The new 2026 CMS measurement, the W boson mass is considered the most precise
+single measurement to date at the LHC and strongly confirms the Standard Model,
+decreasing the likelihood that the 2022 CDF II result indicated new physics. [Reference 16](#reference-16)
 
-Planck energy unit. As an attempt to devise a universal and natural units
-system, the Planck units are combinations of basic universal constants.
-According to the mass-energy equivalence: `Epl=Mpl·c^2` it is the energy
-equivalent to the Planck mass. Considered to be the smallest possible unit
-of energy, which is theoretically meaningful within the framework of quantum
-gravity, where both effects of quantum mechanics and general relativity
-become significant; and also the energy scale at which the universe is thought
-to have existed at times near the start of the Big Bang, characterized by
-extremely high densities and temperatures. Its value depends on the measured
-value of the gravitational constant `G`.
+### mZ° constant
 
-### T°pl constant
-
-Planck temperature unit. As an attempt to devise a universal and natural
-units system, the Planck units are combinations of basic universal constants.
-It is the highest temperature that conventional physics can describe. It's a
-fundamental limit of quantum mechanics and is considered the temperature of
-the universe during the Big Bang when quantum gravity effects became
-dominant. Its value depends on the measured value of the gravitational
-constant `G`.
-
-### Eh constant
-
-Hartree energy constant. It is a unit of energy used in atomic physics
-and computational chemistry, which is also used in molecular orbital
-calculations. It is approximately the negative electric potential energy
-of an electron in a hydrogen atom's ground state, and also approximately
-twice the ionization energy of a hydrogen atom. Its value depends on the
-measured value of the Rydberg constant `R∞`.
+The measured value of the Z° boson mass is determined primarily by the scan
+method performed at e+e- colliders (LEP) using: resonance scan, cross-section
+mapping & Breit-Wigner fit. [Reference 17](#reference-17)
 
 
 ## Electromagnetism constants
@@ -6405,9 +6848,9 @@ as `qe=1.602176634⁳⁻¹⁹` coulombs. Since the 2019 redefinition of SI base 
 the seven SI base units are defined by seven fundamental physical constants, of
 which the elementary charge is one. As a consequence of this change, the value
 of that constant in DB48X differs from the value in the HP50G, which named it q,
-with value `1.60217733⁳⁻¹⁹` coulombs.
+with value `1.60217733⁳⁻¹⁹` coulombs. [CODATA](#codata)
 
-### λ0 constant
+### λ₀ constant
 
 Photon wavelength. Photon energy can be expressed using any unit of energy
 such as the electronvolt (eV) or the Joule (J). For short wavelength sources,
@@ -6417,10 +6860,10 @@ X-rays) out of convenience.  The SI definition for 1 eV derives from the
 in eV can be computed from wavelength `λ` in nm as: `E=λ0/λ`. This is an
 exact constant.
 
-### f0 constant
+### f₀ constant
 
 Photon frequency. This is the exact frequency associated to the
-[photon wavelength λ0][#λ0-constant].
+[photon wavelength λ0][#λ₀-constant].
 
 ### ge constant
 
@@ -6429,12 +6872,23 @@ the magnetic moment and angular momentum of an electron. It is the
 ratio of the magnetic moment (or, equivalently, the gyromagnetic ratio)
 of the electron to that expected of a classical particle of the same
 charge and angular momentum. The electron g-factor is one of the most
-precisely measured values in physics.
+precisely measured values in physics. [CODATA](#codata)
+
+### R∞ constant
+
+Rydberg constant. In spectroscopy, the Rydberg constant is a physical
+constant relating to the electromagnetic spectra of an atom. The constant
+first arose as an empirical fitting parameter in the Rydberg formula for
+the hydrogen spectral series, but Niels Bohr later showed that its value
+is related to more fundamental constants according to his model of the
+atom. The Rydberg constant value is inferred from measurements of atomic
+transition frequencies in three different atoms (hydrogen, deuterium,
+and antiprotonic helium). [CODATA](#codata)
 
 ### qme constant
 
 Ratio between the electron charge `qe` and its mass `me`. The uncertainty
-of `qme` dépends on the one of `me`.
+of `qme` dépends on the one of `me`. [CODATA](#codata)
 
 ### μe constant
 
@@ -6444,7 +6898,18 @@ moment of an electron resulting from its intrinsic properties of spin
 and electric charge. Its angular momentum comes from two types of
 rotation: spin and orbital motion. Therefore an external magnetic field
 exerts a torque on the electron magnetic moment revealing its existence.
-It's a measured quantity.
+It's a measured quantity. [CODATA](#codata)
+
+### μeμB constant
+
+Electron magnetic moment to Bohr magneton ratio. This dimensionless
+constant represents the ratio of the electron magnetic moment `μe` to
+the Bohr magneton `μB`, with a value of approximately -1.00115965218046.
+The value being very close to -1 (but not exactly -1) is a consequence
+of quantum electrodynamics (QED) corrections. The small deviation from
+-1 is due to the anomalous magnetic dipole moment of the electron, which
+has been calculated and measured to extraordinary precision and serves
+as one of the most stringent tests of QED theory. [CODATA](#codata)
 
 ### μp constant
 
@@ -6462,7 +6927,8 @@ zero for an elementary neutral particle because of zero charge. The fact
 that it was non-vanishing prooves that the neutron is a composite particle.
 Its angular momentum comes from two types of rotation: spin and orbital
 motion. Therefore an external magnetic field exerts a torque on the
-neutron magnetic moment revealing its existence. It's a measured quantity.
+neutron magnetic moment revealing its existence.
+It's a measured quantity. [CODATA](#codata)
 
 ### μμ constant
 
@@ -6470,48 +6936,14 @@ Muon magnetic moment. It is the magnetic dipole moment of the meutron
 resulting from its intrinsic properties of spin and electric charge.
 Its angular momentum comes from two types of rotation: spin and orbital
 motion. Therefore an external magnetic field exerts a torque on the muon
-magnetic moment revealing its existence. It's a measured quantity.
-
-
-## Size constants
-
-### re constant
-
-The classical electron radius. Through the Bohr radius `a0`, it
-depends on fine structure constant `α`.
-
-### rp constant
-
-Proton charge radius. A direct measure of the proton radius. Since 2010,
-the measure was done using either spectroscopy method with muonic hydrogen,
-and then with deuterium atom, or either using a more recent electron-proton
-scattering experiment.
-
-### a0 constant
-
-Bohr radius. The Bohr radius is a physical constant, approximately equal to
-the most probable distance between the nucleus and the electron in a hydrogen
-atom in its ground state. Its value depends on the vacuum electric
-permittivity `ε0`.
-
-### σe constant
-
-The Thomson cross-section. This type of scattering is valid when the field
-energy `h·ν` is much less than the rest mass of the electron `m0·c^2`, the
-electric field of the incident wave accelerates the charged target-particle,
-causing it, in turn, to emit radiation at the same frequency `ν` as the
-incident wave, hence the scattering of the wave. Through the classical
-electron radius `re`, its value depends on fine structure constant `α`.
-
-
-## Magnetism constants
+magnetic moment revealing its existence. It's a measured quantity. [CODATA](#codata)
 
 ### μB constant
 
 Bohr magneton. In atomic physics, the Bohr magneton is a physical constant
 and the natural unit for expressing the magnetic moment of an electron caused
 by its orbital or spin angular momentum. In SI units, the Bohr magneton
-depends on the electron mass `me`.
+depends on the electron mass `me`. [CODATA](#codata)
 
 ### μN constant
 
@@ -6519,77 +6951,40 @@ The nuclear magneton is a physical constant of magnetic moment. It
 is the standard unit used to measure the magnetic dipole moment of
 atomic nuclei and nucleons (protons and neutrons), essentially acting
 as a scale to quantify their magnetic strength. Defined in SI units,
-it depends on the measured value of the proton mass `mp`.
+it depends on the measured value of the proton mass `mp`. [CODATA](#codata)
 
 ### γe constant
 
 Electron gyromagnetic ratio. It is the ratio of the electron's magnetic
 moment to its angular momentum. It can be used to determine the direction
 of precession and the resonance frequency of an electron in a magnetic
-field. Its value depends on the electron magnetic moment `μe`.
+field. Its value depends on the electron magnetic moment `μe`. [CODATA](#codata)
 
 ### γp constant
 
 Proton gyromagnetic ratio. It is the ratio of the proton's magnetic
 moment to its angular momentum. It can be used to determine the direction
 of precession and the resonance frequency of a proton in a magnetic field.
-Its value depends on the proton magnetic moment `μp`.
+Its value depends on the proton magnetic moment `μp`. [CODATA](#codata)
 
 ### γn constant
 
 Neutron gyromagnetic ratio. It is the ratio of the Neutron's magnetic
 moment to its angular momentum. It is a characteristic of the neutron's
 nuclear spin and its sign determines the direction of precession. Its
-value depends on the neutron magnetic moment `μn`.
-
-### R∞ constant
-
-Rydberg constant. In spectroscopy, the Rydberg constant is a physical
-constant relating to the electromagnetic spectra of an atom. The constant
-first arose as an empirical fitting parameter in the Rydberg formula for
-the hydrogen spectral series, but Niels Bohr later showed that its value
-is related to more fundamental constants according to his model of the
-atom. The Rydberg constant value is inferred from measurements of atomic
-transition frequencies in three different atoms (hydrogen, deuterium,
-and antiprotonic helium).
-
-### Rk constant
-
-Von Klitzing constant. It appears in the expression of the Hall
-resistance `Rxy=Rk/ν` (`ν` being either an integer or a fraction)
-of the quantum Hall effect, a quantized version of the Hall effect
-which is observed in two-dimensional electron systems subjected to
-low temperatures and strong magnetic fields. It's an exact constant.
-
-### G0 constant
-
-Conductance quantum constant. It is the quantized unit of electrical
-conductance. It is required when measuring the conductance of a quantum
-point contact, and also, it appears explicitly in the Landauer formula:
-`G(μ)=G0·ΣTn(μ) sum over n` which relates the electrical conductance of
-a quantum conductor to its quantum properties. It's an exact constant.
-
-### G0F constant
-
-Fermi reduced coupling constant. It is a fundamental physical constant
-that represents the strength of the weak nuclear interaction, essentially
-indicating how readily particles can interact via the weak force; a
-larger value signifies a stronger interaction, and it is a key parameter
-in the Standard Model of particle physics, primarily used to calculate
-the decay rates of particles involved in weak interactions like beta
-decay. It's a measured quantity.
+value depends on the neutron magnetic moment `μn`. [CODATA](#codata)
 
 ### c1 constant
 
 First radiation constant. This constant appears in the Radiance
 expression of the Planck's law: `Bλ(λ;T)=c1/λ^5/EXPM1(c2/λT)`.
-It's an exact constant.
+It's an exact constant. [CODATA](#codata)
 
 ### c2 constant
 
 Second radiation constant. This constant appears in the Radiance
 expression of the Planck's law: `Bλ(λ;T)=c1/λ^5/EXPM1(c2/λT)`.
-It's an exact constant.
+It's an exact constant. [CODATA](#codata)
 
 ### c3 constant
 
@@ -6607,7 +7002,7 @@ wavelengths as temperature increases.
 Formally, the wavelength version of Wien's displacement law states that the
 spectral radiance of black-body radiation per unit wavelength, peaks at the
 wavelength `λpeak=c3/T` where `T` is absolute temperature. From a theoretic
-expression (using Lambert W function), it's an exact constant.
+expression (using Lambert W function), it's an exact constant. [CODATA](#codata)
 
 ### c3f constant
 
@@ -6622,14 +7017,40 @@ of frequency at any given temperature.
 Formally, the frequency version of Wien's displacement law states that the
 spectral radiance of black-body radiation per unit frequency, peaks at the
 frequency `fpeak=Ⓒc3f·T` where `T` is absolute temperature. From a theoretic
-expression (using Lambert W function), it's an exact constant.
+expression (using Lambert W function), it's an exact constant. [CODATA](#codata)
+
+### Rk constant
+
+Von Klitzing constant. It appears in the expression of the Hall resistance
+`Rxy=Rk/ν` (`ν` being either an integer or a fraction) of the quantum Hall
+effect, a quantized version of the Hall effect which is observed in
+two-dimensional electron systems subjected to low temperatures and strong
+magnetic fields. It's an exact constant. [CODATA](#codata)
+
+### G0 constant
+
+Conductance quantum constant. It is the quantized unit of electrical
+conductance. It is required when measuring the conductance of a quantum
+point contact, and also, it appears explicitly in the Landauer formula:
+`G(μ)=G0·ΣTn(μ) sum over n` which relates the electrical conductance of
+a quantum conductor to its quantum properties. It's an exact constant. [CODATA](#codata)
+
+### G0F constant
+
+Fermi reduced coupling constant. It is a fundamental physical constant
+that represents the strength of the weak nuclear interaction, essentially
+indicating how readily particles can interact via the weak force; a
+larger value signifies a stronger interaction, and it is a key parameter
+in the Standard Model of particle physics, primarily used to calculate
+the decay rates of particles involved in weak interactions like beta
+decay. It's a measured quantity. [CODATA](#codata)
 
 ### ø constant
 
 Magnetic flux quantum. The (superconducting) magnetic flux quantum is a
 combination of fundamental physical constants: the Planck constant `h`
 and the electron charge `qe`. Its value is, therefore, the same for
-any superconductor. It's an exact constant.
+any superconductor. It's an exact constant. [CODATA](#codata)
 
 ### KJ constant
 
@@ -6637,7 +7058,7 @@ Josephson constant. The Josephson constant is a constant of
 proportionality that relates the potential difference across a
 Josephson junction to the frequency of irradiation. It's also
 the inverse of the magnetic flux quantum `ø`. It's an exact
-constant.
+constant. [CODATA](#codata)
 
 ### Kc constant
 
@@ -6647,10 +7068,44 @@ a vortex can only occur in multiples of this value. The existence
 of quantum vortices was first predicted by Lars Onsager in 1949 in
 connection with superfluid helium. It is defined as the ratio of
 Planck's constant `h` to the mass of the relevant particle `m`
-chosen here as the electron.
+chosen here as the electron. [CODATA](#codata)
+
+## Size constants
+
+Consants describing the size of fundamental particles
+
+### re constant
+
+The classical electron radius. Through the Bohr radius `a0`, it
+depends on fine structure constant `α`. [CODATA](#codata)
+
+### rp constant
+
+Proton charge radius. A direct measure of the proton radius. Since 2010,
+the measure was done using either spectroscopy method with muonic hydrogen,
+and then with deuterium atom, or either using a more recent electron-proton
+scattering experiment. [CODATA](#codata)
+
+### a0 constant
+
+Bohr radius. The Bohr radius is a physical constant, approximately equal to
+the most probable distance between the nucleus and the electron in a hydrogen
+atom in its ground state. Its value depends on the vacuum electric
+permittivity `ε0`. [CODATA](#codata)
 
 
 ## Scattering constants
+
+Scattering constants for the Compton effect.
+
+### σe constant
+
+The Thomson cross-section. This type of scattering is valid when the field
+energy `h·ν` is much less than the rest mass of the electron `m0·c^2`, the
+electric field of the incident wave accelerates the charged target-particle,
+causing it, in turn, to emit radiation at the same frequency `ν` as the
+incident wave, hence the scattering of the wave. Through the classical
+electron radius `re`, its value depends on fine structure constant `α`. [CODATA](#codata)
 
 ### λc constant
 
@@ -6660,7 +7115,7 @@ photon whose energy is the same as the rest energy of that particle
 (based on the mass–energy equivalence). The standard Compton wavelength
 `λ` of a particle of mass `m` is given by `λ=h/(m·c)`. Since it is
 defined here for the electron, it depends on the value of the electron
-mass `me`.
+mass `me`. [CODATA](#codata)
 
 ### λcp constant
 
@@ -6670,7 +7125,7 @@ a photon whose energy is the same as the rest energy of that particle
 (based on the mass–energy equivalence). The standard Compton wavelength
 `λ` of a particle of mass `m` is given by `λ=h/(m·c)`. Since it is
 defined here for the proton, it depends on the measured value of the
-proton mass `mp`.
+proton mass `mp`. [CODATA](#codata)
 
 ### λcn constant
 
@@ -6680,7 +7135,7 @@ a photon whose energy is the same as the rest energy of that particle
 (based on the mass–energy equivalence). The standard Compton wavelength
 `λ` of a particle of mass `m` is given by `λ=h/(m·c)`. Since it is
 defined here for the neutron, it depends on the measured value of the
-neutron mass `mn`.
+neutron mass `mn`. [CODATA](#codata)
 
 ### λcμ constant
 
@@ -6690,7 +7145,7 @@ a photon whose energy is the same as the rest energy of that particle
 (based on the mass–energy equivalence). The standard Compton wavelength
 `λ` of a particle of mass `m` is given by `λ=h/(m·c)`. Since it is
 defined here for the muon particle, it depends on the measured value of
-the muon mass `mμ`.
+the muon mass `mμ`. [CODATA](#codata)
 
 ### λcτ constant
 
@@ -6700,46 +7155,2414 @@ a photon whose energy is the same as the rest energy of that particle
 (based on the mass–energy equivalence). The standard Compton wavelength
 `λ` of a particle of mass `m` is given by `λ=h/(m·c)`. Since it is
 defined here for the tau particle, it depends on the measured value of
-the tau mass `mτ`.
+the tau mass `mτ`. [CODATA](#codata)
+
+
+## Quantum constants
+
+### h constant
+
+The Planck constant is a fundamental physical constant that appears in quantum
+mechanics. A photon's energy is equal to its frequency multiplied by the Planck
+constant (`E=h·ν`), and the wavelength of a matter wave equals the Planck
+constant divided by the associated particle momentum (`λ=h/p`). Since the 2019
+SI redefinition, it has an exact value. [CODATA](#codata)
+
+### ℏ constant
+
+The reduced Planck constant, ℏ, also known as the Dirac Constant, is
+exactly defined as `ℏ=h/2π`. [CODATA](#codata)
+
+### α constant
+
+Fine-structure constant. In physics, the fine-structure constant, also known as
+the Sommerfeld constant, commonly denoted by α (the Greek letter alpha), is a
+fundamental physical constant which quantifies the strength of the
+electromagnetic interaction between elementary charged particles. It is measured
+by observing the recoil frequency of atoms, like cesium or rubidium, when they
+absorb a photon, essentially gauging how strongly the atoms recoil, which
+provides an accurate determination of the constant's value using high precision
+measurements achieved through techniques like matter-wave interferometry.
+
+It is a dimensionless quantity, independent of the system of units used, which
+is related to the strength of the coupling of an elementary charge `qe` with
+the electromagnetic field. [CODATA](#codata)
+
+### ΔfCs constant
+
+Caesium (Cs) hyperfine transition. It is the transition between the two
+hyperfine ground states of the caesium atom. The frequency `ΔfCs` of this
+transition is used to define the second as the official time unit of the
+International System of Units (SI): one second is therefore the duration
+of exactly 9192631770 cycles of this radiation. It represents the "tick"
+of an extremely accurate atomic clock based on the properties of the
+Caesium atom. By convention this constant is exact. [CODATA](#codata)
+
+### θw constant
+
+The weak mixing angle or Weinberg angle. It is a parameter in the
+Weinberg–Salam theory of the electroweak interaction, part of the
+Standard Model of particle physics. It is the angle by which spontaneous
+symmetry breaking rotates the original W0 and B0 vector boson plane,
+producing as a result the Z0 boson, and the photon. Its value is
+calculated from the mesurement of the following dimensionless parameter
+for the W and Z bosons: `(sinθw)^2 = 1 - (mW/mZ)^2 = 0.22305 ± 0.00023`. [CODATA](#codata)
+
+### Lpl constant
+
+Planck length unit. As an attempt to devise a universal and natural units
+system, the Planck units are combinations of basic universal constants. It
+is the smallest distance that can be measured, and it represents the
+scale at which quantum gravity effects become dominant. It is the distance
+travelled by light during one Planck time `Tpl`. Its value depends on the
+measured value of the gravitational constant `G`. [CODATA](#codata)
+
+### Tpl constant
+
+Planck time unit. As an attempt to devise a universal and natural units
+system, the Planck units are combinations of basic universal constants.
+It is the shortest time interval that can be measured and it is fundamental
+in the study of the universe beginning. It is the time required for light
+to travel one Planck length `Lpl`. Its value depends on the measured value
+of the gravitational constant `G`. [CODATA](#codata)
+
+### Mpl constant
+
+Planck mass unit. As an attempt to devise a universal and natural units
+system, the Planck units are combinations of basic universal constants.
+It can be viewed as the mass of a black hole with a Swarzhchild radius
+of 2 Planck lengths (`rs=2·Lpl`) or, the minimum mass of a black hole
+is one half of the Planck mass, the latter having a Planck Length radius.
+Its value depends on the measured value of the gravitational constant
+`G`. [CODATA](#codata)
+
+### Epl constant
+
+Planck energy unit. As an attempt to devise a universal and natural units
+system, the Planck units are combinations of basic universal constants.
+According to the mass-energy equivalence: `Epl=Mpl·c^2` it is the energy
+equivalent to the Planck mass. Considered to be the smallest possible unit
+of energy, which is theoretically meaningful within the framework of quantum
+gravity, where both effects of quantum mechanics and general relativity
+become significant; and also the energy scale at which the universe is thought
+to have existed at times near the start of the Big Bang, characterized by
+extremely high densities and temperatures. Its value depends on the measured
+value of the gravitational constant `G`. [CODATA](#codata)
+
+### T°pl constant
+
+Planck temperature unit. As an attempt to devise a universal and natural
+units system, the Planck units are combinations of basic universal constants.
+It is the highest temperature that conventional physics can describe. It's a
+fundamental limit of quantum mechanics and is considered the temperature of
+the universe during the Big Bang when quantum gravity effects became
+dominant. Its value depends on the measured value of the gravitational
+constant `G`. [CODATA](#codata)
+
+### qpl constant
+
+Planck charge
+
+The Planck charge unit is the natural unit of electric charge in Planck units,
+defined as `qpl=√(4π·ε₀·ℏ·c)`. Its value depends on the vacuum permittivity `ε₀`. [CODATA](#codata)
+
+### ppl constant
+
+Planck momentum
+
+The Planck momentum unit is the natural unit of momentum in Planck units, defined
+as `ppl=√(ℏ·c³/G)`. Its value depends on the gravitational constant `G`. [CODATA](#codata)
+
+### Fpl constant
+
+Planck force
+
+The Planck force unit is the natural unit of force in Planck units, defined as
+`Fpl=c⁴/G`. It is the maximum force postulated in general relativity. Its value
+depends on the gravitational constant `G`. [CODATA](#codata)
+
+### ρvpl constant
+
+Planck density
+
+The Planck density unit is the natural unit of density in Planck units, defined
+as `ρvpl=c⁵/(ℏ·G²)`. Its value depends on the gravitational constant `G`. [CODATA](#codata)
+
+### Eh constant
+
+Hartree energy constant. It is a unit of energy used in atomic physics
+and computational chemistry, which is also used in molecular orbital
+calculations. It is approximately the negative electric potential energy
+of an electron in a hydrogen atom's ground state, and also approximately
+twice the ionization energy of a hydrogen atom. Its value depends on the
+measured value of the Rydberg constant `R∞`. [CODATA](#codata)
+
+
+## Astronomy constants
+
+## Mercury constants
+
+### GM☿ constant
+
+Mercury gravitational parameter
+
+It is measured by radio tracking of spacecraft (Mariner 10, MESSENGER). [Reference 4](#reference-4)
+
+### Req☿ constant
+
+Mercury equatorial radius
+
+It is measured by radar altimetry and spacecraft imaging. [Reference 22](#reference-22)
+
+### Rp☿ constant
+
+Mercury polar radius
+
+Mercury's polar radius is also measured, since Mercury being essentially
+spherical; equatorial and polar radii are equal within measurement precision. [Reference 22](#reference-22)
+
+### f☿ constant
+
+Mercury oblateness
+
+Mercury's oblateness is calculated from its equatorial and polar radii measurement.
+Due to Mercury's near-spherical shape, this value is effectively zero. [Reference 22](#reference-22)
+
+### ρv☿ constant
+
+Mercury mean density
+
+It is calculated from measurement of its gravitational parameter and volume.
+Its high density indicates a large metallic core. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g☿ constant
+
+Mercury surface gravity
+
+It is calculated from measurement of `GM☿` and the equatorial radius
+`Req☿`. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve☿ constant
+
+Mercury escape velocity
+
+Mercury's escape velocity at the equatorial surface is calculated from
+measured quantities. It is the minimum speed needed to break free from
+Mercury's gravitational pull and never return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot☿ constant
+
+Mercury sidereal rotation period
+
+Mercury's sidereal rotation period is a measured quantity. It is the true time
+it takes to spin 360° on its axis. Mercury is in a 3:2 spin-orbit resonance with
+the Sun, rotating three times for every two orbits. [Reference 22](#reference-22)
+
+### ϵ☿ constant
+
+Mercury axial tilt
+
+Mercury's axial tilt (obliquity) is measured from spacecraft observations.
+The nearly zero value is consistent with its spin-orbit resonance. It is the
+angle of the planet's rotational axis relative to its orbital plane. [Reference 22](#reference-22)
+
+### a☿ constant
+
+Mercury semi-major axis
+
+Mercury's orbital semi-major axis is a measured quantity. It is half the length
+of the longest diameter of the elliptical orbit, which is also the average
+distance from one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e☿ constant
+
+Mercury orbital eccentricity
+
+Mercury's orbital eccentricity is a measured quantity, it is the largest of
+all major planets. When different from 0, it is a measure of how much a
+planet's elliptical path deviates from a perfect circle. [Reference 23](#reference-23)
+
+### i☿ constant
+
+Mercury orbital inclination
+
+Mercury's orbital inclination with respect to the ecliptic plane is a measured
+angle. [Reference 23](#reference-23)
+
+### Ω☿ constant
+
+Mercury longitude of ascending node
+
+Mercury's longitude of the ascending node is a measured angle quantifying the
+horizontal orientation of the orbit. It represents where Mercury crosses
+northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω☿ constant
+
+Mercury argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit crosses
+the reference plane northward) and the perihelion (the closest point to the
+Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀☿ constant
+
+Mercury last perihelion passage
+
+Mercury's most recent time of perihelion passage is a measured quantity.
+Mercury passes perihelion approximately four times per year. Value in JDN
+(Julian Day Number, Gregorian calendar). It is the most recent point in its
+orbit when it was closest to the Sun. [Materials 20](#materials-20)
+
+
+## Venus constants
+
+### GM♀ constant
+
+Venus gravitational parameter
+
+Venus's gravitational parameter, measured by radio tracking of spacecraft
+(Magellan, Venus Express). [Reference 4](#reference-4)
+
+### Req♀ constant
+
+Venus equatorial radius
+
+Venus's equatorial radius is a measured quantity. Venus is essentially spherical.
+[Reference 22](#reference-22)
+
+### Rp♀ constant
+
+Venus polar radius
+
+Venus's polar radius is a measured quantity, essentially equal to the equatorial
+radius. [Reference 22](#reference-22)
+
+### f♀ constant
+
+Venus oblateness
+
+Venus's oblateness obtained from measurement is effectively zero given its near-
+spherical shape. [Reference 22](#reference-22)
+
+### ρv♀ constant
+
+Venus mean density
+
+Venus's mean density, calculated from measurement of its gravitational parameter and
+volume. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g♀ constant
+
+Venus surface gravity
+
+Venus's surface gravity is calculated from measurement of `GM♀` and `Req♀`.
+[Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve♀ constant
+
+Venus escape velocity
+
+Venus's escape velocity at the equatorial surface is calculated from measured
+quantities. It is the minimum speed needed to break free from Venus’s gravitational
+pull and never return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot♀ constant
+
+Venus sidereal rotation period
+
+Measured. Venus's sidereal rotation period is the true time it takes to spin 360°
+on its axis. Venus rotates retrograde (opposite to its orbital motion), with a
+rotation period longer than its orbital period. [Reference 22](#reference-22)
+
+### ϵ♀ constant
+
+Venus axial tilt
+
+Measured. Venus's axial tilt. The near-180° value reflects its retrograde rotation.
+It is the angle of the planet's rotational axis relative to its orbital plane. [Reference 22](#reference-22)
+
+### a♀ constant
+
+Venus semi-major axis
+
+Measured. Venus's orbital semi-major axis is half the length of the longest
+diameter of the elliptical orbit, which is also the average distance from one
+of the radii to the orbit. [Reference 23](#reference-23)
+
+### e♀ constant
+
+Venus orbital eccentricity
+
+Measured. Venus's orbital eccentricity, nearly circular (therefore, near 0). [Reference 23](#reference-23)
+
+### i♀ constant
+
+Venus orbital inclination
+
+Venus's orbital inclination with respect to the ecliptic plane is a measured angle.
+[Reference 23](#reference-23)
+
+### Ω♀ constant
+
+Venus longitude of ascending node
+
+Venus's longitude of the ascending node is a measured angle quantifying the
+horizontal orientation of the orbit. It represents where Venus crosses northward
+through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♀ constant
+
+Venus argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit crosses
+the reference plane northward) and the perihelion (the closest point to the Sun),
+measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♀ constant
+
+Venus last perihelion passage
+
+Measured. Venus's most recent time of perihelion passage. Venus passes perihelion
+approximately twice per year. Value in JDN. It is the most recent point in its
+orbit when it was closest to the Sun. [Materials 20](#materials-20)
+
+
+## Earth constants
+
+### GM♁ constant
+
+Earth gravitational parameter
+
+Exact nominal value (IAU 2015). Earth's gravitational parameter. An exact nominal
+value defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### Req♁ constant
+
+Earth equatorial radius
+
+Exact nominal value (IAU 2015). Earth's equatorial radius. An exact nominal value
+defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### Rp♁ constant
+
+Earth polar radius
+
+Exact nominal value (IAU 2015). Earth's polar radius. An exact nominal value
+defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### f♁ constant
+
+Earth oblateness
+
+Calculated from nominal value. Earth's oblateness, reflecting its equatorial
+bulge due to rotation. Calculated from `Req♁` and `Rp♁`. When greater than 0, it
+describes how much a celestial body deviates from a perfect sphere, forming an
+"oblate spheroid". [Particle Data Group 2023](#particle-data-group-2023)
+
+### ρv♁ constant
+
+Earth mean density
+
+Calculated from nominal value. Earth's mean density, calculated from its gravitational
+parameter and volume. [Particle Data Group 2023](#particle-data-group-2023)
+
+### g♁ constant
+
+Earth surface gravity
+
+Calculated from nominal value. Earth's surface gravity at the equator, calculated
+from `GM♁` and `Req♁`. [Particle Data Group 2023](#particle-data-group-2023)
+
+### Ve♁ constant
+
+Earth escape velocity
+
+Calculated from nominal value, it is valid at the equatorial surface. It is the
+minimum speed needed to break free from Earth's gravitational pull and never return. [Particle Data Group 2023](#particle-data-group-2023)
+
+### Prot♁ constant
+
+Earth sidereal rotation period
+
+Measured. Earth's sidereal rotation period (one sidereal day), the time for one
+rotation relative to the fixed stars. [Reference 24](#reference-24)
+
+### ϵ♁ constant
+
+Earth axial tilt
+
+Measured. Earth's axial tilt (obliquity of the ecliptic), the primary driver of the
+seasons. It is the angle of the planet's rotational axis relative to its orbital plane.
+[Reference 24](#reference-24)
+
+### a♁ constant
+
+Earth semi-major axis
+
+Exact nominal value (1 AU by definition). Earth's orbital semi-major axis, defined
+as exactly 1 astronomical unit (AU). It is half the length of the longest diameter
+of the elliptical orbit, which is also the average distance from one of the radii
+to the orbit. [Particle Data Group 2023](#particle-data-group-2023)
+
+### e♁ constant
+
+Earth orbital eccentricity
+
+Measured. Earth's orbital eccentricity (low since the orbit is nearly circular) . [Reference 23](#reference-23)
+
+### i♁ constant
+
+Earth orbital inclination
+
+Measured (reference plane constant
+
+near zero relative to the J2000.0 ecliptic plane).
+The Earth's orbital inclination is often defined by convention with respect to
+the reference plane (effectively zero) as being the ecliptic plane (in such case
+this angle is zero). [Reference 23](#reference-23)
+
+### Ω♁ constant
+
+Earth longitude of ascending node
+
+Earth’s longitude of the ascending node is a measured angle quantifying the
+horizontal orientation of the orbit. It represents where the Earth crosses
+northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♁ constant
+
+Earth argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit crosses
+the reference plane northward) and the perihelion (the closest point to the
+Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♁ constant
+
+Earth perihelion passage
+
+Measured. Earth's most recent time of perihelion passage (early January each
+year). Value in JDN. It is the most recent point in its orbit when it was
+closest to the Sun. [Materials 20](#materials-20)
+
+
+## Moon constants
+
+### GM☽ constant
+
+Moon gravitational parameter
+
+Measured. Moon's gravitational parameter, measured by lunar laser ranging
+and spacecraft radio tracking. [Reference 4](#reference-4)
+
+### Req☽ constant
+
+Moon equatorial radius
+
+Measured. Moon's equatorial radius, measured by laser altimetry (LRO mission). [Reference 22](#reference-22)
+
+### Rp☽ constant
+
+Moon polar radius
+
+Measured. Moon's polar radius. [Reference 22](#reference-22)
+
+### f☽ constant
+
+Moon oblateness
+
+Calculated from measurement. Moon's oblateness, reflecting its slight equatorial
+bulge. Calculated from `Req☽` and `Rp☽`. When greater than 0, it describes how
+much a celestial body deviates from a perfect sphere, forming an "oblate spheroid".
+[Reference 22](#reference-22)
+
+### ρv☽ constant
+
+Moon mean density
+
+Calculated from measurement. Moon's mean density, reflecting its predominantly
+silicate composition with a small iron core. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g☽ constant
+
+Moon surface gravity
+
+Calculated from measurement. Moon's surface gravity, approximately one sixth
+of Earth's. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve☽ constant
+
+Moon escape velocity
+
+Calculated from measurement, it is valid at the equatorial surface. It is
+the minimum speed needed to break free from Moon's gravitational pull and
+never return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot☽ constant
+
+Moon sidereal rotation period
+
+Measured. Moon's sidereal rotation period is the true time it takes to spin
+360° on its axis. The Moon is tidally locked to Earth, so its rotation period
+equals its orbital period. [Reference 22](#reference-22)
+
+### ϵ☽ constant
+
+Moon axial tilt
+
+Measured. Moon's axial tilt is the angle of the planet's rotational axis
+relative to its orbital plane. [Reference 22](#reference-22)
+
+### a☽ constant
+
+Moon semi-major axis
+
+Measured. Moon's orbital semi-major axis (mean Earth-Moon distance). It is half
+the length of the longest diameter of the elliptical orbit, which is also the
+average distance from one of the radii to the orbit. [Reference 25](#reference-25)
+
+### e☽ constant
+
+Moon orbital eccentricity
+
+Measured. Moon's orbital eccentricity. The Moon's elliptical orbit causes
+noticeable variation in its apparent size (supermoon and micromoon effects).
+When different from 0, it is a measure of how much the moon's elliptical path
+deviates from a perfect circle. [Reference 25](#reference-25)
+
+### i☽ constant
+
+Moon orbital inclination
+
+Moon's orbital inclination is a measured angle with respect to the ecliptic
+plane. [Reference 25](#reference-25)
+
+### Ω☽ constant
+
+Moon longitude of ascending node
+
+Moon's longitude of the ascending node is a measured angle quantifying the
+horizontal orientation of the orbit. It represents where the Moon crosses
+northward through Earth's orbital plane.. [Reference 25](#reference-25)
+
+### ω☽ constant
+
+Moon argument of perigee
+
+Measured. Moon's argument of perigee. It is the most recent point in its
+orbit when it was closest to the Earth. [Reference 25](#reference-25)
+
+### T₀☽ constant
+
+Moon perigee passage
+
+Calculated from measurement (Meeus ch.50, ±1 hour). See MPERC.txt. Moon's
+most recent time of perigee passage (closest approach to Earth). The perigee
+recurs approximately every 27.55 days. Computed using the Meeus algorithm
+(15 terms, ±1 hour accuracy). Value in JDN. [Materials 20](#materials-20) [Materials 22](#materials-22)
+
+
+## Mars constants
+
+### GM♂ constant
+
+Mars gravitational parameter
+
+Measured. Mars system gravitational parameter, including the contribution of
+its moons Phobos and Deimos, measured by spacecraft radio tracking. [Reference 4](#reference-4)
+
+### Req♂ constant
+
+Mars equatorial radius
+
+Measured. Mars's equatorial radius. [Reference 22](#reference-22)
+
+### Rp♂ constant
+
+Mars polar radius
+
+Measured. Mars's polar radius. Mars is noticeably oblate due to its rotation. [Reference 22](#reference-22)
+
+### f♂ constant
+
+Mars oblateness
+
+Calculated from measurement. When greater than 0, it describes how much a
+celestial body deviates from a perfect sphere, forming an "oblate spheroid". [Reference 22](#reference-22)
+
+### ρv♂ constant
+
+Mars mean density
+
+Calculated from measurement. Mars's mean density, intermediate between rocky
+and metallic compositions. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g♂ constant
+
+Mars surface gravity
+
+Calculated from measurement. Mars's surface gravity, approximately 38% of
+Earth's. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve♂ constant
+
+Mars escape velocity
+
+Calculated from measurement, it is valid at the equatorial surface. It is the
+minimum speed needed to break free from Mars's gravitational pull and never
+return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot♂ constant
+
+Mars sidereal rotation period
+
+Measured. Mars's sidereal rotation period is the true time it takes to spin
+360° on its axis. A Martian day (sol) is very similar in length to an Earth day.
+[Reference 22](#reference-22)
+
+### ϵ♂ constant
+
+Mars axial tilt
+Measured. Mars's axial tilt, similar to Earth's, gives Mars comparable
+seasonal variations. It is the angle of the planet's rotational axis
+relative to its orbital plane. [Reference 22](#reference-22)
+
+### a♂ constant
+
+Mars semi-major axis
+
+Measured. Mars's orbital semi-major axis is half the length of the longest
+diameter of the elliptical orbit, which is also the average distance from
+one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e♂ constant
+
+Mars orbital eccentricity
+
+Measured. Mars's orbital eccentricity, significantly larger than Earth's.
+When different from 0, it is a measure of how much a planet's elliptical
+path deviates from a perfect circle. [Reference 23](#reference-23)
+
+### i♂ constant
+
+Mars orbital inclination
+
+Mars's orbital inclination is a measured angle with respect to the ecliptic
+plane. [Reference 23](#reference-23)
+
+### Ω♂ constant
+
+Mars longitude of ascending node
+Mars's longitude of the ascending node is a measured angle quantifying the
+horizontal orientation of the orbit. It represents where Mars crosses
+northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♂ constant
+
+Mars argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit crosses
+the reference plane northward) and the perihelion (the closest point to the
+Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♂ constant
+
+Mars perihelion passage
+
+Measured. Mars's most recent time of perihelion passage. Mars's orbital
+period is approximately 1.88 years. Value in JDN. It is the most recent point
+in its orbit when it was closest to the Sun. [Materials 20](#materials-20)
+
+
+## Jupiter constants
+
+### GM♃ constant
+
+Jupiter gravitational parameter
+
+Exact nominal value (IAU 2015). Jupiter system gravitational parameter.
+An exact nominal value defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### Req♃ constant
+
+Jupiter equatorial radius
+
+Exact nominal value (IAU 2015). Jupiter's equatorial radius. An exact
+nominal value defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### Rp♃ constant
+
+Jupiter polar radius
+
+Exact nominal value (IAU 2015). Jupiter's polar radius. An exact nominal
+value defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### f♃ constant
+
+Jupiter oblateness
+
+Calculated from nominal value. It is the largest of any planet due to its
+rapid rotation and gaseous composition. When greater than 0, it describes
+how much a celestial body deviates from a perfect sphere, forming an
+"oblate spheroid". [Particle Data Group 2023](#particle-data-group-2023)
+
+### ρv♃ constant
+
+Jupiter mean density
+
+Calculated from nominal value. Jupiter's mean density, lower than water
+due to its gaseous composition. [Particle Data Group 2023](#particle-data-group-2023)
+
+### g♃ constant
+
+Jupiter surface gravity
+
+Calculated from nominal value. Jupiter's surface gravity at the 1-bar
+pressure level. [Particle Data Group 2023](#particle-data-group-2023)
+
+### Ve♃ constant
+
+Jupiter escape velocity
+
+Calculated from nominal value, it is valid at the equatorial surface.
+It is the minimum speed needed to break free from Jupiter's gravitational
+pull and never return. [Particle Data Group 2023](#particle-data-group-2023)
+
+### Prot♃ constant
+
+Jupiter sidereal rotation period
+
+Measured. Jupiter's sidereal rotation period is the true time it takes to
+spin 360° on its axis (System III, based on radio emissions from its
+magnetosphere). [Reference 22](#reference-22)
+
+### ϵ♃ constant
+
+Jupiter axial tilt
+
+Measured. Jupiter's axial tilt is the angle of the planet's rotational
+axis relative to its orbital plane. It is very small compared to Earth's.
+[Reference 22](#reference-22)
+
+### a♃ constant
+
+Jupiter semi-major axis
+
+Measured. Jupiter's orbital semi-major axis is half the length of the
+longest diameter of the elliptical orbit, which is also the average
+distance from one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e♃ constant
+
+Jupiter orbital eccentricity
+
+Measured. Jupiter's orbital eccentricity. When different from 0, it
+is a measure of how much a planet's elliptical path deviates from a
+perfect circle. [Reference 23](#reference-23)
+
+### i♃ constant
+
+Jupiter orbital inclination
+
+Jupiter's orbital inclination is a measured angle with respect to the
+ecliptic plane. [Reference 23](#reference-23)
+
+### Ω♃ constant
+
+Jupiter longitude of ascending node
+
+Jupiter's longitude of the ascending node is a measured angle
+quantifying the horizontal orientation of the orbit. It represents
+where Jupiter crosses northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♃ constant
+
+Jupiter argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit
+crosses the reference plane northward) and the perihelion (the closest
+point to the Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♃ constant
+
+Jupiter perihelion passage
+
+Measured. Jupiter's most recent time of perihelion passage. Jupiter's
+orbital period is approximately 11.86 years. It is the most recent point
+in its orbit when it was closest to the Sun. Value in JDN. [Reference 4](#reference-4) [Materials 21](#materials-21)
+
+
+## Saturn constants
+
+### GM♄ constant
+
+Saturn gravitational parameter
+
+Measured. Saturn system gravitational parameter, measured by radio
+tracking of the Cassini spacecraft. [Reference 4](#reference-4)
+
+### Req♄ constant
+
+Saturn equatorial radius
+
+Measured. Saturn's equatorial radius at the 1-bar pressure level. [Reference 22](#reference-22)
+
+### Rp♄ constant
+
+Saturn polar radius
+
+Measured. Saturn's polar radius at the 1-bar pressure level. [Reference 22](#reference-22)
+
+### f♄ constant
+
+Saturn oblateness
+
+Calculated from measurement. It is the second largest of any planet.
+When greater than 0, it describes how much a celestial body deviates
+from a perfect sphere, forming an "oblate spheroid". [Reference 22](#reference-22)
+
+### ρv♄ constant
+
+Saturn mean density
+
+Calculated from measurement. Saturn's mean density, the lowest of any
+planet constant
+
+less than that of water. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g♄ constant
+
+Saturn surface gravity
+
+Calculated from measurement. Saturn's surface gravity at the 1-bar
+pressure level. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve♄ constant
+
+Saturn escape velocity
+
+Calculated from measurement, it is valid at the equatorial surface.
+It is the minimum speed needed to break free from Saturn's gravitational
+pull and never return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot♄ constant
+
+Saturn sidereal rotation period
+
+Measured. Saturn's sidereal rotation period is the true time it takes
+to spin 360° on its axis (System III, based on Cassini radio
+measurements). [Reference 22](#reference-22)
+
+### ϵ♄ constant
+
+Saturn axial tilt
+
+Measured. Saturn's axial tilt, which causes its rings to appear at
+varying angles from Earth, It is the angle of the planet's rotational
+axis relative to its orbital plane.. [Reference 22](#reference-22)
+
+### a♄ constant
+
+Saturn semi-major axis
+
+Measured. Saturn's orbital semi-major axis is half the length of the
+longest diameter of the elliptical orbit, which is also the average
+distance from one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e♄ constant
+
+Saturn orbital eccentricity
+
+Measured. Saturn's orbital eccentricity. When different from 0, it is
+a measure of how much a planet's elliptical path deviates from a perfect
+circle. [Reference 23](#reference-23)
+
+### i♄ constant
+
+Saturn orbital inclination
+
+Saturn's orbital inclination is a measured angle with respect to the
+ecliptic plane. [Reference 23](#reference-23)
+
+### Ω♄ constant
+
+Saturn longitude of ascending node
+
+Saturn's longitude of the ascending node is a measured angle quantifying
+the horizontal orientation of the orbit. It represents where Saturn
+crosses northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♄ constant
+
+Saturn argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit
+crosses the reference plane northward) and the perihelion (the closest
+point to the Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♄ constant
+
+Saturn perihelion passage
+
+Measured. Saturn's most recent time of perihelion passage. Saturn's
+orbital period is approximately 29.46 years. It is the most recent point
+in its orbit when it was closest to the Sun. Value in JDN. [Reference 4](#reference-4) [Materials 21](#materials-21)
+
+
+## Uranus constants
+
+### GM⛢ constant
+
+Uranus gravitational parameter
+
+Measured. Uranus system gravitational parameter, measured by Voyager
+2 radio tracking. [Reference 4](#reference-4)
+
+### Req⛢ constant
+
+Uranus equatorial radius
+
+Measured. Uranus's equatorial radius, measured by Voyager 2 and stellar
+occultations. [Reference 22](#reference-22)
+
+### Rp⛢ constant
+
+Uranus polar radius
+
+Measured. Uranus's polar radius. [Reference 22](#reference-22)
+
+### f⛢ constant
+
+Uranus oblateness
+
+Calculated from measurement. When greater than 0, it describes how much
+a celestial body deviates from a perfect sphere, forming an "oblate
+spheroid". [Reference 22](#reference-22)
+
+### ρv⛢ constant
+
+Uranus mean density
+
+Calculated from measurement. Uranus's mean density, characteristic of
+an ice giant. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g⛢ constant
+
+Uranus surface gravity
+
+Calculated from measurement. Uranus's surface gravity at the 1-bar
+pressure level. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve⛢ constant
+
+Uranus escape velocity
+
+Calculated from measurement, it is valid at the equatorial surface.
+It is the minimum speed needed to break free from Uranus's gravitational
+pull and never return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot⛢ constant
+
+Uranus sidereal rotation period
+
+Measured. Uranus's sidereal rotation period is the true time it takes
+to spin 360° on its axis. Uranus rotates retrograde relative to its
+orbital motion. [Reference 22](#reference-22)
+
+### ϵ⛢ constant
+
+Uranus axial tilt
+
+Measured. Uranus's axial tilt is the angle of the planet's rotational
+axis relative to its orbital plane. Its extreme obliquity (≈98°) means
+it rotates almost on its side. [Reference 22](#reference-22)
+
+### a⛢ constant
+
+Uranus semi-major axis
+
+Measured. Uranus's orbital semi-major axis is half the length of the
+longest diameter of the elliptical orbit, which is also the average
+distance from one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e⛢ constant
+
+Uranus orbital eccentricity
+
+Measured. Uranus's orbital eccentricity. When different from 0, it
+is a measure of how much a planet's elliptical path deviates from a
+perfect circle. [Reference 23](#reference-23)
+
+### i⛢ constant
+
+Uranus orbital inclination
+
+Uranus's orbital inclination is a measured angle with respect to the
+ecliptic plane. [Reference 23](#reference-23)
+
+### Ω⛢ constant
+
+Uranus longitude of ascending node
+
+Uranus's longitude of the ascending node is a measured angle quantifying
+the horizontal orientation of the orbit. It represents where Uranus
+crosses northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω⛢ constant
+
+Uranus argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit
+crosses the reference plane northward) and the perihelion (the closest
+point to the Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀⛢ constant
+
+Uranus perihelion passage
+
+Calculated from measurement (JPL DE440 orbital propagation). Uranus's
+predicted next time of perihelion passage (~2050). Uranus's orbital
+period is approximately 84 years. Last perihelion: 1966. It is the most
+recent point in its orbit when it was closest to the Sun. Value in JDN.
+[Reference 4](#reference-4) [Materials 21](#materials-21)
+
+
+## Neptune constants
+
+### GM♆ constant
+
+Neptune gravitational parameter
+
+Measured. Neptune system gravitational parameter, measured by Voyager
+2 radio tracking and Hubble Space Telescope astrometry of Triton. [Reference 4](#reference-4)
+
+### Req♆ constant
+
+Neptune equatorial radius
+
+Measured. Neptune's equatorial radius, measured by Voyager 2 and stellar
+occultations. [Reference 22](#reference-22)
+
+### Rp♆ constant
+
+Neptune polar radius
+
+Measured. Neptune's polar radius. [Reference 22](#reference-22)
+
+### f♆ constant
+
+Neptune oblateness
+
+Calculated from measurement. When greater than 0, it describes how
+much a celestial body deviates from a perfect sphere, forming an
+"oblate spheroid". [Reference 22](#reference-22)
+
+### ρv♆ constant
+
+Neptune mean density
+
+Calculated from measurement. Neptune's mean density, characteristic of
+an ice giant. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### g♆ constant
+
+Neptune surface gravity
+
+Calculated from measurement. Neptune's surface gravity at the 1-bar
+pressure level. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Ve♆ constant
+
+Neptune escape velocity
+
+Calculated from measurement, it is valid at the equatorial surface. It
+is the minimum speed needed to break free from Neptune's gravitational
+pull and never return. [Reference 4](#reference-4) [Reference 22](#reference-22)
+
+### Prot♆ constant
+
+Neptune sidereal rotation period
+
+Measured. Neptune's sidereal rotation period is the true time it takes
+to spin 360° on its axis (System III, from Voyager 2 radio measurements).
+[Reference 22](#reference-22)
+
+### ϵ♆ constant
+
+Neptune axial tilt
+
+Measured. Neptune's axial tilt, comparable to Earth's, is the angle of
+the planet's rotational axis relative to its orbital plane. [Reference 22](#reference-22)
+
+### a♆ constant
+
+Neptune semi-major axis
+
+Measured. Neptune's orbital semi-major axis is half the length of the
+longest diameter of the elliptical orbit, which is also the average
+distance from one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e♆ constant
+
+Neptune orbital eccentricity
+
+Measured. Neptune's orbital eccentricity. When different from 0, it
+is a measure of how much a planet's elliptical path deviates from a
+perfect circle. [Reference 23](#reference-23)
+
+### i♆ constant
+
+Neptune orbital inclination
+
+Neptune's orbital inclination is a measured angle with respect to
+the ecliptic plane. [Reference 23](#reference-23)
+
+### Ω♆ constant
+
+Neptune longitude of ascending node
+
+Neptune's longitude of the ascending node is a measured angle quantifying
+the horizontal orientation of the orbit. It represents where Neptune
+crosses northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♆ constant
+
+Neptune argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit
+crosses the reference plane northward) and the perihelion (the closest
+point to the Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♆ constant
+
+Neptune perihelion passage
+
+Calculated from measurement (JPL DE440 orbital propagation). Neptune's
+predicted next time of perihelion passage (~2042). Neptune's orbital
+period is approximately 164.8 years. Last perihelion: 1876. It is the
+most recent point in its orbit when it was closest to the Sun. Value
+in JDN. [Reference 4](#reference-4) [Materials 21](#materials-21)
+
+
+## Pluto constants
+
+### GM♇ constant
+
+Pluto gravitational parameter
+
+Measured. Pluto system gravitational parameter, measured by New Horizons
+radio tracking. [Reference 4](#reference-4)
+
+### Req♇ constant
+
+Pluto equatorial radius
+
+Measured. Pluto's equatorial radius, measured by New Horizons occultation
+and imaging. [Reference 26](#reference-26)
+
+### Rp♇ constant
+
+Pluto polar radius
+
+Measured. Pluto's polar radius. Pluto is essentially spherical. [Reference 26](#reference-26)
+
+### f♇ constant
+
+Pluto oblateness
+
+Calculated from measurement. Pluto being spherical, its oblateness is
+effectively zero. [Reference 26](#reference-26)
+
+### ρv♇ constant
+
+Pluto mean density
+
+Calculated from measurement. Pluto's mean density, consistent with
+a mixture of rock and ice. [Reference 4](#reference-4) [Reference 26](#reference-26)
+
+### g♇ constant
+
+Pluto surface gravity
+
+Calculated from measurement. Pluto's surface gravity. [Reference 4](#reference-4) [Reference 26](#reference-26)
+
+### Ve♇ constant
+
+Pluto escape velocity
+
+Calculated from measurement, it is valid at the equatorial surface.
+It is the minimum speed needed to break free from Pluto's gravitational
+pull and never return. [Reference 4](#reference-4) [Reference 26](#reference-26)
+
+### Prot♇ constant
+
+Pluto sidereal rotation period
+
+Measured. Pluto's sidereal rotation period is the true time it takes to
+spin 360° on its axis. Pluto rotates retrograde and is tidally locked to
+its moon Charon. [Reference 26](#reference-26)
+
+### ϵ♇ constant
+
+Pluto axial tilt
+
+Measured. Pluto's axial tilt is the angle of the planet's rotational
+axis relative to its orbital plane. [Reference 26](#reference-26)
+
+### a♇ constant
+
+Pluto semi-major axis
+
+Measured. Pluto's orbital semi-major axis is half the length of the
+longest diameter of the elliptical orbit, which is also the average
+distance from one of the radii to the orbit. [Reference 23](#reference-23)
+
+### e♇ constant
+
+Pluto orbital eccentricity
+
+Measured. Pluto's orbital eccentricity, large enough to bring it inside
+Neptune's orbit near perihelion. When different from 0, it is a measure
+of how much a planet's elliptical path deviates from a perfect circle. [Reference 23](#reference-23)
+
+### i♇ constant
+
+Pluto orbital inclination
+
+Pluto's orbital inclination is a measured angle with respect to the ecliptic
+plane, ir is the highest of any solar system body traditionally listed. [Reference 23](#reference-23)
+
+### Ω♇ constant
+
+Pluto longitude of ascending node
+
+Pluto's longitude of the ascending node is a measured angle quantifying
+the horizontal orientation of the orbit. It represents where Pluto crosses
+northward through Earth's orbital plane. [Reference 23](#reference-23)
+
+### ω♇ constant
+
+Pluto argument of perihelion
+
+It is the measured angle between the ascending node (where the orbit crosses
+the reference plane northward) and the perihelion (the closest point to the
+Sun), measured in the direction of motion. [Reference 23](#reference-23)
+
+### T₀♇ constant
+
+Pluto perihelion passage
+
+Measured. Pluto's last time of perihelion passage (1989 Sep 05). Pluto's
+orbital period is approximately 248 years. It is the most recent point in
+its orbit when it was closest to the Sun. Next perihelion: ~2237. Value
+in JDN. [Reference 4](#reference-4) [Materials 21](#materials-21)
+
+## Sun constants
+
+### M☉ constant
+
+Solar mass
+
+It is derived from the exact nominal solar gravitational parameter
+`GM☉` and the measured gravitational constant `G`. [Particle Data Group 2024](#particle-data-group-2024) [Particle Data Group 2023](#particle-data-group-2023) [Reference 5](#reference-5)
+
+### GM☉ constant
+
+Solar gravitational parameter
+
+It is an exact nominal value defined by the International Astronomical
+Union (IAU 2015 Resolution B3). [Particle Data Group 2023](#particle-data-group-2023)
+
+### L☉ constant
+
+Solar luminosity
+
+It is an exact nominal value defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### Req☉ constant
+
+Solar equatorial radius
+
+It is an exact nominal value defined by the IAU (2015). [Particle Data Group 2023](#particle-data-group-2023)
+
+### Rp☉ constant
+
+Solar polar radius
+
+It is measured by helioseismology and limb-darkening observations.
+[Reference 18](#reference-18) [Reference 19](#reference-19)
+
+### f☉ constant
+
+Solar oblateness
+
+The Solar oblateness (or flattening) is calculated from the nominal
+equatorial radius and the polar radius measurement as
+`f☉=1−Rp☉/Req☉`. Its uncertainty is inherited from Jupiter `♃Rp☉`.
+When greater than 0, it describes how much a celestial body deviates
+from a perfect sphere, forming an "oblate spheroid". [Reference 18](#reference-18) [Reference 19](#reference-19)
+
+### ρv☉ constant
+
+Solar mean density
+
+It is calculated from the nominal gravitational parameter `GM☉`, the
+gravitational constant `G`, and the solar radii measurement. [Particle Data Group 2023](#particle-data-group-2023)
+
+### g☉ constant
+
+Solar surface gravity
+
+The Solar surface gravity at the equator is calculated from `GM☉`
+and the measurement of the equatorial radius `Req☉`. [Particle Data Group 2023](#particle-data-group-2023)
+
+### Ve☉ constant
+
+Solar escape velocity
+
+The Solar escape velocity at the equatorial surface is calculated from
+`GM☉` and the measurement of solar radii. It is the minimum speed needed
+to break free from Sun's gravitational pull and never return. [Particle Data Group 2023](#particle-data-group-2023)
+
+### Prot☉ constant
+
+Solar sidereal rotation period
+
+The Solar sidereal rotation period at the equator (System I) is measured
+by tracking surface features using Doppler techniques. It is the true
+time it takes to spin 360° on its axis. [Reference 20](#reference-20) [Reference 21](#reference-21)
+
+
+## Cosmology constants
+
+### Λ constant
+
+Cosmological constant
+
+It represents the measured energy density of empty space (dark energy)
+in Einstein's field equations. Its value is inferred from observations
+of the large-scale structure and expansion of the universe. [Planck 2020](#planck-2020) [Particle Data Group 2024](#particle-data-group-2024)
+
+### H₀ constant
+
+Hubble constant
+
+It is the measured current rate of expansion of the universe, expressed
+in `km/(s·Mpc)`. Its value is measured from observations of the cosmic
+microwave background and Type Ia supernovae. [Planck 2020](#planck-2020)
+
+### ωb constant
+
+Baryon density parameter
+
+It is the measured physical density of baryonic matter (ordinary matter)
+in the universe, measured from the cosmic microwave background power
+spectrum. [Planck 2020](#planck-2020)
+
+### ωc constant
+
+Dark matter density parameter
+
+It is the measured physical density of cold dark matter in the universe,
+measured from the cosmic microwave background power spectrum. [Planck 2020](#planck-2020)
+
+### 100θ* constant
+
+CMB acoustic scale
+
+The CMB Acoustic scale corresponds to the measure of one hundred times
+the angular size of the sound horizon at recombination, measured from
+the position of the first acoustic peak in the CMB power spectrum. [Planck 2020](#planck-2020)
+
+### τr constant
+
+Reionization optical depth
+
+It is the measured integrated optical depth to Thomson scattering from
+the epoch of reionization, measured from the CMB polarization spectrum.
+[Planck 2020](#planck-2020)
+
+### ns constant
+
+Scalar spectral index
+
+It is the measured tilt of the primordial power spectrum of density
+fluctuations, where ns=1 corresponds to a scale-invariant Harrison-
+Zel'dovich spectrum. [Planck 2020](#planck-2020)
+
+### (ln(10¹⁰As)) constant
+
+Power spectrum amplitude
+
+Measured amplitude of the primordial power spectrum. The logarithm
+of the scalar power spectrum amplitude, normalized at a pivot scale
+of `0.05 Mpc⁻¹`. [Planck 2020](#planck-2020)
+
+### MG constant
+
+Milky Way total mass
+
+Measured total mass of the Milky Way galaxy, including baryonic
+and dark matter components, estimated from stellar kinematics and
+satellite galaxy dynamics. [Reference 8](#reference-8) [Reference 9](#reference-9) [Reference 10](#reference-10)
+
+### fDMG constant
+
+Milky Way dark matter fraction
+
+Measured fraction of dark matter in the Milky Way galaxy. Estimated
+from rotation curves, satellite dynamics, and gravitational lensing.
+[Reference 8](#reference-8) [Reference 9](#reference-9)
+
+### RG constant
+
+Milky Way disk radius
+
+Measure of the equatorial radius of the Milky Way galaxy's disk,
+estimated from star count surveys and kinematic models. [Reference 8](#reference-8) [Reference 9](#reference-9)
+
+### D●SgrA* constant
+
+Distance to Sgr A*
+
+Measured distance from the Sun to the black hole Sagittarius A* at
+the Galactic centre, measured by stellar orbit monitoring with the
+GRAVITY instrument. [Reference 6](#reference-6) [Reference 7](#reference-7)
+
+### R●SgrA* constant
+
+Sgr A* Schwarzschild radius
+
+Measured Schwarzschild radius of the black hole Sagittarius A*, derived
+from its mass measurement by the Event Horizon Telescope collaboration.
+[Reference 7](#reference-7)
+
+### M●SgrA* constant
+
+Sgr A* black hole mass
+
+Measured mass of the supermassive black hole Sagittarius A* at the
+Galactic centre, measured from the orbits of stars in its immediate vicinity.
+[Reference 7](#reference-7)
+
+### MNGC224 constant
+
+Andromeda galaxy total mass
+
+Measure of the total mass of the Andromeda galaxy (M31, NGC 224), including
+dark matter, estimated from satellite galaxy kinematics and gravitational
+timing arguments. [Reference 11](#reference-11) [Reference 12](#reference-12)
+
+### fDMNGC224 constant
+
+Andromeda dark matter fraction
+
+Measured fraction of dark matter in the Andromeda galaxy (M31), estimated
+from dynamical modelling of its halo. [Reference 11](#reference-11) [Reference 12](#reference-12)
+
+### RNGC224 constant
+
+Andromeda galaxy disk radius
+
+Measurement of the mean equatorial radius of the Andromeda galaxy (M31),
+estimated from stellar population surveys. [Reference 11](#reference-11)
+
+### DNGC224 constant
+
+Distance to Andromeda galaxy
+
+Measurement of the mean distance from the Milky Way to the Andromeda
+galaxy (M31), measured using Cepheid variable stars and tip of the red
+giant branch. [Reference 11](#reference-11)
+
+### GM★Vega constant
+
+Vega gravitational parameter
+
+Measurement of the gravitational parameter of the star Vega (mass times
+gravitational constant `G`). Measured by interferometry and spectral
+analysis. [Reference 13](#reference-13) [Reference 14](#reference-14)
+
+### L★Vega constant
+
+Vega luminosity
+
+Measured luminosity of the star Vega, used as a photometric reference
+standard in stellar astronomy. [Reference 13](#reference-13) [Reference 14](#reference-14)
+
 
 
 ## Materials constants
 
-### ε₀q constant
+## A. GASES (at `StdT = 273.15 K = 0°C`, `StdP = 101.325 kPa`)
+  Parameters: `ρv`, `n*`, `cp`, `cv`, `γ`, `R`, `ε`, `μ`, `ρ`, `Ed`
+   *: where relevant
+  `γ = cp/cv` and `R = cp − cv` apply to gases only.
+  `γ` is given as a calculation `cp/cv` for diatomic gases.
+  `R` is given as a calculation `cp-cv` for all gases.
 
-Ratio of the vacuum permittivity [vaccum permittivity](#ε₀-constant) to
-the elementary charge [elementary charge](#qe-constant): `ε₀q=ε₀/qe`.
+## Dry Air constants
 
-### qε₀ constant
+Gas
 
-Product of the vaccum permittivity [vaccum permittivity](#ε₀-constant) by
-the elementary charge [elementary charge](#qe-constant): `qε₀=ε₀·qe`.
+### ρvAir constant
+
+Dry air density
+
+Measured. Volumetric density of dry air at standard temperature (0°C)
+and pressure (101.325 kPa).
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### nAir constant
+
+Refractive index of dry air
+
+Measured. Refractive index of dry air at 589 nm (sodium D line), 0°C,
+1 atm. Varies slightly with humidity and CO2 content.
+[Materials 2](#materials-2)
+
+### cpAir constant
+
+Specific heat cp of dry air
+
+Measured. Specific heat of dry air at constant pressure at 300 K.
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### cvAir constant
+
+Specific heat cv of dry air
+
+Specific heat of dry air at constant volume, calculated as
+`cpAir − RAir`.
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### γAir constant
+
+Adiabatic index of dry air
+
+Calculated from measurement. Adiabatic index (heat capacity ratio) of
+dry air, `γ=cp/cv`, at 300 K.
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### RAir constant
+
+Specific gas constant of dry air
+
+Exact calculation: `R/M_Air`. Specific gas constant of dry air,
+`RAir=R/M_Air`, where `M_Air=28.9647 g/mol`. [Materials 1](#materials-1)
+
+### εAir constant
+
+Electric permittivity of dry air
+
+Measured. Electric permittivity of dry airat STP. The relative
+permittivity `εr≈1.000536` is very close to vacuum permittivity `ε₀`.
+It is a measure of how dense an electric field is "permitted" to
+form in response to electric charges.
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### μAir constant
+
+Magnetic permeability of dry air
+
+Measured. Magnetic permeability of dry air at STP. The relative
+permeability `μr≈1.0000004`, essentially identical to `μ₀`. It
+quantifies the strength of the magnetic field induced by an electric
+current.
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### ρAir constant
+
+Resistivity of dry air
+
+Measured. Electrical resistivity of dry air at STP. Dry air is an
+excellent insulator; resistivity ranges from 10¹³ to 10¹⁶ Ω·m
+depending on ionisation level. It quantifies how strongly a material
+opposes the flow of electric current.
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+### EdAir constant
+
+Dielectric rigidity of dry air
+
+Measured. Dielectric breakdown field strength of dry air at STP.
+Above this threshold, dry air undergoes avalanche ionisation
+(lightning, spark discharge).
+[Materials 1](#materials-1)
+[Materials 2](#materials-2)
+
+## N2 constant
+
+Gas
+
+### ρvN2 constant
+
+Dinitrogen N2 density
+
+Measured. Volumetric density of dinitrogen (N2) at `0°C`,
+`101.325 kPa`.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### cpN2 constant
+
+Dinitrogen N2 specific heat cp
+
+Measured. Specific heat of N2 at constant pressure.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### cvN2 constant
+
+Dinitrogen N2 specific heat cv
+
+Measured. Specific heat of N2 at constant volume.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### γN2 constant
+
+Dinitrogen N2 adiabatic index
+
+Measured. Adiabatic index of N2, γ=cp/cv.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### RN2 constant
+
+Dinitrogen N2 specific gas constant
+
+Exact calculation: `R/M_N2`. Specific gas constant of N2, `RN2=R/M_N2`,
+where `M_N2=28.014 g/mol`. [Materials 2](#materials-2)
+
+### εN2 constant
+
+Electric permittivity of N2
+
+Measured. Electric permittivity of N2 at STP. Relative permittivity
+`εr≈1.000580`; N2 is widely used as an insulating gas in high-voltage
+equipment. It is a measure of how dense an electric field is "permitted"
+to form in response to electric charges. [Materials 2](#materials-2)
+
+### μN2 constant
+
+Magnetic permeability of N2
+
+Measured. Magnetic permeability of N2 at STP. Diamagnetic with `μr≈1.0000000`,
+essentially equal to `μ₀`. It quantifies the strength of the magnetic field
+induced by an electric current. [Materials 2](#materials-2)
+
+### ρN2 constant
+
+Resistivity of N2
+
+Measured. Electrical resistivity of dry N2 at STP. Excellent insulator
+used in purged electrical enclosures. It quantifies how strongly a
+material opposes the flow of electric current. [Materials 2](#materials-2)
+
+### EdN2 constant
+
+Dielectric rigidity of N2
+
+Measured. Dielectric breakdown field of N2 at STP. Slightly higher
+than dry air; preferred for high-voltage insulation. It is the electric
+field threshold above which an avalanche ionisation occurs. [Materials 2](#materials-2)
+
+## O2 constant
+
+Gas
+
+### ρvO2 constant
+
+Dioxygen O2 density
+
+Measured. Volumetric density of dioxygen (O2) at `0°C`,
+`101.325 kPa`.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### cpO2 constant
+
+Dioxygen O2 specific heat cp
+
+Measured. Specific heat of O2 at constant pressure.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### cvO2 constant
+
+Dioxygen O2 specific heat cv
+
+Measured. Specific heat of O2 at constant volume.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### γO2 constant
+
+Dioxygen O2 adiabatic index
+
+Measured. Adiabatic index of O2, `γ=cp/cv`, at `300 K`.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### RO2 constant
+
+Dioxygen O2 specific gas constant
+
+Exact calculation: `R/M_O2`. Specific gas constant of O2, `RO2=R/M_O2`,
+where `M_O2=31.999 g/mol`. [Materials 2](#materials-2)
+
+### εO2 constant
+
+Electric permittivity of O2
+
+Measured. Electric permittivity of O2 at STP. Relative permittivity
+`εr≈1.000530`, comparable to N2. It is a measure of how dense an electric
+field is "permitted" to form in response to electric charges. [Materials 2](#materials-2)
+
+### μO2 constant
+
+Magnetic permeability of O2
+
+Measured. Magnetic permeability of O2 at STP. Paramagnetic with
+`μr≈1.0000019` due to its unpaired electrons. It quantifies the strength
+of the magnetic field induced by an electric current. [Materials 2](#materials-2)
+
+### ρO2 constant
+
+Resistivity of O2
+
+Measured. Electrical resistivity of dry O2 at STP. Good insulator
+under standard conditions. It quantifies how strongly a material
+opposes the flow of electric current. [Materials 2](#materials-2)
+
+### EdO2 constant
+
+Dielectric rigidity of O2
+
+Measured. Dielectric breakdown electric field of O2 at STP.
+Slightly lower than N2. [Materials 2](#materials-2)
+
+## Argon constant
+
+Gas
+
+### ρvAr constant
+
+Argon density
+
+Measured. Volumetric density of argon (Ar) at `0°C`,
+`101.325 kPa`. [Materials 2](#materials-2)
+
+### cpAr constant
+
+Argon specific heat cp
+
+Exact calculation: `(5/2)·R/M_Ar` (monatomic ideal gas). Specific
+heat of argon at constant pressure. [Materials 2](#materials-2)
+
+### cvAr constant
+
+Argon specific heat cv
+
+Specific heat of argon at constant volume. Exactly `(3/2)·R/M_Ar` for
+a monatomic ideal gas. [Materials 2](#materials-2)
+
+### γAr constant
+
+Argon adiabatic index
+
+Adiabatic index of argon. Exactly `5/3` for any monatomic ideal gas. [Materials 2](#materials-2)
+
+### RAr constant
+
+Argon specific gas constant
+
+Exact calculation. Specific gas constant of argon, `RAr=R/M_Ar`, where
+`M_Ar=39.948 g/mol`. [Materials 2](#materials-2)
+
+### εAr constant
+
+Electric permittivity of Ar
+
+Measured. Electric permittivity of Ar at STP. Relative permittivity
+`εr≈1.000516`; used as an inert dielectric medium. It is a measure of how
+dense an electric field is "permitted" to form in response to electric charges.
+[Materials 2](#materials-2)
+
+### μAr constant
+
+Magnetic permeability of Ar
+
+Measured. Magnetic permeability of Ar at STP. Diamagnetic with `μr≈1.0000000`,
+essentially equal to `μ₀`. It quantifies the strength of the magnetic field
+induced by an electric current. [Materials 2](#materials-2)
+
+### ρAr constant
+
+Resistivity of Ar
+
+Measured. Electrical resistivity of argon at STP. Excellent insulator; used
+in plasma physics and dielectric studies. It quantifies how strongly a
+material opposes the flow of electric current. [Materials 2](#materials-2)
+
+### EdAr constant
+
+Dielectric rigidity of Ar
+
+Measured. Dielectric breakdown electric field of argon at STP. Lower than
+air due to absence of polar molecules. [Materials 2](#materials-2)
+
+## CO2 constant
+
+Gas
+
+### ρvCO2 constant
+
+Carbon dioxide CO2 density
+
+Measured. Volumetric density of carbon dioxide (CO2) at `0°C`,
+`101.325 kPa`.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### cpCO2 constant
+
+Carbon dioxide CO2 specific heat cp
+
+Measured. Specific heat of CO2 at constant pressure at `300 K`.
+Strongly temperature-dependent.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### cvCO2 constant
+
+Carbon dioxide CO2 specific heat cv
+
+Measured. Specific heat of CO2 at constant volume at `300 K`.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### γCO2 constant
+
+Carbon dioxide CO2 adiabatic index
+
+Measured. Adiabatic index of CO2 at `300 K`. Lower than diatomic gases
+due to its additional vibrational modes.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+
+### RCO2 constant
+
+Carbon dioxide CO2 specific gas constant
+
+Exact calculation. Specific gas constant of CO2, `RCO2=R/M_CO2`,
+where `M_CO2=44.010 g/mol`. [Materials 2](#materials-2)
+
+### εCO2 constant
+
+Electric permittivity of CO2
+
+Measured. Electric permittivity of CO2 at STP. Relative permittivity `εr≈1.000921`,
+slightly higher than N2 and Ar due to CO2's quadrupole moment. It is a measure
+of how dense an electric field is "permitted" to form in response to electric
+charges.
+[Materials 2](#materials-2)
+[Materials 3](#materials-3)
+
+### μCO2 constant
+
+Magnetic permeability of CO2
+
+Measured. Magnetic permeability of CO2 at STP. Diamagnetic with `μr≈1.0000000`,
+essentially equal to `μ₀`. It quantifies the strength of the magnetic field
+induced by an electric current. [Materials 2](#materials-2)
+
+### ρCO2 constant
+
+Resistivity of CO2
+
+Measured. Electrical resistivity of CO2 at STP. Lower than N2 and Ar; sometimes
+used as arc-quenching medium in circuit breakers. It quantifies how strongly
+a material opposes the flow of electric current. [Materials 2](#materials-2)
+
+### EdCO2 constant
+
+Dielectric rigidity of CO2
+
+Measured. Dielectric breakdown electric field of CO2 at STP. Comparable to dry
+air. [Materials 2](#materials-2)
+
+
+## B. LIQUIDS (at `T = 293.15 K = 0°C`, `StdP = 101.325 kPa`)
+  Parameters: `ρv`, `n`, `cp`, `ρ`
+  For liquids: `cv ≈ `cp (difference < 1%), `γ ≈ 1`, `R = cp - cv ≈ 0`.
+  These parameters are therefore not listed for liquids.
+
+## H2O constant
+
+Liquid
+
+### ρvH2O constant
+
+Liquid water density
+
+Measured (IAPWS-IF97). Volumetric density of liquid water at `20°C`,
+`101.325 kPa`. [Materials 4](#materials-4)
+[Materials 2](#materials-2)
+
+### nH2O constant
+
+Refractive index of liquid water
+
+Measured. Refractive index of liquid water at `589 nm` (sodium D line), `20°C`.
+[Materials 4](#materials-4)
+
+### cpH2O constant
+
+Specific heat cp of liquid water
+
+Measured (IAPWS-IF97). Specific heat of liquid water at constant pressure
+at `20°C`. Near its minimum value in the `0–100°C` range. [Materials 4](#materials-4)
+[Materials 2](#materials-2)
+
+### ρH2O constant
+
+Resistivity of liquid water
+
+Measured. Electrical resistivity of ultra-pure water at `25°C` . The value
+`1.8×10⁵ Ω·m (18 MΩ·cm)` is the theoretical maximum for pure water. It
+quantifies how strongly a material opposes the flow of electric current.
+[Materials 4](#materials-4) [Materials 2](#materials-2)
+
+
+## C. SOLIDS (at `T = 293.15 K = 20°C`, `StdP = 101.325 kPa`)
+  Parameters: `ρv`, `n`, `cp`, `ε`, `ρ*`, `Ed*`  * when relevant
+
+## C1. Materials for optical fibers and waveguides
+
+## Silicon constant
+
+Dielectric
+
+### ρvSi constant
+
+Crystalline silicon density
+
+Measured. Volumetric density of crystalline silicon, the foundation
+of modern microelectronics and an important infrared photonic
+material. [Materials 10](#materials-10) [Materials 11](#materials-11)
+
+### nSi constant
+
+Refractive index of crystalline silicon
+
+Measured (Silicon is transparent only for `λ > 1.1 µm`). Refractive
+index of crystalline silicon at `1150 nm`, `20°C`. [Materials 11](#materials-11)
+
+### cpSi constant
+
+Specific heat of silicon
+
+Measured. Specific heat of crystalline silicon at `300 K`. [Materials 10](#materials-10)
 
 ### εsi constant
 
-Dielectric constant of silicon. The dielectric constant (or relative
-permittivity), is a material property that measures how well an applied electric
-field can penetrate a dielectric medium compared to a vacuum. A higher value
-corresponds to a lower penetration. It has an exact value by convention.
+Dielectric constant of silicon
+
+Exact convention. Dielectric constant of silicon. The relative permittivity
+measures how well an applied electric field penetrates the material
+compared to vacuum. Has an exact value by convention. [HP50g Manual]
+
+### ρSi constant
+
+Resistivity of crystalline silicon
+
+Measured. Electrical resistivity of intrinsic crystalline silicon at `300 K`.
+Semiconductor; resistivity varies over many orders of magnitude with doping.
+It quantifies how strongly a material opposes the flow of electric current.
+[Materials 10](#materials-10) [Materials 11](#materials-11)
+
+## SiO2 constant
+
+Dielectric
+
+### ρvSiO2 constant
+
+Fused silica density
+
+Measured. Volumetric density of amorphous fused silica (vitreous SiO2),
+the primary material for standard optical fibers. [Materials 5](#materials-5) [Materials 7](#materials-7)
+
+### nSiO2 constant
+
+Refractive index of fused silica
+
+Measured (Malitson 1965 Sellmeier fit). Refractive index of fused silica
+at `589.3 nm` (sodium D line), `20°C`. The Sellmeier-calibrated value
+from Malitson (1965) is the standard reference for fiber optic design. [Materials 5](#materials-5)
+
+### cpSiO2 constant
+
+Specific heat of fused silica
+
+Measured. Specific heat of fused silica at `20°C`. [Materials 7](#materials-7)
 
 ### εox constant
 
-SiO2 dielectric constant. The dielectric constant (or relative
-permittivity), is a material property that measures how well an applied electric
-field can penetrate a dielectric medium compared to a vacuum. A higher value
-corresponds to a lower penetration. By convention it has an exact value.
+Dielectric constant of SiO2
 
-### I₀ constant
+Exact convention. Dielectric constant of SiO2 (silicon dioxide). The relative
+permittivity of thermally grown or deposited silicon dioxide, used in MOS
+device modelling. Has an exact value by convention. It measures how well
+an applied electric field penetrates the material compared to vacuum. [HP50g Manual]
 
-Reference sound intensity. Sound intensity level or acoustic intensity level is
-the level of the intensity of a sound relative to a reference value. It is a
-logarithmic quantity, most often expressed in decibels dB. I₀ is the sound
-intensity used as a reference, corresponding to `β=0_dB` due to the definition
-of the sound pressure level `β=10·LOG10(I/I₀)` where `I=I₀`. By convention it
-has an exact value.
+### ρSiO2 constant
+
+Resistivity of fused silica
+
+Measured. Electrical resistivity of fused silica at `20°C`. Among the best
+solid insulators; used in high-voltage isolation and MEMS. It quantifies
+how strongly a material opposes the flow of electric current. [Materials 7](#materials-7)
+
+### EdSiO2 constant
+
+Dielectric rigidity of fused silica
+
+Measured. Dielectric breakdown electric field of fused silica. Very high;
+SiO2 is the standard gate dielectric in MOSFET technology. [Materials 7](#materials-7)
+
+## GeO2 constant
+
+Dielectric
+
+## ρvGeO2 constant
+
+Germanate glass density
+
+Measured. Volumetric density of germanate glass (GeO2), used as a dopant
+in the core of standard single-mode optical fibers to raise the refractive
+index. [Materials 8](#materials-8) [Materials 9](#materials-9)
+
+### nGeO2 constant
+
+Refractive index of germanate glass
+
+Measured. Refractive index of pure GeO2 glass at `589 nm`, `20°C`. The
+actual core index of a doped fiber is interpolated between nSiO2
+and nGeO2. [Materials 8](#materials-8)
+
+### cpGeO2 constant
+
+Specific heat of germanate glass
+
+Measured. Specific heat of germanate glass. [Materials 9](#materials-9)
+
+### ρGeO2 constant
+
+Resistivity of germanate glass
+
+Measured. Electrical resistivity of pure GeO2 glass at `20°C`. Lower
+than fused silica but still an excellent insulator. It quantifies how
+strongly a material opposes the flow of electric current. [Materials 9](#materials-9)
+
+### EdGeO2 constant
+
+Dielectric rigidity of germanate glass
+
+Measured. Dielectric breakdown electric field of GeO2 glass. Similar
+order of magnitude to SiO2; varies with purity. [Materials 9](#materials-9)
+
+## Si3N4 constant
+
+Dielectric
+
+### ρvSi3N4 constant
+
+Silicon nitride density
+
+Measured. Volumetric density of silicon nitride (Si3N4) deposited by
+LPCVD, the standard platform for integrated photonic waveguides.
+[Materials 18](#materials-18) [Materials 19](#materials-19)
+
+### nSi3N4 constant
+
+Refractive index of LPCVD Si3N4
+
+Measured; depends on deposition conditions. Refractive index of LPCVD Si3N4
+at `633 nm` (He-Ne laser), `20°C`. The value depends on deposition conditions
+and stoichiometry. [Materials 18](#materials-18)
+
+### cpSi3N4 constant
+
+Specific heat of Si3N4
+
+Measured. Specific heat of silicon nitride. [Materials 19](#materials-19)
+
+### ρSi3N4 constant
+
+Resistivity of Si3N4
+
+Measured. Electrical resistivity of LPCVD Si3N4 at `20°C`. Excellent insulator
+used for passivation and etch-stop layers in integrated circuits. It quantifies
+how strongly a material opposes the flow of electric current. [Materials 19](#materials-19)
+
+### EdSi3N4 constant
+
+Dielectric rigidity of Si3N4
+
+Measured. Dielectric breakdown electric field of Si3N4 thin films. Higher than
+SiO2; used as storage dielectric in SONOS flash memory. [Materials 19](#materials-19)
 
 
-## Dates Constants
+## C2. Reference optical glasses
+
+##BK7 Glass constant
+
+Dielectric
+
+### ρvBK7 constant
+
+Schott BK7 glass density
+
+Measured. Volumetric density of Schott BK7 borosilicate glass, the
+most widely used optical glass for visible-range optics. [Materials 15](#materials-15)
+
+### nBK7 constant
+
+Refractive index of Schott BK7 glass
+
+Measured (Schott catalogue nominal nd). Refractive index of Schott BK7 at
+`589.3 nm` (sodium d line), `20°C`. This is the nominal nd value used in
+optical design. [Materials 15](#materials-15)
+
+### cpBK7 constant
+
+Specific heat of BK7 glass
+
+Measured. Specific heat of BK7 glass. [Materials 15](#materials-15)
+
+### ρBK7 constant
+
+Resistivity of BK7 glass
+
+Measured. Electrical resistivity of BK7 borosilicate glass at `20°C`. Used
+in high-voltage optical isolators. It quantifies how strongly a material
+opposes the flow of electric current. [Materials 15](#materials-15)
+
+### EdBK7 constant
+
+Dielectric rigidity of BK7 glass
+
+Measured. Dielectric breakdown electric field of BK7 glass. Lower than
+crystalline dielectrics due to its amorphous microstructure. [Materials 15](#materials-15)
+
+
+## C3. Optical crystals (UV & IR)
+
+## Al2O3 Sapphire constant
+
+Dielectric
+
+### ρvAl2O3 constant
+
+Sapphire density
+
+Measured. Volumetric density of single-crystal sapphire (alpha-Al2O3),
+used for UV-to-IR windows, substrates, and high-power laser rods. [Materials 16](#materials-16)
+
+### nAl2O3 constant
+
+Ordinary refractive index of sapphire
+
+Measured (ordinary axis; birefringent material). Ordinary refractive index
+of sapphire at `589 nm`, `20°C`. Sapphire is birefringent; the extraordinary
+index is slightly higher. [Materials 16](#materials-16)
+
+### cpAl2O3 constant
+
+Specific heat of sapphire
+
+Measured. Specific heat of sapphire at `300 K`. [Materials 16](#materials-16) [Materials 2](#materials-2)
+
+### ρAl2O3 constant
+
+Resistivity of sapphire
+
+Measured. Electrical resistivity of single-crystal sapphire at `20°C`. One
+of the best insulating substrates; used in power electronics and RF
+substrates. It quantifies how strongly a material opposes the flow of electric
+current. [Materials 16](#materials-16)
+
+### EdAl2O3 constant
+
+Dielectric rigidity of sapphire
+
+Measured. Dielectric breakdown electric field of sapphire. High strength;
+enables use in high-field capacitors and microwave devices. [Materials 16](#materials-16)
+
+## CaF2 constant
+
+Dielectric
+
+### ρvCaF2 constant
+
+Calcium fluoride density
+
+Measured. Volumetric density of calcium fluoride (CaF2), a key material
+for deep ultraviolet optics (`193` nm excimer lithography) and infrared
+windows. [Materials 17](#materials-17) [Materials 15](#materials-15)
+
+### nCaF2 constant
+
+Refractive index of CaF2
+
+Measured. Refractive index of CaF2 at `589 nm`, `20°C`. CaF2 is transparent
+from `130 nm` to `10 µm`, making it useful across a very wide spectral range.
+[Materials 17](#materials-17)
+
+### cpCaF2 constant
+
+Specific heat of CaF2
+
+Measured. Specific heat of calcium fluoride. [Materials 15](#materials-15)
+
+### ρCaF2 constant
+
+Resistivity of CaF2
+
+Measured. Electrical resistivity of single-crystal CaF2 at `20°C` . Excellent
+insulator; ionic crystal structure provides high purity. It quantifies
+how strongly a material opposes the flow of electric current. [Materials 17](#materials-17)
+
+### EdCaF2 constant
+
+Dielectric rigidity of CaF2
+
+Measured. Dielectric breakdown electric field of CaF2 crystal. Very high;
+consistent with use in high-power UV laser optics. [Materials 17](#materials-17)
+
+## C Diamond constant
+
+Dielectric
+
+### ρvC constant
+
+Diamond density
+
+Measured. Volumetric density of cubic (type IIa) diamond. Diamond has
+the highest known thermal conductivity of any material at room
+temperature. [Materials 13](#materials-13) [Materials 14](#materials-14)
+
+### nC constant
+
+Refractive index of diamond
+
+Measured (type IIa diamond). Refractive index of diamond at `589 nm`,
+`20°C`. [Materials 14](#materials-14)
+
+### cpC constant
+
+Specific heat of diamond
+
+Measured. Specific heat of diamond at `300 K`. [Materials 13](#materials-13)
+
+### ρC constant
+
+Resistivity of diamond
+
+Measured (type IIa natural diamond). Electrical resistivity of type IIa diamond
+at `20°C`. Resistivity varies strongly with crystal purity. It quantifies how
+strongly a material opposes the flow of electric current. [Materials 13](#materials-13) [Materials 14](#materials-14)
+
+### EdC constant
+
+Dielectric rigidity of diamond
+
+Measured (type IIa diamond). Dielectric breakdown electric field of diamond.
+Highest of any known solid; enables use in next-generation high-power
+electronics. [Materials 13](#materials-13) [Materials 14](#materials-14)
+
+
+## C4. Reference metals (thermal and mechanical engineering)
+    Parameters: `ρv`, `cp`
+    For metals: `n` not listed (complex `n`, strongly wavelength-dependent).
+    `cv ≈ cp` for all metals at room temperature (difference < 0.5%).
+
+## Al constant
+
+Metal
+
+### ρvAl constant
+
+Aluminium density
+
+Measured. Volumetric density of pure aluminium, a standard reference
+material in mechanical and thermal engineering. [Materials 12](#materials-12) [Materials 2](#materials-2)
+
+### cpAl constant
+
+Specific heat of aluminium
+
+Measured. Specific heat of pure aluminium at `20°C`. [Materials 12](#materials-12) [Materials 2](#materials-2)
+
+## Cu constant
+
+Metal
+
+### ρvCu constant
+
+Copper density
+
+Measured. Volumetric density of copper, the reference material for
+thermal and electrical conductivity in engineering. [Materials 12](#materials-12) [Materials 2](#materials-2)
+
+### cpCu constant
+
+Specific heat of copper
+
+Measured. Specific heat of copper at `20°C`. [Materials 12](#materials-12) [Materials 2](#materials-2)
+
+## Fe constant
+
+Metal
+
+### ρvFe constant
+
+Iron density (alpha phase)
+
+Measured (alpha phase, BCC). Volumetric density of iron in its alpha
+phase (body-centred cubic), stable below `912°C`. [Materials 12](#materials-12) [Materials 2](#materials-2)
+
+### cpFe constant
+
+Specific heat of iron (alpha phase, BCC)
+
+Measured (alpha phase). Specific heat of iron (alpha phase) at `20°C`.
+[Materials 12](#materials-12) [Materials 2](#materials-2)
+
+
+## Dates constants
 
 ### BastilleDay constant
 
@@ -6788,6 +9611,216 @@ for performance reason, many modern computers now support multiple page sizes.
 
 A constant often used in computer programs to denote joy, happiness and the
 emergence into the world of some new computer language.
+
+
+## Primary physics data reference
+
+### CODATA
+
+CODATA 2022: Fundamental Physical Constants. National Institute of Standards and Technology (NIST). [Table](https://physics.nist.gov/cuu/pdf/wall_2022.pdf)
+
+Applies to all unspecified sources for fundamental physical constants.
+
+### Planck 2020
+
+Planck Collaboration (2020). "Planck 2018 results. VI. Cosmological parameters". Astronomy & Astrophysics, 641, A6. arXiv:1807.06209 — DOI: 10.1051/0004-6361/201833910
+
+### Particle Data Group 2024
+
+Particle Data Group (2024). "Review of Particle Physics — Astrophysical Constants". Physical Review D, 110, 030001. DOI: 10.1103/PhysRevD.110.030001
+
+### Particle Data Group 2023
+
+Particle Data Group 2023 Prša, A., et al. (2016). "Nominal values for selected solar and planetary quantities: IAU 2015 Resolution B3". The Astronomical Journal, 152(2), 41. arXiv:1605.09788 — DOI: 10.3847/0004-6256/152/2/41
+
+### Reference 4
+
+Park, R.S., et al. (2021). "The JPL Planetary and Lunar Ephemerides DE440 and DE441". The Astronomical Journal, 161(3), 105. DOI: 10.3847/1538-3881/abd414
+
+### Reference 5
+
+Tiesinga, E., et al. (2021). "CODATA recommended values of the fundamental physical constants: 2018". Reviews of Modern Physics, 93(2), 025010. DOI: 10.1103/RevModPhys.93.025010
+
+## Galactic and extragalactic data
+
+### Reference 6
+
+GRAVITY Collaboration (2021). "Mass distribution in the Galactic Center based on interferometric astrometry of multiple stellar orbits". Astronomy & Astrophysics, 647, A59. arXiv:2012.02169 — DOI: 10.1051/0004-6361/202040208
+
+### Reference 7
+
+Event Horizon Telescope Collaboration (2022). "First Sagittarius A* Event Horizon Telescope Results. I. The Shadow of the Supermassive Black Hole in the Center of the Milky Way". The Astrophysical Journal Letters, 930(2), L12. arXiv:2311.08680 — DOI: 10.3847/2041-8213/ac6674
+
+### Reference 8
+
+Eilers, A.-C., et al. (2019). "The Circular Velocity Curve of the Milky Way from 5 to 25 kpc". The Astrophysical Journal, 871(1), 120. arXiv:1810.09466 — DOI: 10.3847/1538-4357/aaf648
+
+### Reference 9
+
+Watkins, L.L., et al. (2019). "Evidence for an Intermediate-Mass Milky Way from Gaia DR2 Halo Globular Cluster Motions". The Astrophysical Journal, 873(2), 118. arXiv:1804.11348 — DOI: 10.3847/1538-4357/ab089f
+
+### Reference 10
+
+Posti, L., & Helmi, A. (2019). "Mass and shape of the Milky Way's dark matter halo with globular clusters from Gaia and Hubble". Astronomy & Astrophysics, 621, A56. arXiv:1805.01408 — DOI: 10.1051/0004-6361/201833355
+
+### Reference 11
+
+Peñarrubia, J., et al. (2014). "A timing constraint on the (total) mass of the Large Magellanic Cloud". Monthly Notices of the Royal Astronomical Society, 443(3), 2204–2222. arXiv:1405.4662 — DOI: 10.1093/mnras/stu879
+
+### Reference 12
+
+Veljanoski, J., et al. (2014). "The M31 satellite plane: Evidence for a recent flyby?" Monthly Notices of the Royal Astronomical Society: Letters, 442(1), L86–L90. arXiv:1404.5988 — DOI: 10.1093/mnrasl/slu050
+
+### Reference 13
+
+Yoon, J., et al. (2010). "A New View of Vega's Composition, Mass, and Age". The Astrophysical Journal, 708(1), 71–79. arXiv:0910.3124 — DOI: 10.1088/0004-637X/708/1/71
+
+### Reference 14
+
+Aufdenberg, J.P., et al. (2006). "First Results from the CHARA Array. VII. Long-Baseline Interferometric Measurements of Vega Consistent with a Pole-On, Rapidly Rotating Star". The Astrophysical Journal, 645(1), 664–675. arXiv:astro-ph/0603327 — DOI: 10.1086/504149
+
+### Particle physics data
+
+### Reference 15
+
+ATLAS-CONF-2023-037: "ATLAS sets record precision on Higgs boson's mass" (CERN, July 21, 2023).
+
+### Reference 16
+
+CMS Collaboration (2026): "High-precision measurement of the W boson mass with the CMS experiment", Nature (published online April 8, 2026).
+
+### Reference 17
+
+LEP Electroweak Working Group, "A Combination of Preliminary Electroweak Measurements and Constraints on the Standard Model," arXiv:hep-ex/0605011, often summarized in Physics Reports 427 (2006) 257–454.
+Solar data
+
+### Reference 18
+
+Haberreiter, M., Schmutz, W., & Kosovichev, A.G. (2008). "Solving the Discrepancy between the Seismic and Photospheric Solar Radius". The Astrophysical Journal Letters, 675(1), L53–L56. DOI: 10.1086/529492
+
+### Reference 19
+
+Mamajek, E.E., et al. (2015). "On the Age and Binarity of Fomalhaut". The Astrophysical Journal, 800(2), L17. arXiv:1412.5018 — DOI: 10.1088/2041-8205/800/2/L17
+
+### Reference 20
+
+Snodgrass, H.B., & Ulrich, R.K. (1990). "Rotation of Doppler features in the solar photosphere". The Astrophysical Journal, 351, 309–316. DOI: 10.1086/168467
+
+### Reference 21
+
+Beck, J.G. (2000). "A comparison of differential rotation measurements". Solar Physics, 191(1), 47–70. DOI: 10.1023/A:1005226402796
+
+## Planetary and lunar data
+
+### Reference 22
+
+Archinal, B.A., et al. (2018). "Report of the IAU Working Group on Cartographic Coordinates and Rotational Elements: 2015". Celestial Mechanics and Dynamical Astronomy, 130(3), 22. DOI: 10.1007/s10569-017-9805-5
+
+### Reference 23
+
+NASA JPL Solar System Dynamics — Horizons On-Line Ephemeris System. URL: https://ssd.jpl.nasa.gov/horizons/ Accessed: February 2026. Epoch: J2000.0 (JD 2451545.0)
+
+### Reference 24
+
+Seidelmann, P.K., & Fukushima, T. (1992). "Why new time scales?" Astronomy & Astrophysics, 265(2), 833–838.
+
+### Reference 25
+
+Williams, J.G., et al. (2014). "Lunar interior properties from the GRAIL mission". Journal of Geophysical Research: Planets, 119(7), 1546–1578. DOI: 10.1002/2013JE004559
+
+### Reference 26
+
+
+Nimmo, F., et al. (2017). "Mean radius and shape of Pluto and Charon from New Horizons images". Icarus, 287, 12–29. arXiv:1603.00821 — DOI: 10.1016/j.icarus.2016.06.027
+
+## Materials & Fluids data
+
+### Materials 1
+
+Lemmon, E.W., Jacobsen, R.T., Penoncello, S.G., & Friend, D.G. (2000). "Thermodynamic Properties of Air and Mixtures of Nitrogen, Argon, and Oxygen from 60 to 2000 K at Pressures to 2000 MPa". J. Phys. Chem. Ref. Data, 29(3), 331–385. DOI: 10.1063/1.1285884
+
+### Materials 2
+
+NIST WebBook of Chemistry (2024). National Institute of Standards and Technology. [Source](https://webbook.nist.gov/chemistry) — Accessed: March 2026
+
+### Materials 3
+
+Chase, M.W. (1998). NIST-JANAF Thermochemical Tables, 4th ed. J. Phys. Chem. Ref. Data, Monograph 9. American Chemical Society / AIP.
+
+### Materials 4
+
+Wagner, W., & Pruss, A. (2002). "The IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use". J. Phys. Chem. Ref. Data, 31(2), 387–535. DOI: 10.1063/1.1461829
+
+### Materials 5
+
+Malitson, I.H. (1965). "Interspecimen Comparison of the Refractive Index of Fused Silica". J. Opt. Soc. Am., 55(10), 1205–1209. DOI: 10.1364/JOSA.55.001205
+
+### Materials 6
+
+Palik, E.D. (Ed.) (1985). Handbook of Optical Constants of Solids. Academic Press, New York. ISBN: 0-12-544420-6
+
+### Materials 7
+
+Corning Incorporated (2023). Corning HPFS Fused Silica — Standard Grade Optical Properties. Product datasheet. [Source](https://www.corning.com)
+
+### Materials 8
+
+Fleming, J.W. (1984). "Dispersion in GeO2-SiO2 glasses". Applied Optics, 23(24), 4486–4493. DOI: 10.1364/AO.23.004486
+
+### Materials 9
+
+Dianov, E.M., & Guryanov, A.N. (2010). "High-power Raman fiber lasers". Quantum Electronics, 40(7), 579–599. DOI: 10.1070/QE2010v040n07ABEH014211
+
+### Materials 10
+
+Glassbrenner, C.J., & Slack, G.A. (1964). "Thermal Conductivity of Silicon and Germanium from 3°K to the Melting Point". Physical Review, 134(4A), A1058–A1069. DOI: 10.1103/PhysRev.134.A1058
+
+### Materials 11
+
+Hull, R. (Ed.) (1999). Properties of Crystalline Silicon. EMIS Datareviews Series No. 20. IEE, London. ISBN: 0-85296-933-3
+
+### Materials 12
+
+Ho, C.Y., Powell, R.W., & Liley, P.E. (1972). "Thermal Conductivity of the Elements". J. Phys. Chem. Ref. Data, 1(2), 279–421. DOI: 10.1063/1.3253100
+
+### Materials 13
+
+Slack, G.A. (1973). "Nonmetallic crystals with high thermal conductivity". J. Phys. Chem. Solids, 34(2), 321–335. DOI: 10.1016/0022-3697(73)90092-9
+
+### Materials 14
+
+Zaitsev, A.M. (2001). Optical Properties of Diamond: A Data Handbook. Springer, Berlin. ISBN: 3-540-66603-8
+
+### Materials 15
+
+Schott AG (2023). Optical Glass Data Sheets. [Source](https://www.schott.com/en-gb/products/optical-glass) — Accessed: March 2026
+
+### Materials 16
+ Dobrovinskaya, E.R., Lytvynov, L.A., & Pishchik, V. (2009). Sapphire: Material, Manufacturing, Applications. Springer, Boston. ISBN: 978-0-387-85694-0
+
+### Materials 17
+
+Burnett, J.H., Levine, Z.H., & Shirley, E.L. (2001). "Intrinsic birefringence in calcium fluoride and barium fluoride". Physical Review B, 64(24), 241102. DOI: 10.1103/PhysRevB.64.241102
+
+### Materials 18
+
+Luke, K., Okawachi, Y., Lamont, M.R.E., Gaeta, A.L., & Lipson, M. (2015). "Broadband mid-infrared frequency comb generation in a Si3N4 microresonator". Optics Letters, 40(21), 4823–4826. DOI: 10.1364/OL.40.004823
+
+### Materials 19
+
+NIST Materials Measurement Laboratory (2024). Materials Properties Database. [Source](https://trc.nist.gov) — Accessed: March 2026
+
+### Materials 20
+
+Espenak, F. (2025–2026). Sky Event Almanacs — Greenwich Mean Time. AstroPixels.com. [Source](https://www.astropixels.com/almanac/almanac21) Accessed: April–May 2026. (Source for perihelion/perigee dates of inner planets and Moon.)
+
+### Materials 21
+
+Park, R.S., et al. (2021). "The JPL Planetary and Lunar Ephemerides DE440 and DE441". The Astronomical Journal, 161(3), 105. DOI: 10.3847/1538-3881/abd414 (Source for perihelion dates of outer planets: Jupiter to Pluto.)
+
+### Materials 22
+
+Meeus, J. (1998). Astronomical Algorithms, 2nd ed. Willmann-Bell Inc., Richmond, Virginia. ISBN: 978-0-943396-61-3. Chapter 50: Perigee and Apogee of the Moon, pp. 355–358. (Formula for lunar perigee — implemented in MPERC.txt.)
 # Equations library
 
 The DB48X calculator features a library of equations covering mathematics,
@@ -8930,7 +11963,7 @@ Tair=-20_°C  u=2200_km/h
 
 #### String Standing Waves
 
-A string being fixed or free at its ends admits only discrete harmonics as standing waves on the string. A string being fixed (or free) at both ends admits all integer harmonics. A string being being fixed at one end and free at the other end admits only all odd integer harmonics.
+A string being fixed or free at its ends admits only discrete harmonics as standing waves on the string. A string being fixed (or free) at both ends admits all integer harmonics. A string being fixed at one end and free at the other end admits only all odd integer harmonics.
 
 * To calculate `[v_m/s;k_(r/m);ω_(r/s);Ts_N;y_m;ffixedfixed_Hz;ffixedfree_Hz]` (Propagation speed of waves, Wave number; Angular frequency; Tension; Frequency of harmonics on a string fixed at both ends; Frequency of harmonics on a string fixed at one end and free at the other end) from 9 known variables:
 ```rpl
@@ -8941,7 +11974,7 @@ A string being fixed or free at its ends admits only discrete harmonics as stand
 
 #### Sound Wave Harmonics
 
-A tube being open or closed at its ends admits only discrete harmonics as standing waves of the sound in the air within the tube. A tube being open (or closed) at both ends admits all integer harmonics. A tube being being open at one end and closed at the other end admits only all odd integer harmonics.
+A tube being open or closed at its ends admits only discrete harmonics as standing waves of the sound in the air within the tube. A tube being open (or closed) at both ends admits all integer harmonics. A tube being open at one end and closed at the other end admits only all odd integer harmonics.
 
 * To calculate `[v_m/s;k_(r/m);ω_(r/s);Tair_°C;s_m;fopenopen_Hz;fopenclose_Hz]` (Propagation speed of sound waves; Wave number; Angular frequency, Temperature; Frequency of harmonics in a tube open at both ends; Frequency of harmonics in a tube open at one end and close at the other end) from 8 known variables:
 ```rpl
@@ -9349,7 +12382,7 @@ M=1.708e45_kg  t=4.18902 53989e119_s
 * **Example 2** For a very small black hole having the mass of 1000_kg, to calculate `[rs_m;As_(m^2);TH_K;PBH_W;SBH_(J/K);tev_s;Mxsun;MxSagA;Mxearth;txyr]` (Schwarzschild radius; Schwarzschild area; Black hole temperature; Black hole evaporation power; Black hole entropy; Evaporation time; Factor multiplicative of Sun mass, of Sagittarius A* mass & of Earth mass; Multiplicative factor of a year) from 2 known variables (maintain 24 digits of precision):
 ```rpl
 M=1000_kg  t=8.40716 15834 7⁳⁻⁸ s
-@ Expecting [ rs=1.48523 20538 2⁳⁻²⁴ m As=2.77203 36055 6⁳⁻⁴⁷ m↑2 TH=1.22690 06705 9⁳²⁰ K PBH=3.56162 21447 8⁳²⁶ W SBH=0.36627 05548 53 J/K tev=8.41147 78997⁳⁻⁸ s Mxsun=0. MxSagA=0. Mxearth=1.67⁳⁻²² txyr=2.66406 8745⁳⁻¹⁵ ]
+@ Expecting [ rs=1.48523 20538 2⁳⁻²⁴ m As=2.77203 36055 6⁳⁻⁴⁷ m↑2 TH=1.22690 06705 9⁳²⁰ K PBH=3.56162 21447 8⁳²⁶ W SBH=0.36627 05548 53 J/K tev=8.41147 78997⁳⁻⁸ s Mxsun=5.02891 62685 4⁳⁻²⁸ MxSagA=1.17096 01873 5⁳⁻³⁴ Mxearth=1.67443 38069 5⁳⁻²² txyr=2.66406 87452 4⁳⁻¹⁵ ]
 'ROOT(ⒺB H Thermodynamics;[rs;As;TH;PBH;SBH;tev;Mxsun;MxSagA;Mxearth;txyr];[1_m;1_(m^2);1_K;1_W;1_(J/K);1_s;1;1;1;1])'
 ```
 
@@ -9485,7 +12518,7 @@ The 52 variables in the Nuclear Physics section are:
 * `λ`: Decay constant (Radioactivity) (dim.: 1/time, in SI: s^-1)
 * `Δm`: Mass default
 * `A`: Total activity at time `t` ([Radioactivity](#Radioactivity)) (dim.: number of decay/time, in SI: becquerel, Bq), or Mass number ([Nuclear Physics](#Nuclear Physics))
-* `abdaughter`: Abondance of the daughter nuclide
+* `abdaughter`: Abundance of the daughter nuclide
 * `abparent`: Abondance of the parent radionuclide
 * `abtot`: Total abondance of the nuclide
 * `AY1`: Mass number of the first nuclide `Y1` produced by a fission
@@ -9584,7 +12617,7 @@ A=239  Z=94  AXα=239  ZXα=94  mX=239.052157_u  mY=235.043924_u
 
 #### β⊖ Decay
 
-The β⊖ Decay reaction has 3 products: the daughter nuclide, an electron & an antineutrino having a negligeable mass. Due to their weak masses, the resulting kinetic energy is essentially splitted between the last two particles. The energy spectrum of the antineutrino being continuous and possibly very small, the energy reaction can therefore be the maximum kinetic energy `Kmax` of the emitted elevtron.
+The β⊖ Decay reaction has 3 products: the daughter nuclide, an electron & an antineutrino having a negligible mass. Due to their weak masses, the resulting kinetic energy is essentially split between the last two particles. The energy spectrum of the antineutrino being continuous and possibly very small, the energy reaction can therefore be the maximum kinetic energy `Kmax` of the emitted electron.
 
 * **Example 1** For the β⊖ decay of Th234 into Pa234, to calculate `[N;Δm_u;Qβ⊖_MeV;Kmax_MeV;γmax;βmax;AYβ⊖;ZYβ⊖]` (Number of neutron of Th234; Mass default; Reaction energy; Maximum kinetic energy of the electron, Maximum Lorentz factor; Maximum relativistic speed ratio; Mass number & Proton number of the daughter nuclide) from 6 known variables:
 ```rpl
@@ -9601,7 +12634,7 @@ A=14  Z=6  AXβ⊖=14  ZXβ⊖=6  mX=14.0032419884_u  mY=14.00307400443_u
 
 #### β⊕ Decay
 
-The β⊕ Decay reaction has 3 products: the daughter nuclide, a positron & a neutrino having a negligeable mass. Due to their weak masses, the resulting kinetic energy is essentially splitted between the last two particles. The energy spectrum of the neutrino being continuous and possibly very small, the energy reaction can therefore be the maximum kinetic energy `Kmax` of the emitted positron.
+The β⊕ Decay reaction has 3 products: the daughter nuclide, a positron & a neutrino having a negligible mass. Due to their weak masses, the resulting kinetic energy is essentially split between the last two particles. The energy spectrum of the neutrino being continuous and possibly very small, the energy reaction can therefore be the maximum kinetic energy `Kmax` of the emitted positron.
 
 * For the β⊕ decay of K40 (present in bananas) into Ar40, to calculate `[N;Δm_u;Qβ⊕_MeV;Kmax_MeV;γmax;βmax;AYβ⊕;ZYβ⊕]` (Number of neutron of K40; Mass default; Reaction energy; Maximum kinetic energy of the electron, Maximum Lorentz factor; Maximum relativistic speed ratio; Mass number & Proton number of the daughter nuclide) from 6 known variables:
 ```rpl
@@ -9775,20 +12808,6 @@ Convert a number or angle to an angle in multiple of π radians.
 If given a number, that number is interpreted using the current angle mode.
 
 
-## →Rectangular
-
-Convert vector or complex to cartesian coordinates
-
-
-## →Polar
-
-Convert vector or complex to polar coordinates
-
-
-## →Spherical
-
-Convert vector or complex to spherical coordinates
-
 ## R→D
 
 Convert radians to degrees.
@@ -9917,12 +12936,15 @@ Fractional part of a number
 ## Abs
 
 Return the absolute value for a real number.
-Return the Euclidean norm for a complex number, vector or matrix.
+Return the modulus for a complex number
+Return the absolute value of elements for a matrix or a vector, which is different from HP calculators, see `NORM`
 
 
 # Integer arithmetic and polynomials
 
-This section documents newRPL commands that are not implemented yet in DB48X.
+This section documents integer arithmetic commands, including prime-related
+operations. Some commands (e.g. MODSTO, GETPREC) are planned but not yet
+implemented in DB48X.
 
 ## SETPREC
 Set the current system precision
@@ -9952,16 +12974,8 @@ Remainder of the integer division
 Square of the input
 
 
-## NEXTPRIME
-Smallest prime number larger than the input
-
-
 ## Factorial
 Factorial of a number
-
-
-## ISPRIME
-Return true/false (1/0) if a number is prime or not
 
 
 ## MANT
@@ -10020,18 +13034,20 @@ Get percentage of a total
 
 
 ## GCD
-Greatest common divisor
+Greatest common divisor of two integers.
+
+`Y` `X` `GCD` → `gcd(X,Y)`
+
+The result is always non-negative. `gcd(0,0)` is `0`.
 
 
 ## LCM
-Least common multiple
+Least common multiple of two integers.
 
+`Y` `X` `LCM` → `lcm(X,Y)`
 
-## IDIV2
-Integer division, get quotient and remainder.
-On DB48X, this is an alias for [div2](#div2).
+The result is always non-negative. If either argument is `0`, the result is `0`.
 
-`Y` `X` ▶ `IP(Y/X)` `Y rem X`
 
 ## IQUOT
 Quotient of the integer division
@@ -10049,12 +13065,69 @@ Subtraction operator MOD the current system modulo
 Multiplication operator MOD the current system modulo
 
 
-## PEVAL
-Evaluation of polynomial given as vector of coefficients
+## PEval
+
+Evaluate a polynomial at a point (Horner’s method).
+
+`Poly` `X` ▶ `Value`
+
+* `Poly` (level 2) is a coefficient array, list, polynomial, or
+  univariate expression (same inputs as `PRoot`; converted to descending
+  coefficients).
+* `X` (level 1) is the evaluation point (any algebraic).
+* Coefficients may be numbers or symbols (e.g. `[ 'A' 'B' 'C' ]` for
+  `A·X²+B·X+C` in descending degree order).
+* Degree is limited by [MaxPolynomialDegree](#maxpolynomialdegree) (default 100).
+* Returns `Value`, the polynomial evaluated at `X`.
+
+```rpl
+[ 1 -5 6 ] 2 PEval
+@ Expecting 0
+```
+
+```rpl
+'X^2-5*X+6' 3 PEval
+@ Expecting 0
+```
+
+```rpl
+'x↑4+2·x↑3-25·x↑2-26·x+120' 3 PEval
+@ Expecting -48
+```
 
 
-## PCOEF
-Coefficients of monic polynomial with the given roots
+## PCoef
+
+Build the monic polynomial whose roots are the given values.
+
+`Roots` ▶ `Poly` or `Coeffs`
+
+* `Roots` is an array or list of algebraic values (integers, fractions,
+  decimals, or complex numbers). Each entry is one root of the polynomial.
+* Degree after expansion is limited by
+  [MaxPolynomialDegree](#maxpolynomialdegree) (default 100).
+* Returns the monic polynomial ∏(x − rᵢ) over all roots rᵢ.
+* With [NewStylePolynomials](#newstylepolynomials) active (default), the result
+  is a polynomial object. Use `ToArray` to obtain coefficients in
+  descending degree order (highest power first).
+* With [CompatiblePolynomials](#compatiblepolynomials) active, the result is a
+  coefficient array in that same order, as on HP calculators.
+* Coefficient order matches `PEval`, `PDIV2`, and `PRoot`.
+
+```rpl
+CompatiblePolynomials
+[ 2 -3 4 -5 ] PCoef
+@ Expecting [ 1 2 -25 -26 120 ]
+```
+
+```rpl
+NewStylePolynomials
+[ 2 -3 4 -5 ] PCoef
+@ Expecting x↑4+2·x↑3-25·x↑2-26·x+120
+```
+
+The compatible-mode vector is the coefficient list of
+`x⁴+2x³−25x²−26x+120`. Use `PRoot` on that vector to recover the roots.
 
 
 ## IEGCD
@@ -10143,16 +13216,147 @@ Truncate a number to the given number of figures
 Extract digits from a real number
 
 
-## PROOT
-All roots of a polynomial
+## PRoot
+
+Find all roots of a polynomial given by its coefficients.
+
+`Coeffs` ▶ `Roots`
+
+* `Coeffs` is an array, list, polynomial, or univariate expression
+  (same inputs as `PEval`; polynomials are converted via `ToArray`) whose
+  coefficients are in descending degree order (same convention as `PEval`
+  and `PCoef`). The leading coefficient must be non-zero; trailing zeros at the
+  high end are ignored.
+* Returns `Roots`, an array containing every root, sorted in ascending order.
+* Degree is limited by [MaxPolynomialDegree](#maxpolynomialdegree) (default 100).
+  Coefficients must be real or complex numbers (not symbolic names).
+* Rational root search is bounded by [MaxRootDivisor](#maxrootdivisor); numerical
+  roots use Laguerre’s method with at most
+  [MaxLaguerreIterations](#maxlaguerreiterations) per root.
+
+For low degrees, roots are found by closed forms (linear and quadratic). For
+higher degrees, the implementation tries exact rational candidates (when the
+constant term allows), then uses Laguerre’s method with deflation for remaining
+roots.
+
+Numeric results are cleaned up using the same imprecision rules as the equation
+solver: values within `SolverImprecision` of an integer are snapped to that
+integer, and negligible imaginary parts are dropped.
+
+```rpl
+[ 1 2 -25 -26 120 ] PRoot
+@ Expecting [ -5 -3 2 4 ]
+```
+
+```rpl
+[ 1 -5 6 ] PRoot
+@ Expecting [ 2 3 ]
+```
+
+To obtain coefficients from a symbolic expression in one variable, use
+`ToPolynomial` and then `ToArray`, or use `Zeros` on the expression directly.
+See [NewStylePolynomials](#newstylepolynomials) for how `PCoef` formats its
+result.
 
 
-## PREVPRIME
-Largest prime smaller than the input
+## IsPrime
+
+Test whether an integer is prime.
+
+`n` ▶ `True` or `False`
+
+* Returns `True` if the integer `n` is prime, `False` if composite.
+* Accepts integer inputs, including bignums. The maximum size is controlled by
+  the `MaxFactorsBits` setting.
+* Uses trial division by small primes first, then Miller-Rabin for larger
+  values.
+* Deterministic for numbers up to about 82 bits; probabilistic beyond that with
+  negligible error probability.
+
+```rpl
+17 IsPrime
+@ Expecting True
+```
+
+```rpl
+15 IsPrime
+@ Expecting False
+```
+
+```rpl
+561 IsPrime
+@ Expecting False
+```
 
 
-## FACTORS
-Factorize a polynomial or number
+## Factors
+
+Decompose an integer into its prime factorization.
+
+`n` ▶ `{ p₁ e₁ p₂ e₂ … }`
+
+* Returns a list of alternating prime-exponent pairs: each prime factor followed
+  by its multiplicity.
+* Accepts integer inputs, including bignums. Zero and one return an empty list.
+  The maximum size is controlled by the `MaxFactorsBits` setting.
+* Uses trial division by small primes, then Pollard's Rho for larger factors.
+* The `MaxFactorIterations` setting limits Pollard's
+  Rho iterations per attempt; lowering it can avoid long runs on hard semiprimes.
+* The product of all `pᵢ^eᵢ` equals the original number.
+
+```rpl
+12 Factors
+@ Expecting { 2 2 3 1 }
+```
+
+```rpl
+100 Factors
+@ Expecting { 2 2 5 2 }
+```
+
+
+## NextPr
+
+Return the smallest prime strictly greater than the input.
+
+`n` ▶ `p`
+
+* Returns the next prime number after `n`.
+* Accepts integers ≥ 1. The maximum input size is controlled by the
+  `MaxFactorsBits` setting.
+* If no prime exists (e.g. search limit reached), returns an error.
+
+```rpl
+10 NextPrime
+@ Expecting 11
+```
+
+```rpl
+2 NextPrime
+@ Expecting 3
+```
+
+
+## PrevPr
+
+Return the largest prime strictly smaller than the input.
+
+`n` ▶ `p`
+
+* Returns the previous prime number before `n`.
+* Accepts integers > 2 (no prime exists below 2). The maximum input size is
+  controlled by the `MaxFactorsBits` setting.
+* If no prime exists or the search limit is reached, returns an error.
+
+```rpl
+10 PreviousPrime
+@ Expecting 7
+```
+
+```rpl
+3 PreviousPrime
+@ Expecting 2
+```
 # Base functions
 
 ## Evaluate
@@ -10502,16 +13706,16 @@ Extract modulus and argument from a complex number in polar form
 Make a complex number in polar form from argument and modulus
 
 ## ToRectangular
-Convert a complex number to rectangular form
+Convert a complex number or vector to rectangular (cartesian) form.
 
 ## ToPolar
-Convert a complex number or a 2D or 3D vector to polar form
+Convert a complex number or a 2D or 3D vector to polar form.
 
 ## ToCylindrical
 Convert a 3D vector to cylindrical form
 
 ## ToSpherical
-Convert a 3D vector to spherical form
+Convert a 3D vector to spherical form.
 
 ## To2DVector
 Make a 2D vector from two components
@@ -10523,28 +13727,12 @@ Make a 3D vector from three components
 Expand a vector into its individual components
 # Lists, Matrix and String commands
 
-## PUT
-Replace an item in a composite
-
-
 ## PUTI
 Replace an item and increase index
 
 
-## GET
-Extract an item from a composite
-
-
 ## GETI
 Extract an item and increase index
-
-
-## HEAD
-Extract the first item in a composite
-
-
-## TAIL
-Removes the first item in a composite
 
 
 ## OBJDECOMP
@@ -10659,6 +13847,24 @@ The name can be given as a symbol or as text.
 `'c'` ▶ `299792458_m/s`
 
 
+## StandardUncertainty
+
+Returns the standard uncertainty of a constant from the constants library.
+The name can be given as a symbol or as text. The result is the absolute
+uncertainty (denoted Ⓢ*X* in expressions) conforming to CODATA.
+
+`'c'` `StandardUncertainty` ▶ `0_m/s`
+
+
+## RelativeUncertainty
+
+Returns the relative uncertainty of a constant from the constants library.
+The name can be given as a symbol or as text. The result is the relative
+uncertainty (denoted Ⓡ*X* in expressions) conforming to CODATA.
+
+`'c'` `RelativeUncertainty` ▶ `0`
+
+
 ## LibraryEquation
 
 Returns the value of a library equation from the equation library.
@@ -10674,6 +13880,31 @@ The name can be given as a symbol or as text.
 
 `'Dedicace'"` ▶ `"À tous ceux qui se souviennent de Maubert électronique"`
 
+
+## ConstantName
+
+Return the name for a given constant, as text
+
+```rpl
+Ⓒπ ConstantName
+@ Expecting "π"
+```
+
+This also works for library items, library equations, standard and relative
+uncertainties.
+
+
+## ConstantValue
+
+Return the value for a given constant
+
+```rpl
+Ⓒπ ConstantValue
+@ Expecting 3.14159 26535 9
+```
+
+This also works for library items, library equations, standard and relative
+uncertainties.
 
 # Precision control
 
@@ -10951,6 +14182,10 @@ The `Value` is copied in a storage location identified by `Name`. The storage lo
 
 * Symbol or integer: The value is stored in a global variable with that name in the current directory, which is created if necessary. Whether integers can be used as variable names depends on the `NumberedVariables` setting.
 
+* List or array: The name is a path through nested directories. Each element except the last must name an existing directory; the last element is the variable name in that directory. For example, `42 { SubDirTest FortyTwo } STO` stores `42` in variable `FortyTwo` inside directory `SubDirTest`. A path may start with [HomeDirectory](#HomeDirectory) to refer to the home directory.
+
+* Directory variable: If the target name already holds a directory, the new value must also be a directory (replacing the old tree). Storing a non-directory value over a directory name reports `No directory`.
+
 * Local name: The value is stored in the corresponding local variable.
 
 * Setting name: The value is used for the corresponding setting, as if the setting command had been executed. For example, `16 'Base' STO` has the same effect as `16 Base`.
@@ -10966,6 +14201,8 @@ Recall an object from a specified location. For example `'ABC' RCL` recalls the 
 The `Value` is fetched from a storage location identified by `Name`. The storage location depends on the type of `Name`, which can be quoted in an expression:
 
 * Symbol or integer: The value is fetched from a global variable with that name in the current directory or any enclosing directory. Whether integers can be used as variable names depends on the `NumberedVariables` setting.
+
+* List or array: The name is a path through nested directories, as for [Store](#Store). Each element except the last must name an existing directory; the last element is the variable to recall. If any path component is missing, recall fails with `Undefined name`.
 
 * Local name: The value is fetched from the corresponding local variable.
 
@@ -11035,11 +14272,20 @@ Subtract one from content of a variable
 
 Delete a global variable from the current directory
 
+`Name` can be a symbol, a quoted name, or a list (or array) of names to purge
+several variables in one command.
+
+If `Name` refers to a directory variable, `Purge` only succeeds when that
+directory is empty (no variables inside). Purging a non-empty directory reports
+`Non-empty directory`. Use [PurgeDirectory](#PurgeDirectory) to remove a directory
+and all of its contents.
+
 *Remark*: `Purge` only removes a variable from the current directory, not the
 enclosing directories. Since [Recall](#Recall) will fetch variable values from
 enclosing directories, it is possible that `'X' Purge 'X' Recall` will fetch a
 value for `X` from an enclosing directory. Use [PurgeAll](#PurgeAll) if you want
-to purge a variable including in enclosing directories.
+to purge a variable including in enclosing directories. The same non-empty
+directory restriction applies to `PurgeAll`.
 
 ## PurgeAll
 
@@ -11051,11 +14297,22 @@ want to only purge a variable in the current directory.
 
 
 ## CreateDirectory
-Create new directory
+
+Create one or more empty directories in the current directory.
+
+`Name` may be a single directory name or a list (or array) of names. For
+example, `{ Tools Examples } CreateDirectory` creates both `Tools` and
+`Examples`. An error is reported if any of the names already exists.
 
 
 ## PurgeDirectory
-Purge entire directory tree
+
+Delete a global variable from the current directory, including directory contents.
+
+`PurgeDirectory` behaves like [Purge](#Purge) for ordinary variables. For a
+directory variable, it removes the directory and everything inside it, even when
+the directory is not empty. `Name` may be a list (or array) of names, as with
+`Purge`.
 
 
 ## UpDirectory
@@ -11127,6 +14384,16 @@ Assignments are useful in conjonction with the solver. For example, the
 following example will solve a simple triangle equation for specific values of
 `α` and `β`.
 
+Note that this example requires `ExplicitConstants` since both `α` and `γ` are
+the names of built-ibn constants.
+
+```rpl
+ExplicitConstants
+```
+
+Once this setting is done, you can use `α`, `β` and `γ` without risking a clash
+with constant names:
+
 ```rpl
 α=20 β=30
 'ROOT(α+β+γ=180;γ;0)' EVAL
@@ -11148,6 +14415,11 @@ interactive `SolvingMenu`:
 SolvingMenu
 ```
 
+You can then restore `AutomaticConstants`.
+
+```rpl
+AutomaticConstants
+```
 
 
 ### PushEvaluatedAssignment
@@ -11160,7 +14432,19 @@ When evaluating `A='2+3*5'`, pushes `A='2+3*5'` on the stack.
 
 
 ## ORDER
-Sort variables in a directory
+
+Reorder variables in the current directory.
+
+`{ Names... }` ▶
+
+`Names` is a list (or array) of variable names in the desired order. Each name
+must exist in the current directory. Names may be quoted. Variables listed first
+appear first in the [Variables](#Variables) display and variable menu; any
+variables in the directory that are not named in the list keep their relative
+order and are placed after the listed ones.
+
+For example, if the directory contains `C`, `B`, and `A` (in that order),
+`{ 'A' 'B' 'C' } ORDER` reorders them to `A`, `B`, `C`.
 
 
 ## QUOTEID
@@ -11933,7 +15217,7 @@ In addition to this HP50G-compatible usage, `DispXY` will also accept:
 ## Show
 
 Display the first level of the stack using the entire screen, with a possible
-scroll using the 4, 8, 6 and 2 keys if the object is larger than fits on screen.
+scroll using the 4, 8, 6 and 2 keys if the object is larger than the screen.
 This makes it possible to comfortably examine very large objects, like `300!`, a
 large program or a complicated equation. Arrow keys can also be used for
 horizontal or vertical scrolling.
@@ -12237,29 +15521,6 @@ Generate an integral sign of the given size
 45 GraphicIntegral
 @ Image check
 ```
-
-
-## Header
-
-The `Header` command updates a special variable also called `Header`.
-
-When that variable is present, it must evaluate to something that can render
-graphically, either directly a graphic object or a (possibly multi-line) text.
-
-When a header is provided, the normal content of the header, i.e. date, time and
-name of the state file, is no longer shown.  However, annunciators and battery
-status are still overimposed.
-
-It is the responsibility of the programmer to ensure that the header program
-does not draw important data at these locations, and also to make sure that the
-header program is "well behaved", i.e. does not leave things on stack. If the
-header program generates an error, then that error may get in the way of normal
-calculator operations.
-
-```rpl
-« TIME " " PATH TAIL TOTEXT + + "
-" + DATE + " Mem: " + MEM + » HEADER
-```
 # Library Management
 
 DB48x features a [library](#library) that can contain arbitary RPL code,
@@ -12277,7 +15538,7 @@ from disk only once, and then cached in compiled form in memory. This is how the
 next uses of that library item can be as fast as if it was on the stack.
 
  Library items that are currently loaded in memory can be identified using
-`Libs`. The `Attach` commadn can be used to load items ahead of time. The
+`Libs`. The `Attach` command can be used to load items ahead of time. The
 `Detach` command can be used to evacuate library elements that are no longer
 used.
 
@@ -12365,17 +15626,6 @@ at the deepest level in the stack. This is the opposite of [→List](#tolist). T
 
 `{ A B ... }` ▶ `A` `B` ... `Count`
 
-
-## List→
-
-Expand a list on the stack and return the number of elements. After executing
-the command, level 1 contains the number of elements, and a corresponding number
-of stack levels contain individual elements of the list, the first element being
-at the deepest level in the stack. This is the opposite of [→List](#tolist). The
-[Obj→](#fromobj) command performs the same operation when applied to a list.
-
-`{ A B ... }` ▶ `A` `B` ... `Count`
-
 ## Head
 
 Return the first element of a list, or an `Invalid dimension` error if the list
@@ -12397,6 +15647,36 @@ first level of the stack should take one argument and return a single value.
 
 `{ A B ... }` `F` ▶ `{ F(A) F(B) ... }`
 
+
+```rpl
+{ 1 2 A 42.2 [ 1 2 3 ]} « →STR » MAP
+@ Expecting { "1" "2" "A" "42.2" "[ 1 2 3 ]" }
+```
+
+Unlike on HP calculators, `Map` does not apply recursively to inner lists by default.
+
+```rpl
+{ 1 2 { 3 4 } } « →STR » MAP
+@ Expecting { "1" "2" "{ 3 4 }" }
+```
+
+This can be changed by setting `ListRecursionDepth` to `0`.
+
+```rpl
+0 ListRecursionDepth
+{ 1 2 { 3 4 } }  « →STR » MAP
+@ Expecting { "1" "2" { "3" "4" } }
+```
+
+`Map` can also be constrained to a given depth.
+
+```rpl
+2 ListRecursionDepth
+{ 1 2 { 3 { 4 { 5 } } } }  « →STR » MAP
+@ Expecting { "1" "2" { "3" "{ 4 { 5 } }" } }
+'ListRecursionDepth' Purge
+```
+
 ## Reduce
 
 Apply a cumulative pairwise operation on all elements in a list or array.
@@ -12406,6 +15686,22 @@ operation to all elements.
 
 `{ A B ... }` `F` ▶ `F(F(A, B), ...)`
 
+For example, to sum all the elements in a list as text, one can use:
+
+```rpl
+{ X Y Z T 12 { Hello World } } « →STR + » REDUCE
+@ Expecting "XYZT12{ Hello World }"
+```
+
+Reduce obeys the `ListRecursionDepth` setting:
+
+```rpl
+0 ListRecursionDepth
+{ X Y Z T 12 { Hello World } } « →STR + » REDUCE
+@ Expecting "XYZT12HelloWorld"
+'ListRecursionDepth' Purge
+```
+
 
 ## Filter
 
@@ -12414,6 +15710,22 @@ level 1 of the stack takes a value as argument, and returns a truth values. The
 resulting list is built with all elements where the predicate is true.
 
 `{ A B ... }` `P` ▶ `{ A ... }` if `P(A)` is true and `P(B)` is false.
+
+For example, to filter all odd numbers in an array, one can use:
+
+```rpl
+[ 1 2 3 4 5 6 42 ] « 2 MOD 0 = » FILTER
+@ Expecting [ 2 4 6 42 ]
+```
+
+`Filter` obeys the `ListRecursionDepth` setting:
+
+```rpl
+0 ListRecursionDepth
+{ 1 2 3 4 { 5 6 { 42 } } } « 2 MOD 0 = » FILTER
+@ Expecting { 2 4 { 6 { 42 } } }
+'ListRecursionDepth' Purge
+```
 
 
 ## Get
@@ -12455,8 +15767,20 @@ When the data is a name, data is feched directly from the given named variable.
 Sort elements in a list or array, sorting by increasing values when comparing
 numers, text or symbols.
 
+```rpl
+{ 27 42 2.2 "DEF" "ABC" } SORT
+@ Expecting { 2.2 27 42 "ABC" "DEF" }
+```
+
 This may be a little slower than `QuickSort`, but is useful to sort
 lists or arrays of numerical values or text values.
+
+Expressions are compared by evaluated value but preserved as is:
+
+```rpl
+{ 1 '2/3+0.21' 0 } Sort
+@ Expecting { 0 '²/₃+0.21' 1 }
+```
 
 ## QuickSort
 
@@ -12478,6 +15802,37 @@ order compared to `QuickSort`.
 
 Reverse the order of elements in a list
 
+## Unique
+
+Remove duplicate consecutive values.
+
+```rpl
+{ 1 2 3 2 2 3 3 1 1 1 1 2 3 } Unique
+@ Expecting { 1 2 3 2 3 1 2 3 }
+```
+
+To guarantee uniqueness across all the values, the list should be sorted first.
+
+```rpl
+{ 1 2 3 2 2 3 3 1 1 1 1 2 3 } Sort Unique
+@ Expecting { 1 2 3 }
+```
+
+Like for `Sort`, expressions are evaluated but preserved in the result:
+
+```rpl
+{ '1+2' '1-2' '2+3' '2-1' '2/(1+1)' '3+2' } Sort Unique
+@ Expecting { '1-2' '2÷(1+1)' '1+2' '3+2' }
+```
+
+## QuickUnique
+
+Remove duplicate consecutive values that match exactly in memory
+
+```rpl
+{ '1+2' '1-2' '2+3' '2-1' '1-2' '2-1' '2/(1+1)' '3+2' } QuickSort QuickUnique
+@ Expecting { '1+2' '1-2' '2-1' '2+3' '3+2' '2÷(1+1)' }
+```
 
 ## ADDROT
 Add elements to a list, keep only the last N elements
@@ -12553,6 +15908,12 @@ Note that on HP calculators, this command only works with lists and not with vec
 
 Stack to Array Command: Returns a vector or matrix built from individual
 elements placed on the stack and dimensions.
+
+If the argument on the stack is a polynomial, `→Array` returns its
+coefficient vector in descending degree order (the same layout `PRoot` and
+`PCoef` use in [CompatiblePolynomials](#compatiblepolynomials) mode). This is
+the usual way to obtain coefficients from a [NewStylePolynomials](#newstylepolynomials)
+`PCoef` result. No stack items are consumed beyond the polynomial.
 
 If the dimension is given as a positive integer, then `→Array` returns a
 vector built from the given number of individual items.
@@ -12890,6 +16251,11 @@ Column norm (one norm) of a matrix
 Row norm (infinity norm) of a matrix
 
 
+## Norm
+
+Euclidean norm of a vector of matrix
+
+
 ## ConstantArray
 
 Returns a constant array, defined as an array whose elements all have the same
@@ -13053,7 +16419,21 @@ Find a basis for the kernel of a linear application
 
 
 ## LU
-LU factorization of a matrix
+
+Crout LU factorization with partial pivoting for a square matrix `A`.
+
+Returns `L`, `U`, and a permutation matrix `P` such that `P·A = L·U`.
+`L` is lower triangular, `U` is upper triangular with ones on its diagonal,
+and `P` records the row exchanges performed during pivoting.
+
+`M` → `L` `U` `P`
+
+```rpl
+[[-1 2 5][3 1 -2][7 6 5]] LU 3 →List
+@ Expecting { [[ 7 0 0 ] [ -1 2 ⁶/₇ 0 ] [ 3 -1 ⁴/₇ -1 ]] [[ 1 ⁶/₇ ⁵/₇ ] [ 0 1 2 ] [ 0 0 1 ]] [[ 0 0 1 ] [ 1 0 0 ] [ 0 1 0 ]] }
+```
+
+See also: `REF`, `RREF`, `QR`, `DET`, `INV`, `LSQ`.
 
 
 ## MAD
@@ -13092,15 +16472,61 @@ Change dimensions of an array
 
 
 ## REF
-Reduce matrix to echelon form (upper triangular form)
+Reduce a matrix to echelon form (upper triangular) using Gaussian elimination.
+Requires symbolic results.
+
+`M` `REF` → `M'`
+
+See also: `RREF`, `RREFP`.
 
 
 ## RREF
-Fully reduce to row-reduced echelon form
+Fully reduce a matrix to row-reduced echelon form using Gauss-Jordan elimination.
+For an augmented system matrix, the coefficient block becomes an identity and the
+extra column holds the solution. Requires symbolic results.
+
+`M` `RREF` → `M'`
+
+```rpl
+[[3 4 5][5 6 7]] RREF
+@ Expecting [[ 1 0 -1 ] [ 0 1 2 ]]
+```
+
+See also: `REF`, `RREFP`.
+
+
+## RREFP
+Row-reduced echelon form with pivot list. Returns the pivot values and a matrix
+whose coefficient block is diagonal but not necessarily scaled to 1. DB48X uses
+`RREFP` because commands are case-insensitive and the HP50G name `rref` would
+collide with `RREF`. Requires symbolic results.
+
+`M` `RREFP` → `{ pivots }` `M'`
+
+```rpl
+[[2 1][3 4]] RREFP 2 →List
+@ Expecting { { 10 5 } [[ 10 0 ] [ 0 5 ]] }
+```
+
+See also: `RREF`, `REF`, `RREFMOD`.
 
 
 ## RREFMOD
+Modular row-reduced echelon form (reduction modulo the current CAS modulus).
+Requires symbolic results.
 
+
+## EchelonFormKeepLastColumn
+
+When set, `RREF` and `RREFP` reduce the coefficient block but leave the last
+column unnormalizedw. The last column is still updated by row operations on the
+rest of the matrix. The inverse flag is `EchelonFormReduceLastColumn`.
+
+This corresponds to HP50G system flag −126.
+
+## EchelonFormReduceLastColumn
+
+When set, `RREF` and `RREFP` reduce the coefficient block including the last column. The inverse flag is `EchelonFormKeepLastColumn`.
 
 ## RSD
 Residual R=B-A*X' on a system A*X=B
@@ -13338,6 +16764,37 @@ integrate as the previous one, so the maximum number of samples taken is in the
 order of `2^IntegrationIterations`.
 
 
+# Continued fractions
+
+## DFC
+
+Decompose a real number into its continued fraction coefficients (Décomposition
+en Fraction Continue).
+
+`X` ▶ `{ a0 a1 a2 … }`
+
+Returns a list of integers such that *X* ≈ a₀ + 1/(a₁ + 1/(a₂ + …)). For
+integers the result is a single-element list. For rationals the expansion is
+exact and finite. For decimals and irrationals (π, *e*, √2, etc.), the expansion
+stops when the next convergent would exceed the precision of the input.
+
+Examples: `22/7 DFC` → `{ 3 7 }`, `2 √ DFC` → `{ 1 2 2 2 … }`.
+
+The inverse `DFC2F` reconstructs the value from the coefficient list.
+
+## DFC2F
+
+Reconstruct a real number from its continued fraction coefficient list.
+
+`{ a0 a1 … an }` ▶ `a0 + 1/(a1 + 1/(… + 1/an))`
+
+Evaluates the list right-to-left to produce a rational or decimal result.
+`DFC2F(DFC(x))` gives an exact round-trip for integers and fractions, and an
+approximate round-trip for irrationals within the current precision.
+
+Example: `{ 3 7 } DFC2F` → `22/7`.
+
+
 # Numerical conversions
 
 ## →Num
@@ -13351,6 +16808,30 @@ Convert decimal values to fractions. For example `1.25 →Frac` gives `5/4`.
 The precision of the conversion in digits is defined by
 [→FracDigits](#ToFractionDigits), and the maximum number of iterations for the
 conversion is defined by [→FracDigits](#ToFractionIterations)
+
+## →Qπ
+
+Convert decimal values to a rational form, or a rational form with π, square
+roots, natural logs, or the Euler constant *e* factored out, whichever yields
+the smaller denominator.
+
+The rational result is a "best guess", since there might be more than one
+rational expression consistent with the argument. `→Qπ` finds a quotient of
+integers that agrees with the argument to the number of decimal places specified
+by the display format mode.
+
+For example, `3.14159265359 →Qπ` gives `π`, `1.4142135624 →Qπ` gives `√2`,
+and `0.346573590280 →Qπ` gives `ln 2/2`.
+
+For a complex argument, the real or imaginary part (or both) can have a constant
+factor.
+
+The [→QπMaxPrime](#→qπmaxprime) setting (default 100, max 10000)
+limits which primes are tried when factoring squares for √*n* detection. Lower
+values speed up conversion on resource-constrained hardware.
+
+The algorithm attempts: π; any √*n* (by squaring and factoring); ln 2, ln 3,
+ln 5, ln 7, ln 10; *e*; *e*^(p/q); and combined factors π·√2, π·√3.
 
 ## →Integer
 
@@ -13526,6 +17007,48 @@ causes the circle to be elongated vertically:
 @ Image yrange-circle
 ```
 
+## Indep
+
+Set the independent variable in `PlotParameters`.
+
+The independent variable name and its plotting range are stored as the third
+element in `PlotParameters`. The default name is `x`, with range `-10` to `10`.
+
+The argument can be:
+
+* A variable name, e.g. `'T'`, which replaces the independent variable name
+* A list containing a name, e.g. `{ 'T' }`, which replaces the name but keeps
+  the existing range
+* A list containing a name and two real numbers, e.g. `{ 'T' 0 6.28 }`, which
+  replaces both the name and the range
+* A list containing two real numbers, e.g. `{ 0 6.28 }`, or two real numbers on
+  the stack, which replace the range but keep the existing name
+
+```rpl
+'PPAR' PGALL
+'T' INDEP
+'PPAR' RCL 3 GET
+@ Expecting { T -10 10 }
+```
+
+## Depnd
+
+Set the dependent variable in `PlotParameters`.
+
+The dependent variable name is stored as the last element in `PlotParameters`.
+The default name is `y`.
+
+The argument formats are the same as for `Indep`. When a range is given, it
+updates the vertical plotting range (`YRange`), which is used for example by
+`TruthPlot`.
+
+```rpl
+'PPAR' PGALL
+'U' DEPND
+'V' INDEP
+'sin(25*V)+cos(32*U)*exp(ⅈV)' TruthPlot
+@ Image depend
+```
 
 ## PlotParameters
 
@@ -14206,6 +17729,66 @@ This is the opposite of `CompatibleBasedNumbers`.
 Display based numbers using the HP syntax, i.e. `#12ABh` for hexadecimal.
 This is the opposite of `ModernBasedNumbers`.
 
+# Polynomial settings
+
+Settings for `PRoot`, `PCoef`, `PEval`, `Zeros`, and related polynomial commands.
+Numeric limits apply to coefficient vectors, expressions converted to
+polynomials, and internal root-finding. Assign a new value on the command line
+(e.g. `200 MaxPolynomialDegree`) or use `{ MaxPolynomialDegree } Purge Std` to
+restore defaults after tests.
+
+## NewStylePolynomials
+
+Use DB48X polynomial objects for polynomial-oriented commands where the result
+is a polynomial in one variable (typically `X` from `AlgebraVariable`).
+
+With this flag active (the default), `PCoef` returns a polynomial built from
+the given roots. Coefficient vectors in descending degree order—the form expected
+by `PEval`, `PRoot`, and related commands—are obtained with `ToArray` on that
+polynomial, or by building the vector directly.
+
+`PRoot`, `PCoef`, and `PEval` accept a coefficient array, list,
+polynomial, or univariate expression as input; non-vectors are converted
+internally to a coefficient vector.
+
+This is the opposite of [CompatiblePolynomials](#compatiblepolynomials).
+
+## CompatiblePolynomials
+
+Use HP-style coefficient vectors for polynomial root and coefficient commands.
+
+With this flag active, `PCoef` returns a coefficient array in descending
+degree order, matching classic RPL calculators. `PRoot` still accepts arrays,
+lists, and polynomials; use `ToPolynomial` to turn a coefficient vector into a
+polynomial object for symbolic work.
+
+This is the opposite of [NewStylePolynomials](#newstylepolynomials).
+
+## MaxPolynomialDegree
+
+Maximum degree accepted by `PRoot`, `PCoef`, `PEval`, `Zeros`, and coefficient
+conversion (`ToPolynomial`, `ToArray` on a polynomial). The value is the highest
+power in the univariate polynomial (e.g. `[ 1 2 1 ]` has degree 2).
+
+Range 5 to 100,000; default 100. Inputs with more coefficients than
+`MaxPolynomialDegree + 1` report a dimension error.
+
+## MaxLaguerreIterations
+
+Maximum iterations of Laguerre’s method per root when `PRoot` or `Zeros` uses
+numerical root finding (after low-degree formulas and rational root search).
+
+Range 5 to 1000; default 80. Increasing the value may help difficult
+polynomials converge; lowering it fails faster on pathological cases.
+
+## MaxRootDivisor
+
+Largest integer tested as a candidate divisor when `PRoot` or `Zeros` searches
+for rational roots (via divisors of the constant term).
+
+Range 5 to 100,000,000; default 1,000,000. Larger values allow more exact
+rational roots on polynomials with big constant terms, at higher cost.
+
 ## ShowAsDecimal
 
 Show integer numbers like `25` and fractions like `3/2` as decimal values.
@@ -14385,15 +17968,15 @@ Display comands using the long form, for example `Store`.
 
 Display names using the short form in lower case, for example `varName` will show as `varname`.
 
-## UpperCase
+## UpperCaseNames
 
 Display names using the short form in upper case, for example `varName` will show as `VARNAME`.
 
-## Capitalized
+## CapitalizedNames
 
 Display names using the short form capitalized, for example `varName` will show as `VarName`.
 
-## LongForm
+## LongFormNames
 
 Display names using the long form, for example `varName` will show as `varName`.
 
@@ -14434,6 +18017,42 @@ applies separately for the numerator and denominator in a fraction, or for the
 real and imaginary part in a complex number. A complex number made of two
 fractions can therefore take up to four times the number of bits specified by
 this setting.
+
+## MaxFactorsBits
+
+Maximum number of bits for integers accepted by prime-related commands:
+`IsPrime`, `Factors`, `NextPr`, and `PrevPr`.
+
+The value can range from 64 to 1024 bits (default 160). Integers exceeding this
+limit trigger a `Number is too big` error. Raising the value allows factoring
+larger numbers but increases memory use and computation time for Pollard's Rho
+and Miller-Rabin. Lowering it can prevent excessive CPU usage on large inputs.
+
+## MaxFactorIterations
+
+Maximum number of Pollard's Rho iterations per attempt when factoring integers
+with `Factors`.
+
+The value can range from 1024 to 16,777,216 (default 4,194,304). If no factor
+is found within this limit for a given Rho attempt, the algorithm tries the
+next random starting point. Exhausting all attempts yields a `Bad argument
+value` error. Lowering the value speeds up failure detection for numbers that
+are hard to factor (e.g. products of two large primes); raising it allows
+factoring tougher semiprimes at the cost of longer run time.
+
+## SolverIterations
+
+Number of times the solver will try to find a solution.
+
+## SolverImprecision
+
+Relative imprecision that is tolerated by the solver
+
+## SolverShuffles
+
+Number of times the solver will shuffle the test vector around errors and
+singularities.
+
 
 ## MathModesMenu
 
@@ -14482,20 +18101,11 @@ bits is limited only by memory and performance.
 
 Return the current [word size](#wordsize) in bits.
 
-## STWS
-
-`STWS` is a compatibility spelling for the [WordSize](#wordsize) command.
-
-## RCWS
-
-`RCWS` is a compatibility spelling for the [RecallWordSize](#recallwordsize)
-command.
-
 
 # Command tuning
 
 Various settings can be used to tune specific commands.
-See also `IntegrationIterations`
+See also `IntegrationIterations` and [Polynomial settings](#polynomial-settings).
 
 ## MaxRewrites
 
@@ -14516,6 +18126,16 @@ whereas `3 →FracIterations 3.1415926 →Frac` will give `355/113`.
 Define the maximum number of digits of precision converting a decimal value to a
 fraction. For example, `2 →FracDigits 3.1415926 →Frac` will give `355/113`.
 
+## →QπMaxPrime
+
+Define the largest prime used when extracting square factors during [→Qπ](#toqπ)
+conversion. When converting a decimal to a rational form with π, √*n*, ln, or *e*
+factors, the algorithm squares the value, converts to a fraction, then factors out
+perfect squares from the numerator and denominator. This setting limits which
+primes are tried (2 to 10000, default 100). Lower values speed up conversion on
+DM32/DM42 at the cost of missing some √*n* simplifications for numbers whose
+square has large prime factors.
+
 
 # User interface
 
@@ -14526,9 +18146,20 @@ labels, rounded or square.
 
 ## Header
 
-This command can be used to define a program that is evaluated when drawing the
-header, i.e. what is shown above the stack. The header should be returned as a
-text, and leave room for the battery to display.
+The `Header` command updates a special variable also called `Header`.
+
+When that variable is present, it must evaluate to something that can render
+graphically, either directly a graphic object or a (possibly multi-line) text.
+
+When a header is provided, the normal content of the header, i.e. date, time and
+name of the state file, is no longer shown.  However, annunciators and battery
+status are still overimposed.
+
+It is the responsibility of the programmer to ensure that the header program
+does not draw important data at these locations, and also to make sure that the
+header program is "well behaved", i.e. does not leave things on stack. If the
+header program generates an error, then that error may get in the way of normal
+calculator operations.
 
 For example, the following shows the current time, the current path, the date
 and free memory in a two-line header, with a 10 second `CustomHeaderRefresh`.
@@ -14558,7 +18189,7 @@ Display menus on a single row, with labels changing using shift.
 
 Display menus on a single row, flattened across multiple pages.
 
-## RoundedMenu
+## RoundedMenus
 
 Display menus using rounded black or white tabs.
 
@@ -14628,9 +18259,9 @@ rendering.
 
 This is the opposite of [TextStackDisplay](#textstackdisplay)
 
-## TextStacktDisplay
+## TextStackDisplay
 
-Display the stack levels above the first one using a text-only representations.
+Display the stack levels above the first one using a text-only representation.
 
 This is the opposite of [GraphicStackDisplay](#graphicstackdisplay)
 
@@ -14684,10 +18315,65 @@ editing.
 Show empty menu entries. For example, when selecting the `VariablesMenu` and
 there is no variable defined, an empty menu shows up.
 
-## HideEmptyMenu.
+## HideEmptyMenu
 
 Restore the default behaviour where empty menus entries are not shown, leaving
 more space for the stack display.
+
+## ExplicitConstants
+
+Require an explicit marker to identify a constant from the constant library.
+This is the opposite of `AutomaticConstants`
+
+## AutomaticConstants
+
+When parsing, identify the constants from the constants library without an
+explicit `Ⓒ` constant marker. For example, `G` will parse as `ⒸG`.
+
+Note that constants, unlike symbols or commands, are always case sensitive,
+because there are constants that differ only in case, such as `ⒸG`
+(gravitational constant) and `Ⓒg` (gravitational acceleration on Earth).
+
+If a global variable with the same name exists at the time of parsing, it takes
+precedence over the constant.
+
+This is the opposite of `ExplicitConstants`
+
+## ExplicitXLibs
+
+Require an explicit marker to identify a library item from the library.
+This is the opposite of `AutomaticConstants`
+
+## AutomaticXLibs
+
+When parsing, identify the library entries from the library without an
+explicit `Ⓛ` library marker.
+
+```rpl
+AutomaticXlibs
+```
+
+With this setting, a named library entry like `SiDensity` will work as if it
+were a built-in command, and will invoke the library-provided `SiDensity` entry.
+
+
+```rpl
+255_°C SiDensity
+@ Expecting 5.11894 93475 7⁳¹⁴ (cm↑3)⁻¹
+```
+
+The `AutomaticXLibs` flag is the opposite of `ExplicitXLibs`:
+
+```rpl
+ExplicitXLibs
+```
+
+With `ExplicitXLibs`, typing `'SiDensity'` will simply produce a name:
+
+```rpl
+SiDensity
+@ Expecting 'SiDensity'
+```
 
 
 # Statistics settings
@@ -14786,9 +18472,9 @@ This is the way RPL in HP calculators works.
 
 When this setting is set, DB48X behaves like the HP48S and later HP devices and
 evaluates lists as if they were programs. For example, `{ 1 2 + } EVAL` returns
-`3`. The default is [ListsAsData](#listsasdata).
+`3`. The default is [ListAsData](#listasdata).
 
-## ListsAsData
+## ListAsData
 
 When this setting is set, DB48X behaves like the HP28 and evaluates lists as
 data. For example, `{ 1 2 + } EVAL` returns `{ 1 2 + }`.
@@ -14822,6 +18508,17 @@ or `not` applied to integers return a bitwise numerical result, which deviates
 from the HP implementations of RPL.
 
 The opposite setting is `TruthLogicForIntegers`.
+
+## ListRecursionDepth
+
+This setting selects the depth of recursion for `Map`, `Reduce` or `Filter`.
+By default, it is set to `1`, indicating that recursion only applies to the
+top-level of the list. This matches the way `Map`, `Reduce` and `Filter` work in
+most programming languages.
+
+A value larger than `1` can be used to recurse beyond the first level.
+On the HP50G, `Map` applies recursively to all levels. This can be achieved by
+setting `ListRecursionDepth` to `0`.
 
 
 # Evaluation settings
@@ -14913,6 +18610,47 @@ The following information is stored in state files:
 
 ## NUMINT
 Numerical integration (adaptive Simpson)
+
+
+## Zeros
+
+Find unique zeros of a univariate expression.
+
+`'Expr'` `'Var'` ▶ `{ Zeros }`
+
+`'Expr'` can be an algebraic expression, equation or polynomial in the variable
+`'Var'`.  Equations such as `'X+1=X^2'` are converted to the difference of their
+sides before solving. `'Var'` must be the quoted name of a variable found in the
+expression.
+
+```rpl
+'Zeros(X^3-X^2-8*X+12;X)'
+@ Expecting { -3 2 }
+```
+
+`Zeros` will attempt to return symbolic results when possible:
+
+```rpl
+'A*X^2+B*X+C' 'X' Zeros
+@ Expecting { '(-B+√(B²-4·A·C))÷(2·A)' '(-B-√(B²-4·A·C))÷(2·A)' }
+```
+
+`Zeros` will find independent roots in the terms of a product:
+
+```rpl
+'zeros(sin(x)*cos(x);x)'
+@ Expecting { 'sin⁻¹ 0+2·i1·π' 'cos⁻¹ 0+2·i2·π' }
+```
+
+When finding the roots of polynomials, if `SymbolicResults` and `AutoSimplify`
+are set, `Zeros` will round numerical results to fractions and square roots if
+possible. `Zeros` will only return complex results if `ComplexResults` is
+set.
+
+```rpl
+ComplexResults 'Zeros(x^2+3;x)' Eval  RealResults
+@ Expecting { '√ 3'ⅈ -'√ 3'ⅈ }
+```
 
 
 ## Root
@@ -15052,7 +18790,7 @@ compared to HP implementations of RPL.
 For example, you can find a complex root for the following equation:
 ```rpl
 'ROOT((X-5)²+3;X;0+0ⅈ)'
-@ Expecting X=5.+1.73205 08075 7ⅈ
+@ Expecting X=5+1.73205 08075 7ⅈ
 ```
 
 ### Differences with HP calculators
@@ -15081,13 +18819,20 @@ END
 As an extension to the HP implementation, `ROOT` can solve systems of equations
 and multiple variables by solving them one equation at a time, a programmatic version of what the HP50G Advanced Reference Manual calls the Multiple Equation Solver (`MINIT`, `MITM` and `MSOLVR` commands).
 
-## SolvingMenuSolve
+## Solving Menu Solve Key
 
-Solve the system of equations for the given variable.
+A variable name followed by "?" will solve the system of equations for the given
+variable.
 
-## SolvingMenuRecall
+## Solving Menu Recall Key
 
-Recall the current value of a variable in a system of equations. The value is returned as an assignment.
+A variable name followed by ▶ will recall the value of the given equation. The
+value is returned as an assignment.
+
+## Solving Menu Store Key
+
+A variable name preceded by ▶ will store the value of the given equation. The
+stored value is placed on the stack as an assignment.
 
 ## MultipleEquationsSolver
 
@@ -15097,13 +18842,9 @@ Solve a system of multiple equations simultaneously.
 
 Solve for multiple variables in a system of equations.
 
-## MSlv
-
-On HP50G, a special command is dedicated to solving systems of equations.
-
-On DB48x, the `MSlv` command is provided for comptability. It behaves almost
-exactly like `Root`, except that it leaves the equations and variable lists on
-the stack in addition to the result.
+On HP50G, `MSlv` is dedicated to solving systems of equations.
+On DB48x, it behaves almost exactly like `Root`, except that it
+leaves the equations and variable lists on the stack in addition to the result.
 
 ```rpl
 RAD
@@ -15683,6 +19424,63 @@ The command will generate `Unable to isolate` if the expression cannot be
 reorganized, for example because it contains functions that have no known
 inverse.
 
+
+## Quote
+
+Return an object unevaluated (quoted).
+
+`Obj` `Quote` → `QuotedObj`
+
+The result is an algebraic expression containing `Obj` without evaluating it.
+This is used to pass unevaluated names or formulas as arguments, for example
+when building symbolic functions or when a CAS command must not evaluate its
+parameters prematurely.
+
+`5` `QUOTE` → `'5'`
+`'A+B'` `QUOTE` → `'A+B'` (unchanged if already quoted)
+
+`Quote` is mostly useful in algebraic expressions:
+
+```rpl
+@ Create an ArcLen commnand
+@ Note that the HP50G ARM erroneously lacks ∫ at end of the program
+@ We changed the names compared to ARM example because DB48x is case-insensitive,
+@ and START..END or VAR would cause a syntax error with original example names.
+« → arcstart arcend arcexpr arcvar
+  « arcstart arcend arcexpr arcvar ∂ SQ 1 + SQRT arcvar ∫ »
+» 'ArcLen' STO
+
+@ Evaluate the result numerically in radians
+'ArcLen(0,π,QUOTE(SIN(X)),QUOTE(X))'
+RAD →Decimal DEG
+@ Expecting 3.82019 77890 3
+```
+
+However, the rules for local name evaluations make the use of `Quote` less often necessary than on HP calculator. Consider the following example:
+
+```rpl
+@ Example program
+« → A B C 'A+B*C' » 'MyFn' STO
+
+@ Evaluation of MyFn with symbolic names
+'MyFn(X;Y;Z)' EVAL
+
+@ Evaluation of MyFn with expressions
+'MyFn(X+1;Y-1;Z*2)' EVAL
+
+@ Store a numerical value in X
+42 'X' STO
+
+@ Evaluation of MyFn without quotes will evaluate X
+'MyFn(X+1;Y-1;Z*2)' EVAL
+
+@ Evaluation of MyFn with quote will not evaluate X
+'MyFn(Quote(X+1);Y-1;Z*2)' EVAL
+
+4 →List
+@ Expecting { 'X+Y·Z' 'X+1+(Y-1)·(Z·2)' '43+(Y-1)·(Z·2)' 'X+1+(Y-1)·(Z·2)' }
+```
+
 ## Derivative
 
 Compute the derivative function for an expression. The algebraic syntax for `∂` is `'∂name(expr)'` For example, `'∂x(sin(2*x^2)'` computes `4*X*cos(2*X^2)`
@@ -15786,7 +19584,14 @@ Match and apply a rule to an expression only once
 
 
 ## TRIGSIN
-Simplify replacing cos(x)^2+sin(x)^2=1
+Simplify replacing `cos(x)²` with `1-sin(x)²`
+
+This command applies the Pythagorean identity to rewrite expressions so that
+cosine squares are replaced by sine squares. This favors the use of `sin` over
+`cos` in the expression.
+
+`'cos(X)^2'` ▶ `'1-(sin X)²'`
+`'cos(A+B)^2'` ▶ `'1-(sin(A+B))²'`
 
 
 ## ALLROOTS
@@ -15816,20 +19621,57 @@ The configuration directory is stored in the global variable with the name
 
 ## AlgebraVariable
 
-Recall the current algebra variable.
+Recall the current CAS algebra variable (HP-50G `VX` / `RCLVX`).
 
 The `AlgebraVariable` command returns the current variable used for polynomial
 evaluation and symbolic computations.
 If no variable is set, it defaults to `X`.
-The variable is stored in the algebra configuration directory.
+The variable is stored in the `AlgebraConfiguration` directory.
+
+Spellings: `VX`, `RclVX`, `RCLVX`, `ⓧ`.
+
+## ToPolynomial
+
+Convert an algebraic object to a polynomial.
+
+`X` ▶ `Poly`
+
+* If `X` is already a polynomial, it is returned unchanged.
+* If `X` is an array or list of coefficients in descending degree order, a
+  univariate polynomial in the current `AlgebraVariable` is built (same layout
+  as `PRoot` and `PCoef` in [CompatiblePolynomials](#compatiblepolynomials)
+  mode).
+* Otherwise, `X` is treated as an expression and expanded to a polynomial when
+  possible.
+
+```rpl
+[ 1 2 -25 -26 120 ] ToPolynomial
+@ Expecting x↑4+2·x↑3-25·x↑2-26·x+120
+```
+
+Use `ToArray` to recover the coefficient vector. See
+[NewStylePolynomials](#newstylepolynomials) for the default `PCoef` result type.
+
+## FromPolynomial
+
+Convert a polynomial to an ordinary expression.
+
+`Poly` ▶ `Expr`
+
+Rewrites the polynomial using normal infix notation (sums and products of
+powers). The variable names and term order follow the internal polynomial
+representation. Use `ToPolynomial` for the inverse conversion.
 
 ## StoreAlgebraVariable
 
-Store the current algebra variable.
+Store the current CAS algebra variable (HP-50G `STOVX`).
 
-The `StoreAlgebraVariable` command sets the variable used for polynomial evaluation and symbolic computations.
+The `StoreAlgebraVariable` command sets the variable used for polynomial
+evaluation and symbolic computations.
 The variable must be a quoted symbol (e.g., `'X'`).
-The variable is stored in the algebra configuration directory.
+The variable is stored in the `AlgebraConfiguration` directory.
+
+Spellings: `StoVX`, `STOVX`, `Storeⓧ`.
 
 ## Equation
 
@@ -16173,6 +20015,24 @@ Return DB48X version information as text.
 
  ▶ `"Version information"`
 
+## Chuck
+
+The most powerful command in DB48x.
+
+ ▶ `"Chuck pearl of wisdom"`
+
+The `CHUCK` command is by far the most powerful command in DB48x.
+Users must run it regularly to keep their calculator in shape.
+
+* `CHUCK` does not have arguments, it wins every single one.
+* `CHUCK` does not merely produce a result, it produces the best result
+every single time, effortlessly.
+* `CHUCK` does not need help, it provides help.
+* `CHUCK` never fails, any error is a user error.
+* `CHUCK` does not drain the battery, it exercises power.
+* `CHUCK` is so fast it has to slow down for you to keep up.
+* `CHUCK` can identify if your DB48x build is genuine.
+
 
 ## FreeMemory
 
@@ -16237,7 +20097,7 @@ power, because of additional animations or more expensive graphical rendering.
 ## Bytes
 
 Return the size of the object and a hash of its value. On classic RPL systems,
-teh hash is a 5-nibbles CRC32. On DB48X, the hash is a based integer of the
+the hash is a 5-nibbles CRC32. On DB48X, the hash is a based integer of the
 current [wordsize](#stws) corresponding to the binary representation of the
 object.
 
@@ -16527,14 +20387,6 @@ List all code points in a Utf8 string
 
 Convert an object to its text representation.
 
-## ToDecimal
-
-Convert an object to its decimal representation.
-
-## ToFraction
-
-Convert an object to its fractional representation.
-
 ## Compile
 
 Compile and evaluate the text, as if it was typed on the command line.
@@ -16766,6 +20618,45 @@ For a real argument that is an odd-integer multiple of 90 degrees, an
 `symbexpr` ▶ `tan symbexpr`
 
 
+## sec
+
+[Analytic function](#analytic-functions) returning the secant of the argument (1/cos).
+
+For real arguments, the current angle mode determines the number's units, unless
+angular units are specified. At odd-integer multiples of 90° in the current angle
+units, an [infinite result](#infinite-result) is generated.
+
+`z` ▶ *sec* `z`
+
+`symbexpr` ▶ `sec symbexpr`
+
+
+## csc
+
+[Analytic function](#analytic-functions) returning the cosecant of the argument (1/sin).
+
+For real arguments, the current angle mode determines the number's units, unless
+angular units are specified. At integer multiples of 180° in the current angle
+units, an [infinite result](#infinite-result) is generated.
+
+`z` ▶ *csc* `z`
+
+`symbexpr` ▶ `csc symbexpr`
+
+
+## cot
+
+[Analytic function](#analytic-functions) returning the cotangent of the argument (cos/sin).
+
+For real arguments, the current angle mode determines the number's units, unless
+angular units are specified. At integer multiples of 180° in the current angle
+units, an [infinite result](#infinite-result) is generated.
+
+`z` ▶ *cot* `z`
+
+`symbexpr` ▶ `cot symbexpr`
+
+
 ## ASIN
 Compute the arcsine
 
@@ -16776,6 +20667,21 @@ Compute the arccosine
 
 ## ATAN
 Compute the arctangent
+
+
+## sec⁻¹
+
+Compute the arc-secant. The argument must satisfy |x| ≥ 1.
+
+
+## csc⁻¹
+
+Compute the arc-cosecant. The argument must satisfy |x| ≥ 1.
+
+
+## cot⁻¹
+
+Compute the arc-cotangent.
 
 
 ## ATAN2
@@ -16814,6 +20720,30 @@ Compute the hyperbolic arccosine
 Compute the hyperbolic arctangent
 
 
+## csch
+Compute the hyperbolic cosecant (1/sinh)
+
+
+## sech
+Compute the hyperbolic secant (1/cosh)
+
+
+## coth
+Compute the hyperbolic cotangent (cosh/sinh)
+
+
+## csch⁻¹
+Compute the hyperbolic arccosecant
+
+
+## sech⁻¹
+Compute the hyperbolic arcsecant
+
+
+## coth⁻¹
+Compute the hyperbolic arccotangent
+
+
 ## LOG10
 Compute logarithm in base 10
 
@@ -16829,20 +20759,12 @@ Compute the square root
 Compute the cube root
 
 
-## EXPM
+## Expm1
 Compute exp(x)-1
-
-
-## LNP1
-Compute ln(x+1)
 
 
 ## Ln1p
 Compute ln(x+1)
-
-
-## Expm1
-Compute exp(x)-1
 
 
 ## Exp2
@@ -17333,3 +21255,973 @@ automatically be disabled after the first operation. The opposite setting is
 
 Enable temporary user mode, where the first activation of `ToggleUserMode` only
 enables user mode for a single operation. The oppsite setting is `UserModeLock`.
+# Soft Menus Tree
+
+
+Soft-menu hierarchy of the DB48X calculator for dm42 keyboard
+
+Buttons are shown as they appear on the calculator screen:
+**6 columns** (F1–F6) and **3 rows** per page.
+
+**Legend**
+
+| Style | Meaning |
+|:------|:--------|
+| \[Menu\] | Opens a sub-menu (defined in this document) |
+| [Command](#add) | Executes a command — link leads to the reference doc |
+| Command | Command with no documentation entry found |
+| _Unimplemented_ | Not yet implemented |
+| `text` | Inserts literal text in the command line |
+| 🟨 KEY | Press the yellow shift key once, then KEY |
+| 🟦 KEY | Press the yellow shift key twice, then KEY |
+| ▶ Fn | Navigate to next page, then press Fn |
+
+---
+
+## Contents
+
+- [AlarmMenu](#alarmmenu)
+- [AlgebraMenu](#algebramenu)
+- [AnglesMenu](#anglesmenu)
+- [ArithmeticMenu](#arithmeticmenu)
+- [BasesMenu](#basesmenu)
+- [CalculationMenu](#calculationmenu)
+- [CharactersMenu](#charactersmenu-reference)
+- [CircularMenu](#circularmenu)
+- [ClearThingsMenu](#clearthingsmenu)
+- [CompareMenu](#comparemenu)
+- [ComplexMenu](#complexmenu)
+- [ConstantsMenu](#constantsmenu-reference)
+- [DateMenu](#datemenu-reference)
+- [DebugMenu](#debugmenu-reference)
+- [DifferentialSolverMenu](#differentialsolvermenu)
+- [DisplayModesMenu](#displaymodesmenu-reference)
+- [EditMenu](#editmenu)
+- [EquationsMenu](#equationsmenu)
+- [ExpLogIdentitiesMenu](#explogidentitiesmenu)
+- [FilesMenu](#filesmenu)
+- [FlagsMenu](#flagsmenu)
+- [FractionsMenu](#fractionsmenu)
+- [GraphicsMenu](#graphicsmenu)
+- [HyperbolicMenu](#hyperbolicmenu)
+- [IntegrationMenu](#integrationmenu)
+- [IOMenu](#iomenu)
+- [Library](#library-reference)
+- [LinearSolverMenu](#linearsolvermenu)
+- [ListMenu](#listmenu)
+- [LoopsMenu](#loopsmenu)
+- [MainMenu](#mainmenu-reference)
+- [MathMenu](#mathmenu-reference)
+- [MathModesMenu](#mathmodesmenu-reference)
+- [MatrixMenu](#matrixmenu)
+- [MemoryMenu](#memorymenu)
+- [ModesMenu](#modesmenu-reference)
+- [MultiSolverMenu](#multisolvermenu)
+- [NumbersMenu](#numbersmenu)
+- [NumericalSolverMenu](#numericalsolvermenu)
+- [ObjectMenu](#objectmenu)
+- [PartsMenu](#partsmenu)
+- [PlotMenu](#plotmenu)
+- [PolynomialsMenu](#polynomialsmenu)
+- [PolynomialSolverMenu](#polynomialsolvermenu)
+- [PowersMenu](#powersmenu)
+- [PrintingMenu](#printingmenu)
+- [ProbabilitiesMenu](#probabilitiesmenu)
+- [ProgramMenu](#programmenu)
+- [RangeMenu](#rangemenu)
+- [RealMenu](#realmenu)
+- [SeparatorModesMenu](#separatormodesmenu-reference)
+- [SignalProcessingMenu](#signalprocessingmenu)
+- [SolverMenu](#solvermenu)
+- [StackMenu](#stackmenu)
+- [StatisticsMenu](#statisticsmenu)
+- [SymbolicMenu](#symbolicmenu)
+- [SymbolicSolverMenu](#symbolicsolvermenu)
+- [TestsMenu](#testsmenu)
+- [TextMenu](#textmenu)
+- [TimeMenu](#timemenu-reference)
+- [TrigIdentitiesMenu](#trigidentitiesmenu)
+- [UnitsConversionsMenu](#unitsconversionsmenu)
+- [UnitsMenu](#unitsmenu)
+- [UserInterfaceModesMenu](#userinterfacemodesmenu)
+- [UserModeMenu](#usermodemenu-reference)
+- [VectorMenu](#vectormenu)
+
+---
+
+### AlarmMenu
+
+Access: [DateMenu](#datemenu-reference) 🟨 F6; [TimeMenu](#timemenu-reference) 🟦 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| _AckAll_ | \[[Time](#timemenu-reference)\] | \[[Date](#datemenu-reference)\] |   |   |   |
+| _Alarm_ | _Ack_ | _→Alarm_ | _Alarm→_ | _FindAlm_ | _DelAlm_ |
+
+### AlgebraMenu
+
+Access: 🟦 D (LOG); [SymbolicMenu](#symbolicmenu) F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Ⓓ](#algebraconfiguration) | [ⓧ](#algebravariable) | [Stoⓧ](#storealgebravariable) | [Final](#finalalgebraresults) | &Wild | \[[Symb](#symbolicmenu)\] |
+| [∂](#derivative) | ∫ | ∑ | ∏ | _∆_ | [→Qπ](#q-1) |
+| [↓Match](#match-1) | [↑Match](#match) | [Isolate](#isolate) | Apply | Subst | [\|](#where) |
+
+### AnglesMenu
+
+Access: 🟦 L (TAN); [ComplexMenu](#complexmenu) 🟦 F5; [MathMenu](#mathmenu-reference) 🟦 F3; [ModesMenu](#modesmenu-reference) 🟨 F2; [RealMenu](#realmenu) 🟦 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [→DMS](#dms) | [DMS→](#dms-1) | DMS+ | DMS- | [Hypot](#hypot) | [Atan2](#atan2) |
+| →Deg | →Rad | →Grad | →πr | [→Polar](#topolar) | [→Rect](#torectangular) |
+| Deg | Rad | Grad | [πr](#piradians) | [D→R](#dr) | [R→D](#rd) |
+
+### ArithmeticMenu
+
+Access: [SymbolicMenu](#symbolicmenu) 🟨 F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [Show](#show) | [Quote](#quote) | [\|](#where) | `=` | _Rules_ | \[[Symb](#symbolicmenu)\] |
+| [∂](#derivative) | ∫ | ∑ | ∏ | _∆_ | _Taylor_ |
+
+### BasesMenu
+
+Access: 🟨 T (4); [MathMenu](#mathmenu-reference) 🟦 F2; [ProgramMenu](#programmenu) 🟨 F5
+
+*3 pages · 45 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [WordSize](#wordsize) | [NAnd](#nand) | [NOr](#nor) | [Implies](#implies) | [Excludes](#excludes) |   |
+| [Base](#base) | Bin | Oct | Dec | Hex | ◀ |
+| `#` | [And](#and) | [Or](#or) | [Xor](#xor) | [Not](#not) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [SLC](#shiftleftcount) | [SRC](#shiftrightcount) | [ASRC](#arithmeticshiftrightcount) | [RLC](#rotateleftcount) | [RRC](#rotaterightcount) |   |
+| [SLB](#shiftleftbyte) | [SRB](#shiftrightbyte) | [ASRB](#arithmeticshiftrightbyte) | [RLB](#rotateleftbyte) | [RRB](#rotaterightbyte) | ◀ |
+| [SL](#shiftleft) | [SR](#shiftright) | [ASR](#arithmeticshiftright) | [RL](#rotateleft) | [RR](#rotateright) | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| CntBits | 1-comp | 2-comp | [Modern](#modernbasednumbers) | [TruthLogicForIntegers](#truthlogicforintegers) |   |
+| SetBit | ClrBit | FlipBit | FstSet | LstSet | ◀ |
+| `#` | R→B | B→R | [Base](#base) | [WordSize](#wordsize) | ▶ |
+
+### CalculationMenu
+
+Access: [SymbolicMenu](#symbolicmenu) 🟨 F2
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| _Limit_ | _Serie_ | _Taylor_ | \[[Symb](#symbolicmenu)\] |   |   |
+| [LName](#listexpressionnames) | [XVars](#expressionvariables) | [Deriv](#derivative) | _DerivX_ | _IBF_ | _IntVX_ |
+
+### CircularMenu
+
+Access: 🟦 K (COS); [MathMenu](#mathmenu-reference) F3; [RealMenu](#realmenu) 🟦 F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [sec](#sec) | [csc](#csc) | [cot](#cot) | [sec⁻¹](#sec-1) | [csc⁻¹](#csc-1) | [cot⁻¹](#cot-1) |
+| [sin](#sin) | [cos](#cos) | [tan](#tan) | [sin⁻¹](#asin) | [cos⁻¹](#acos) | [tan⁻¹](#atan) |
+
+### ClearThingsMenu
+
+Access: 🟨 (⌫)
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| [Stack](#clearstack) | [Purge](#purge) | Stats | [Mem](#availablememory) | Error | [LCD](#clearlcd) |
+
+### CompareMenu
+
+Access: [ProgramMenu](#programmenu) 🟨 F3; [TestsMenu](#testsmenu) 🟦 F4
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [true](#true) | [false](#false) | \[[Tests](#testsmenu)\] | \[[Loops](#loopsmenu)\] | \[[Prog](#programmenu)\] |   |
+| [and](#and) | [or](#or) | [xor](#xor) | [not](#not) | [==](#-2) | _Unimplemented_ |
+| [<](#-3) | [=](#) | [>](#-5) | [≤](#-4) | [≠](#-1) | [≥](#-6) |
+
+### ComplexMenu
+
+Access: 🟨 G (STO); [MathMenu](#mathmenu-reference) F2; [VectorMenu](#vectormenu) 🟨 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| 2+i3 | [ℝ∡ℝ→ℂ](#realtopolar) | [ℂ→ℝ∡ℝ](#polartoreal) | Auto ℂ | \[[Angles](#anglesmenu)\] |   |
+| [→Rect](#torectangular) | [→Polar](#topolar) | [conj](#conj) | [sign](#sign) | [\|z\|](#abs) | [arg](#arg) |
+| `ⅈ` | `∡` | [ℝ→ℂ](#realtorectangular) | [ℂ→ℝ](#rectangulartoreal) | [re](#re) | [im](#im) |
+
+### DateMenu Reference
+
+See also: [DateMenu](#datemenu) user documentation
+
+Access: [AlarmMenu](#alarmmenu) 🟨 F3; [TimeMenu](#timemenu-reference) 🟦 F4
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [→Time](#settime) | [→Date](#setdate) | [JDN](#juliandaynumber) | [JDN→](#datefromjuliandaynumber) | \[[Time](#timemenu-reference)\] | \[[Alarms](#alarmmenu)\] |
+| `_date` | `_d` | [Date](#date-1) | [Dt+Tm](#datetime) | ∆Date | [Date+](#date) |
+
+### DebugMenu Reference
+
+See also: [DebugMenu](#debugmenu) user documentation
+
+Access: 🟦 X (1); [ProgramMenu](#programmenu) 🟦 F2
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Run](#run) | [ErrDbg](#debugonerror) | \[[Prog](#programmenu)\] |   |   |   |
+| [Halt](#halt) | [Step↑](#stepout) | DoErr | ErrMsg | ErrNum | ClrErr |
+| [Debug](#debug) | [Step](#step) | [Over](#over) | [Steps](#multiplesteps) | [Continue](#continue) | [Kill](#kill) |
+
+### DifferentialSolverMenu
+
+Access: [SolverMenu](#solvermenu) 🟨 F4; [SymbolicMenu](#symbolicmenu) 🟦 F2
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| [Eq](#equation) | [Indep](#indep) | [Root](#root) | \[[SolverMenu](#solvermenu)\] |   |   |
+
+### DisplayModesMenu Reference
+
+See also: [DisplayModesMenu](#displaymodesmenu) user documentation
+
+Access: 🟨 O (EEX); [MathModesMenu](#mathmodesmenu-reference) 🟦 F6; [ModesMenu](#modesmenu-reference) 🟨 F5; [SeparatorModesMenu](#separatormodesmenu-reference) 🟨 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [1 1/2](#mixedfractions) | [3/2](#improperfractions) | [1/3](#bigfractions) | [¹/₃](#smallfractions) | \[[UI](#userinterfacemodesmenu)\] | \[[Math](#mathmodesmenu-reference)\] |
+| [MantissaSpacing](#mantissaspacing) | [FractionSpacing](#fractionspacing) | [BasedSpacing](#basedspacing) | [StandardExponent](#standardexponent) | [MinimumSignificantDigits](#minimumsignificantdigits) | \[[Seps](#separatormodesmenu-reference)\] |
+| Std | Fix | Sci | Eng | Sig | [Precision](#precision) |
+
+### EditMenu
+
+Access: 🟦 (▼)
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| Stack | Hist↑ | Hist↓ |   |   |   |
+| Csr⇄Sel | \|← | →\| | Replace | [Copy](#copy) | Clear |
+| Select | ←Word | Word→ | [Search](#editorsearch) | [Cut](#editorcut) | [Paste](#editorpaste) |
+
+### ExpLogIdentitiesMenu
+
+Access: [SymbolicMenu](#symbolicmenu) 🟨 F4
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| _ExpLn_ | _Lin_ | _LnCollect_ | _SinCos_ | _TExpand_ | \[[Symb](#symbolicmenu)\] |
+
+### FilesMenu
+
+Access: 🟦 (0)
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| _Seek_ | _Dir_ |   |   |   |   |
+| _Save_ | _Load_ | _Open_ | _Close_ | _Read_ | _Write_ |
+| [Libs](#libs) | [Attach](#attach) | [Detach](#detach) | [Voltage](#batteryvoltage) | [USB?](#usbpowered) | [Low?](#lowbattery) |
+
+### FlagsMenu
+
+Access: 🟨 V (6); [ProgramMenu](#programmenu) 🟦 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Prog](#programmenu)\] | \[[Loops](#loopsmenu)\] | \[[Modes](#modesmenu-reference)\] |   |   |   |
+| [F→Bin](#flagstobinary) | [Bin→F](#binarytoflags) | \[[Tests](#testsmenu)\] | [Flip](#flipflag) | [Set?Set](#testflagsetthenset) | [Clr?Set](#testflagclearthenset) |
+| [Set](#setflag) | [Clear](#clearflag) | [Set?](#testflagset) | [Clear?](#testflagclear) | [Set?Clr](#testflagsetthenclear) | [Clr?Clr](#testflagclearthenclear) |
+
+### FractionsMenu
+
+Access: 🟦 I (R↓); [MathMenu](#mathmenu-reference) 🟦 F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Frac→](#explode) | [1 1/2](#mixedfractions) | [¹/₃](#smallfractions) | FractionIterations | FractionLargestPrime | FractionDigits |
+| [%Total](#percenttotal) | [%Chg](#percentchange) | DMS+ | DMS- | [→HMS](#hms) | [HMS→](#hms-1) |
+| `/` | [%](#percent) | [→DMS](#dms) | [DMS→](#dms-1) | [→Num](#num) | →Frac |
+
+### GraphicsMenu
+
+Access: 🟦 (.)
+
+*4 pages · 59 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| PixOn | PixOff | [Pix?](#pixtest) | [PixCol?](#pixcolor) | _Arc_ |   |
+| [RGB](#rgb) | [Gray](#gray) | Foregnd | Bckgnd | LnWidth | ◀ |
+| [Line](#drawline) | Rect | RndRect | Ellipse | Circle | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [→LCD](#tolcd) | [LCD→](#fromlcd) | [Pict](#pict) | Clip | CurClip |   |
+| Freeze | [Show](#show) | [→Grob](#togrob) | [MaximumShowWidth](#maximumshowwidth) | [MaximumShowHeight](#maximumshowheight) | ◀ |
+| [ClLCD](#clearlcd) | [Disp](#drawtext) | [DispXY](#drawstyledtext) | [Input](#input) | [Prompt](#prompt) | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Σ](#graphicsum) | [∏](#graphicproduct) | [∫](#graphicintegral) | [Subscript](#graphicsubscript) | [Exponent](#graphicexponent) |   |
+| [(.)](#graphicparentheses) | [\|.\|](#graphicnorm) | [÷](#graphicratio) | [√.](#graphicroot) | [Stack](#graphicstack) | ◀ |
+| [GOr](#gor) | [GXor](#gxor) | [GAnd](#gand) | [Extract](#extract) | [Append](#graphicappend) | ▶ |
+
+**Page 4**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [BlankPixmap](#blankpixmap) | _Unimplemented_ | [GraphicPicture](#pict) | \[[Plot](#plotmenu)\] |   |   |
+| _Unimplemented_ | [→Grob](#togrob) | [Blank](#blankgraphic) | [BlBitmap](#blankbitmap) | [BlGrob](#blankgrob) | ◀ |
+| [LCD→](#fromlcd) | [→LCD](#tolcd) | [→Bitmap](#tobitmap) | [→HPGrob](#tohpgrob) | [→Pixmap](#topixmap) | ▶ |
+
+### HyperbolicMenu
+
+Access: 🟦 J (SIN); [MathMenu](#mathmenu-reference) 🟨 F1; [PowersMenu](#powersmenu) 🟦 F6; [RealMenu](#realmenu) 🟦 F2
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [csch](#csch) | [sech](#sech) | [coth](#coth) | [csch⁻¹](#csch-1) | [sech⁻¹](#sech-1) | [coth⁻¹](#coth-1) |
+| [sinh](#sinh) | [cosh](#cosh) | [tanh](#tanh) | [sinh⁻¹](#asinh) | [cosh⁻¹](#acosh) | [tanh⁻¹](#atanh) |
+
+### IntegrationMenu
+
+Access: 🟨 Q (8); [SymbolicMenu](#symbolicmenu) 🟦 F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| Σ | ∏ |   |   |   |   |
+| [∂](#derivative) | ∫ | [Num ∫](#integrate) | Symb ∫ | [Eq](#equation) | [Indep](#indep) |
+
+### IOMenu
+
+Access: 🟦 (-); [MainMenu](#mainmenu-reference) 🟦 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [Save](#savestate) | [MinimumBatteryVoltage](#minimumbatteryvoltage) |   |   |   |   |
+| [Save](#savestate) | _Load_ | _Print_ | [Voltage](#batteryvoltage) | [USB?](#usbpowered) | [Low?](#lowbattery) |
+
+### LinearSolverMenu
+
+Access: [SolverMenu](#solvermenu) 🟨 F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| [Eq](#equation) | [Indep](#indep) | [Root](#root) | \[[SolverMenu](#solvermenu)\] |   |   |
+
+### ListMenu
+
+Access: 🟨 (-); [ProgramMenu](#programmenu) 🟦 F4
+
+*2 pages · 30 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Sort](#sort) | [RSort](#reversesort) | [Map](#map) | [Reduce](#reduce) | [Filter](#filter) |   |
+| [QSort](#quicksort) | [RQSort](#reversequicksort) | [∑List](#listsum) | [∏List](#listproduct) | [∆List](#listdifferences) | ◀ |
+| [→List](#list) | [List→](#list-1) | [Size](#size) | [Head](#head) | [Tail](#tail) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Obj→](#explode) | _Find_ | [Unique](#unique) | [QUnique](#quickunique) | \[[Objects](#objectmenu)\] |   |
+| DoList | DoSubs | NSub | EndSub | [Extract](#extract) | ◀ |
+| [Get](#get) | [Put](#put) | [GetI](#geti) | [PutI](#puti) | [Reverse](#reverselist) | ▶ |
+
+### LoopsMenu
+
+Access: 🟦 Y (2); [CompareMenu](#comparemenu) 🟦 F4; [FlagsMenu](#flagsmenu) 🟦 F2; [ProgramMenu](#programmenu) 🟨 F4; [TestsMenu](#testsmenu) 🟦 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| \[[Compare](#testsmenu)\] | \[[Prog](#programmenu)\] | _Label_ | _Goto_ | _Gosub_ | _Return_ |
+| [Start](#start) | StStep | [For](#for) | ForStep | [Until](#until) | [While](#while) |
+
+### MainMenu Reference
+
+See also: [MainMenu](#mainmenu) user documentation
+
+Access: 🟦 A (Σ+)
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Lib](#library-reference)\] | \[[Eqns](#equationsmenu)\] | \[[Const](#constantsmenu-reference)\] | \[[Time](#timemenu-reference)\] | \[[I/O](#iomenu)\] | \[[Chars](#charactersmenu-reference)\] |
+| [Cat](#catalog) | \[[Real](#realmenu)\] | \[[Matrix](#matrixmenu)\] | \[[Symb](#symbolicmenu)\] | \[[Stack](#stackmenu)\] | \[[UI](#userinterfacemodesmenu)\] |
+| Help | \[[Math](#mathmenu-reference)\] | \[[Prog](#programmenu)\] | \[[Plot](#plotmenu)\] | \[[Solve](#solvermenu)\] | \[[Modes](#modesmenu-reference)\] |
+
+### MathMenu Reference
+
+See also: [MathMenu](#mathmenu) user documentation
+
+Access: E (LN); [MainMenu](#mainmenu-reference) F2
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Signal](#signalprocessingmenu)\] | \[[Bases](#basesmenu)\] | \[[Angles](#anglesmenu)\] | \[[Poly](#polynomialsmenu)\] | \[[Symb](#symbolicmenu)\] | \[[Frac](#fractionsmenu)\] |
+| \[[Hyper](#hyperbolicmenu)\] | \[[Proba](#probabilitiesmenu)\] | \[[Stats](#statisticsmenu)\] | \[[Solver](#solvermenu)\] | \[[Const](#constantsmenu-reference)\] | \[[Eqns](#equationsmenu)\] |
+| \[[Real](#realmenu)\] | \[[Cmplx](#complexmenu)\] | \[[Trig](#circularmenu)\] | \[[Powers](#powersmenu)\] | \[[Matrix](#matrixmenu)\] | \[[Ranges](#rangemenu)\] |
+
+### MathModesMenu Reference
+
+See also: [MathModesMenu](#mathmodesmenu) user documentation
+
+Access: [DisplayModesMenu](#displaymodesmenu-reference) 🟦 F6; [ModesMenu](#modesmenu-reference) F4
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| Lazy | Lossy | [LinFitΣ](#linearfitsums) | x·y | [Angles](#setangleunits) | \[[Disp](#displaymodesmenu-reference)\] |
+| [MaxNumberBits](#maxnumberbits) | [MaxRewrites](#maxrewrites) | FractionIterations | FractionDigits | [1 1/2](#mixedfractions) | [¹/₃](#smallfractions) |
+| [Sym](#symbolicresults) | [Simpl](#autosimplify) | 0^0=1 | HwFP | Auto ℂ | Princ |
+
+### MatrixMenu
+
+Access: 🟦 R (9); [MainMenu](#mainmenu-reference) 🟨 F3; [MathMenu](#mathmenu-reference) F5; [VectorMenu](#vectormenu) 🟨 F6
+
+*3 pages · 35 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [RowNrm](#rownorm) | [ColNrm](#columnnorm) | _CondNum_ | [Size](#size) | \[[Vector](#vectormenu)\] |   |
+| [Det](#determinant) | [Norm](#norm) | [→Array](#array) | [Array→](#array-1) | [Random](#random) | ◀ |
+| `[]` | [Idnty](#identitymatrix) | [Const](#constantarray) | Transp | TrConj | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| _SVD_ | _SVL_ | _Diag→_ | _→Diag_ | _SpecRad_ |   |
+| [LU](#lu) | _LQ_ | _QR_ | _Schur_ | _Cholesky_ | ◀ |
+| [Col+](#col) | [Col-](#col-) | →Col | Col→ | ColSwp | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   | ◀ |
+| [Row+](#row) | [Row-](#row-) | →Row | Row→ | RowSwp | ▶ |
+
+### MemoryMenu
+
+Access: 🟨 H (RCL); [ProgramMenu](#programmenu) 🟨 F1
+
+*3 pages · 35 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Free](#freememory) | [TVars](#typedvariables) | [PgAll](#purgeall) | CurDir | [GCStats](#garbagecollectorstatistics) |   |
+| [Avail](#availablememory) | [Vars](#variables) | [Home](#homedirectory) | [Path](#directorypath) | [GC](#garbagecollect) | ◀ |
+| [Store](#store) | [Recall](#recall) | [Purge](#purge) | [CrDir](#createdirectory) | [UpDir](#updirectory) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Bytes](#bytes) | System | [RunStats](#runtimestatistics) | GC Clr | RT Clr |   |
+| [Recall](#recall) | Recall+ | Recall- | Recall× | Recall÷ | ◀ |
+| [Store](#store) | Store+ | Store- | Store× | Store÷ | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   | ◀ |
+| `Ⓥ` | [▶](#copy) | Clone | [Incr](#increment) | [Decr](#decrement) | ▶ |
+
+### ModesMenu Reference
+
+See also: [ModesMenu](#modesmenu) user documentation
+
+Access: 🟨 N (+/-); [FlagsMenu](#flagsmenu) 🟦 F3; [MainMenu](#mainmenu-reference) F6; [SeparatorModesMenu](#separatormodesmenu-reference) 🟨 F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Modes](#modes) | [Reset](#resetmodes) | [System](#systemsetup) |   |   |   |
+| Grad | \[[Angles](#anglesmenu)\] | Beep | Flash | \[[Display](#displaymodesmenu-reference)\] | \[[Seps](#separatormodesmenu-reference)\] |
+| Deg | Rad | [n×π](#piradians) | \[[Math](#mathmodesmenu-reference)\] | \[[User](#usermodemenu-reference)\] | \[[UI](#userinterfacemodesmenu)\] |
+
+### MultiSolverMenu
+
+Access: [SolverMenu](#solvermenu) 🟦 F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| _Eqs_ | _Indeps_ | [MRoot](#multipleequationssolver) | \[[SolverMenu](#solvermenu)\] |   |   |
+
+### NumbersMenu
+
+Access: 🟦 W (×)
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| →Int | [IsPrime](#isprime) | [NextPr](#nextpr) | [PrevPr](#prevpr) | [GCD](#gcd) | [LCM](#lcm) |
+| [→Num](#num) | [→Q](#q) | [→Qπ](#q-1) | R#Seed | [RandomGeneratorBits](#randomgeneratorbits) | [RandomGeneratorOrder](#randomgeneratororder) |
+| Σ | ∏ | QuoRem | [Factors](#factors) | Ran# | [Random](#random) |
+
+### NumericalSolverMenu
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| [Eq](#equation) | [Indep](#indep) | [Root](#root) | \[[SolverMenu](#solvermenu)\] |   |   |
+
+### ObjectMenu
+
+Access: [ListMenu](#listmenu) ▶ 🟦 F5; [ProgramMenu](#programmenu) 🟦 F3
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Eval](#evaluate) | [Run](#run) | Clone | [DTag](#deletetag) | [Tag→](#tag-1) | \[[Tools](#toolsmenu)\] |
+| [→List](#list) | [→Text](#totext) | [→Tag](#tag) | [→Graph](#togrob) | [→Prog](#program) | [→Array](#array) |
+| [Bytes](#bytes) | [Type](#type) | [TypeName](#typename) | [Obj→](#explode) | [→Num](#num) | →Frac |
+
+### PartsMenu
+
+Access: 🟦 E (LN); [RealMenu](#realmenu) 🟦 F6
+
+*3 pages · 45 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| R→I | →ℚ | →ℚπ | [→Decimal](#decimal) | [SignificantDigits](#sigdig) |   |
+| Truncate | [Mantissa](#mant) | [Exponent](#xpon) | [ceil](#ceil) | [floor](#floor) | ◀ |
+| [abs](#abs) | [sign](#sign) | [IntegerPart](#intpart) | [FractionalPart](#fracpart) | Round | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [→2D](#to2dvector) | [→3D](#to3dvector) | [→Rectangular](#torectangular) | [→Cylindrical](#tocylindrical) | [→Spherical](#tospherical) |   |
+| [Object→](#explode) | Range→ | [List→](#list-1) | Arry→ | [Vector→](#fromvector) | ◀ |
+| [re](#re) | [im](#im) | [arg](#arg) | [Size](#size) | [Get](#get) | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Tag→](#tag-1) | [→Tag](#tag) | [DeleteTag](#deletetag) | [Polynomial→](#frompolynomial) | [→Polynomial](#topolynomial) |   |
+| [StdRnd](#standardround) | [RelRnd](#relativeround) | [→StdUnc](#us) | [→RelUnc](#ur) | [PrcRnd](#precisionround) | ◀ |
+| [CstName](#constantname) | [CstValue](#constantvalue) | CstRng | [StdUnc](#standarduncertainty) | [RelUnc](#relativeuncertainty) | ▶ |
+
+### PlotMenu
+
+Access: 🟦 O (EEX); [GraphicsMenu](#graphicsmenu) ▶×3 🟦 F4; [MainMenu](#mainmenu-reference) F4; [SolverMenu](#solvermenu) 🟦 F3; [StatisticsMenu](#statisticsmenu) 🟦 F5; [SymbolicMenu](#symbolicmenu) 🟨 F6
+
+*2 pages · 20 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| Lines | Axes | [StatsPlotBins](#statsplotbins) | [XYPlotBins](#xyplotbins) | PlotRefreshRate |   |
+| Foregnd | Backgnd | LineWdth | [Xrange](#xrange) | [Yrange](#yrange) | ◀ |
+| [Function](#functionplot) | [Polar](#polarplot) | [Param](#parametricplot) | [Scatter](#scatterplot) | [Truth](#truthplot) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   | ◀ |
+| [Bar](#barplot) | [Histogrm](#histogramplot) | [Clear](#clearlcd) | Freeze | DrAxes | ▶ |
+
+### PolynomialsMenu
+
+Access: 🟦 Q (8); [MathMenu](#mathmenu-reference) 🟦 F4; [SymbolicMenu](#symbolicmenu) 🟨 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[MSolvr](#solvermenu)\] | [Solve](#root) | [TVMRoot](#tvmroot) | _FRoots_ | [XRoot](#xroot) | _FCoef_ |
+| [Obj→](#explode) | Display | QuoRem | [Root](#root) | [Zeros](#zeros) | [MRoot](#multipleequationssolver) |
+| `Ⓟ''` | [→Poly](#topolynomial) | [Poly→](#frompolynomial) | [PEval](#peval) | [PCoef](#pcoef) | [PRoot](#proot) |
+
+### PolynomialSolverMenu
+
+Access: [SolverMenu](#solvermenu) 🟨 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| [Eq](#equation) | [Indep](#indep) | [Root](#root) | \[[SolverMenu](#solvermenu)\] |   |   |
+
+### PowersMenu
+
+Access: 🟨 E (LN); [MathMenu](#mathmenu-reference) F4; [RealMenu](#realmenu) 🟦 F3
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [pow](#pow) | [xroot](#xroot) | FstSet | LstSet | popcnt | \[[Hyper](#hyperbolicmenu)\] |
+| [exp2](#exp2) | log2 | [expm1](#expm1) | [ln1p](#ln1p) | x³ | [∛](#cbrt) |
+| [exp](#exp) | [ln](#ln) | [exp10](#exp10) | [log10](#log10) | [x²](#sq) | [√](#sqrt) |
+
+### PrintingMenu
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| _Print_ | [Screen](#screencapture) | _Disk_ | _IR_ |   |   |
+
+### ProbabilitiesMenu
+
+Access: 🟨 W (×); [MathMenu](#mathmenu-reference) 🟨 F2; [RealMenu](#realmenu) 🟦 F4; [StatisticsMenu](#statisticsmenu) 🟦 F4
+
+*2 pages · 22 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| _Normal_ | _Student_ | _Chi²_ | _F-Distr_ | _FFT_ |   |
+| Γ | ln(Γ) | erf | erfc | RSeed | ◀ |
+| Comb | Perm | x! | Ran# | [Random](#random) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [RandomGeneratorBits](#randomgeneratorbits) | [RandomGeneratorOrder](#randomgeneratororder) |   |   |   | ◀ |
+| _Normal⁻¹_ | _Studnt⁻¹_ | _Chi²⁻¹_ | _F-Dist⁻¹_ | _FFT⁻¹_ | ▶ |
+
+### ProgramMenu
+
+Access: 🟨 Z (3); [CompareMenu](#comparemenu) 🟦 F5; [DebugMenu](#debugmenu-reference) 🟦 F3; [FlagsMenu](#flagsmenu) 🟦 F1; [LoopsMenu](#loopsmenu) 🟨 F2; [MainMenu](#mainmenu-reference) F3; [TestsMenu](#testsmenu) 🟦 F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Stack](#stackmenu)\] | \[[Debug](#debugmenu-reference)\] | \[[Objects](#objectmenu)\] | \[[List](#listmenu)\] | \[[Flag](#flagsmenu)\] | [Version](#version) |
+| \[[Mem](#memorymenu)\] | \[[Test](#testsmenu)\] | \[[Cmp](#comparemenu)\] | \[[Loop](#loopsmenu)\] | \[[Base](#basesmenu)\] | [Eval](#evaluate) |
+| `«»` | `{}` | `[]` | `→  «»` | `→  ''` | [Run](#run) |
+
+### RangeMenu
+
+Access: [MathMenu](#mathmenu-reference) F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Size](#size) |   |   |   |   |   |
+| [→Range](#range) | [→∆Range](#range-1) | [→%Range](#range-2) | [→σRange](#range-3) | [∪](#rangeunion) | [∩](#rangeintersect) |
+| `…` | `±` | `±%` | `±σ` | Range→ | `ρ` |
+
+### RealMenu
+
+Access: 🟦 G (STO); [MainMenu](#mainmenu-reference) 🟨 F2; [MathMenu](#mathmenu-reference) F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Trig](#circularmenu)\] | \[[Hyper](#hyperbolicmenu)\] | \[[Powers](#powersmenu)\] | \[[Prob](#probabilitiesmenu)\] | \[[Angles](#anglesmenu)\] | \[[Parts](#partsmenu)\] |
+| [Ceil](#ceil) | [Floor](#floor) | rem | [%](#percent) | [%Chg](#percentchange) | [%Total](#percenttotal) |
+| [Min](#min) | [Max](#max) | [mod](#mod) | [abs](#abs) | [→Num](#num) | [→Q](#q) |
+
+### SeparatorModesMenu Reference
+
+See also: [SeparatorModesMenu](#separatormodesmenu) user documentation
+
+Access: [DisplayModesMenu](#displaymodesmenu-reference) 🟨 F6; [ModesMenu](#modesmenu-reference) 🟨 F6
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [1.2x10³²](#fancyexponent) | [1.2E32](#classicexponent) | [1.0→1.](#trailingdecimal) | [1→1.0](#showasdecimal) | Fixed0 |   |
+| #1 000 | #1.000 | #1'000 | #1_000 | \[[Disp](#displaymodesmenu-reference)\] | \[[Modes](#modesmenu-reference)\] |
+| [1 000](#numberspaces) | [1.000,](#numberdotorcomma) | [1'000](#numberticks) | [1_000](#numberunderscore) | [2.3](#decimaldot) | [2,3](#decimalcomma) |
+
+### SignalProcessingMenu
+
+Access: [MathMenu](#mathmenu-reference) 🟦 F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| _FFT_ | _InvFFT_ |   |   |   |   |
+
+### SolverMenu
+
+Access: 🟨 P (7); [DifferentialSolverMenu](#differentialsolvermenu) F4; [LinearSolverMenu](#linearsolvermenu) F4; [MainMenu](#mainmenu-reference) F5; [MathMenu](#mathmenu-reference) 🟨 F4; [MultiSolverMenu](#multisolvermenu) F4; [NumericalSolverMenu](#numericalsolvermenu) F4; [PolynomialsMenu](#polynomialsmenu) 🟦 F1; [PolynomialSolverMenu](#polynomialsolvermenu) F4; [SymbolicSolverMenu](#symbolicsolvermenu) F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Multi](#multisolvermenu)\] | \[[Finance](#financesolvermenu)\] | \[[Plot](#plotmenu)\] | \[[Eqns](#equationsmenu)\] | [SolverImprecision](#solverimprecision) | [SolverIterations](#solveriterations) |
+| [▶Eq](#steq) | [Stoⓧ](#storealgebravariable) | \[[Symb](#symbolicsolvermenu)\] | \[[Diff](#differentialsolvermenu)\] | \[[Poly](#polynomialsolvermenu)\] | \[[Linear](#linearsolvermenu)\] |
+| [Eq▶](#rceq) | [ⓧ](#algebravariable) | [Root](#root) | [EvalEq](#evaleq) | [NxtEq](#nexteq) | \[[Solve](#solvingmenu)\] |
+
+### StackMenu
+
+Access: I (R↓); [MainMenu](#mainmenu-reference) 🟨 F5; [ProgramMenu](#programmenu) 🟦 F1
+
+*2 pages · 22 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [DupN](#duplicaten) | [DropN](#dropn) | [Depth](#depth) | [Nip](#nip) | [Pick3](#pick3) |   |
+| [Dup2](#duplicate2) | [Drop2](#drop2) | [Rot↓](#unrot) | [Roll↓](#rolld) | [Pick](#pick) | ◀ |
+| [Dup](#duplicate) | [Drop](#drop) | [Rot↑](#rot) | [Roll↑](#roll) | [Over](#over) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [NDupN](#ndupn) | [DupDup](#duplicatetwice) |   |   |   | ◀ |
+| [Swap](#swap) | [LastArg](#lastarguments) | [LastX](#lastx) | [Undo](#undo) | [ClrStk](#clearstack) | ▶ |
+
+### StatisticsMenu
+
+Access: 🟨 S (÷); [MathMenu](#mathmenu-reference) 🟨 F3
+
+*3 pages · 35 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| StoΣ | RclΣ | ClrΣ | \[[Proba](#probabilitiesmenu)\] | \[[Plot](#plotmenu)\] |   |
+| [XCol](#independentcolumn) | [YCol](#dependentcolumn) | [MinΣ](#min) | [MaxΣ](#max) | [ΣSize](#size) | ◀ |
+| [Σ+](#) | [Σ-](#-) | Total | [Mean](#average) | [StdDev](#standarddeviation) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [ΣX](#x) | [ΣY](#y) | [ΣXY](#xy) | [ΣX²](#x-1) | [ΣY²](#y-1) |   |
+| [BestFit](#bestfit) | [LinFit](#linearfit) | [ExpFit](#exponentialfit) | [LogFit](#logarithmicfit) | [PwrFit](#powerfit) | ◀ |
+| [LR](#linearregression) | ΣLine | PredX | PredY | [Corr](#correlation) | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   | ◀ |
+| [Median](#median) | [Bins](#frequencybins) | [PopVar](#populationvariance) | [PopSDev](#populationstandarddeviation) | [PCovar](#populationcovariance) | ▶ |
+
+### SymbolicMenu
+
+Access: 🟦 P (7); [AlgebraMenu](#algebramenu) 🟦 F6; [ArithmeticMenu](#arithmeticmenu) 🟨 F6; [CalculationMenu](#calculationmenu) 🟨 F4; [ExpLogIdentitiesMenu](#explogidentitiesmenu) F6; [MainMenu](#mainmenu-reference) 🟨 F4; [MathMenu](#mathmenu-reference) 🟦 F5; [TrigIdentitiesMenu](#trigidentitiesmenu) 🟨 F1
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| \[[Integ](#integrationmenu)\] | \[[DSolve](#differentialsolvermenu)\] | [Simplify](#autosimplify) | [KeepAll](#noautosimplify) |   |   |
+| \[[Arith](#arithmeticmenu)\] | \[[Calc](#calculationmenu)\] | \[[Trig](#trigidentitiesmenu)\] | \[[Exp/Ln](#explogidentitiesmenu)\] | \[[Poly](#polynomialsmenu)\] | \[[Graph](#plotmenu)\] |
+| Collect | Expand | Simplify | [→Poly](#topolynomial) | [→Prog](#program) | \[[Algbra](#algebramenu)\] |
+
+### SymbolicSolverMenu
+
+Access: [SolverMenu](#solvermenu) 🟨 F3
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   |   |
+| [Eq](#equation) | [Indep](#indep) | [Root](#root) | [Isolate](#isolate) | \[[SolverMenu](#solvermenu)\] |   |
+
+### TestsMenu
+
+Access: 🟦 Z (3); [CompareMenu](#comparemenu) 🟦 F3; [FlagsMenu](#flagsmenu) 🟨 F3; [LoopsMenu](#loopsmenu) 🟨 F1; [ProgramMenu](#programmenu) 🟨 F2
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Case](#case) | Then | When | \[[Compare](#comparemenu)\] | \[[Loops](#loopsmenu)\] | \[[Prog](#programmenu)\] |
+| IfThen | IfElse | [IfErr](#iferr) | IfErrElse | [IFT](#ift) | [IFTE](#ifte) |
+| [<](#-3) | [=](#) | [>](#-5) | [≤](#-4) | [≠](#-1) | [≥](#-6) |
+
+### TextMenu
+
+Access: 🟦 T (4)
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [T→Real](#compiletoreal) | [T→Expr](#compiletoexpression) | [T→Int](#compiletointeger) | [T→Pos](#compiletopositive) |   |   |
+| [T→Code](#textcode) | [Code→T](#codetext) | [Extract](#extract) | [T→Obj](#compiletoobject) | [T→Alg](#compiletoalgebraic) | [T→Num](#compiletonumber) |
+| [→Text](#totext) | [Text→](#compile) | [Length](#size) | [Append](#add) | [Repeat](#repeat) | [C→Code](#charcode) |
+
+### TimeMenu Reference
+
+See also: [TimeMenu](#timemenu) user documentation
+
+Access: 🟦 V (6); [AlarmMenu](#alarmmenu) 🟨 F2; [DateMenu](#datemenu-reference) 🟨 F5; [MainMenu](#mainmenu-reference) 🟦 F4
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [→Time](#settime) | [→Date](#setdate) | _ClkAdj_ | \[[Dates](#datemenu-reference)\] | \[[Alarms](#alarmmenu)\] |   |
+| Chrono | [Ticks](#ticks) | [Dt+Tm](#datetime) | [T→Str](#totext) | [Wait](#wait) | [TEval](#teval) |
+| _hms | [Time](#time) | [→HMS](#hms) | [HMS→](#hms-1) | [HMS+](#hms-2) | [HMS-](#hms-) |
+
+### TrigIdentitiesMenu
+
+Access: [SymbolicMenu](#symbolicmenu) 🟨 F3
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| \[[Symb](#symbolicmenu)\] |   |   |   |   |   |
+| _HalfTan_ | _Tan→SinCos_ | _Tan→SinCos²_ | _TExpand_ | _TLin_ | [TrigSin](#trigsin) |
+
+### UnitsConversionsMenu
+
+Access: 🟦 U (5)
+
+*3 pages · 36 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| µ (-6) | n (-9) | p (-12) | T (+12) | P (+15) |   |
+| m (-3) | c (-2) | k (+3) | M (+6) | G (+9) | ◀ |
+| [Convert](#convert) | [Base](#base) | [Value](#unitvalue) | [Factor](#factorunit) | [→Unit](#unit) | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| Ki | Mi | Gi | Ti | [Pi](#pi) |   |
+| y (-24) | z (-21) | a (-18) | Z (+21) | Y (+24) | ◀ |
+| f (-15) | d (-1) | da (+1) | h (+2) | E (+18) | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [SIPfx](#unitssiprefixcycle) |   |   |   |   | ◀ |
+| Ei | Zi | Yi | Ri | Qi | ▶ |
+
+### UserInterfaceModesMenu
+
+Access: 🟦 N (+/-); [DisplayModesMenu](#displaymodesmenu-reference) 🟦 F5; [MainMenu](#mainmenu-reference) 🟨 F6; [ModesMenu](#modesmenu-reference) F6
+
+*4 pages · 47 items total*
+
+**Page 1**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [3-lines](#threerowsmenus) | [1-line](#singlerowmenus) | [Flat](#flatmenus) | [Round](#roundedmenus) | \[[Hide](#hideemptymenu)\] |   |
+| ResultFont | StackFont | EditorFont | MultilineEditorFont | [CursorBlinkRate](#cursorblinkrate) | ◀ |
+| [GrRes](#graphicresultdisplay) | [GrStk](#graphicstackdisplay) | Beep | Flash | \[[User](#usermodemenu-reference)\] | ▶ |
+
+**Page 2**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| Fixed0 | VProg | BusyIndicatorRefresh | \[[ExitMenu](#exitclearsmenu)\] | [ListEval](#listasprogram) |   |
+| [EditorWrapColumn](#editorwrapcolumn) | [TabWidth](#tabwidth) | [MaximumShowWidth](#maximumshowwidth) | [MaximumShowHeight](#maximumshowheight) | ErrorBeepFrequency | ◀ |
+| [cmd](#lowercase) | [CMD](#uppercase) | [Cmd](#capitalized) | [Command](#longform) | ErrorBeepDuration | ▶ |
+
+**Page 3**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [TextRenderingSizeLimit](#textrenderingsizelimit) | [GraphRenderingSizeLimit](#graphrenderingsizelimit) | PlotRefreshRate | AllVars | [SIPrefixCycle](#unitssiprefixcycle) |   |
+| [ResultGraphingTimeLimit](#resultgraphingtimelimit) | [StackGraphingTimeLimit](#stackgraphingtimelimit) | [GraphingTimeLimit](#graphingtimelimit) | [ShowTimeLimit](#showtimelimit) | [MinimumBatteryVoltage](#minimumbatteryvoltage) | ◀ |
+| [Units](#showbuiltinunits) | Const | Eqns | [Libs](#libs) | Chars | ▶ |
+
+**Page 4**
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+|   |   |   |   |   | ◀ |
+| [Header](#header) | [CustomHeaderRefresh](#customheaderrefresh) |   |   |   | ▶ |
+
+### UserModeMenu Reference
+
+See also: [UserModeMenu](#usermodemenu) user documentation
+
+Access: [ModesMenu](#modesmenu-reference) F5; [UserInterfaceModesMenu](#userinterfacemodesmenu) F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|   |   |   |   |   |   |
+| [DelKeys](#deletekeys) | [KeyMap](#keymap) |   |   |   |   |
+| [Toggle](#toggleusermode) | [User](#usermode) | [Lock](#usermodelock) | [RclKeys](#recallkeys) | [StoKeys](#storekeys) | [Assign](#assignkey) |
+
+### VectorMenu
+
+Access: [MatrixMenu](#matrixmenu) 🟦 F5
+
+| F1 | F2 | F3 | F4 | F5 | F6 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| [Hypot](#hypot) | [Atan2](#atan2) |   |   |   |   |
+| [→Vec2](#to2dvector) | [→Vec3](#to3dvector) | [Vec→](#fromvector) | [→Cylind](#tocylindrical) | \[[Complex](#complexmenu)\] | \[[Matrix](#matrixmenu)\] |
+| [Norm](#norm) | [Dot](#dot) | [Cross](#cross) | [→Rect](#torectangular) | [→Polar](#topolar) | [→Spher](#tospherical) |
+
+### CharactersMenu Reference
+
+See also: [CharactersMenu](#charactersmenu) user documentation
+
+_Content loaded dynamically at runtime._
+
+### ConstantsMenu Reference
+
+See also: [ConstantsMenu](#constantsmenu) user documentation
+
+_Content loaded dynamically at runtime._
+
+### EquationsMenu
+
+_Content loaded dynamically at runtime._
+
+### Library Reference
+
+See also: [Library](#library) user documentation
+
+_Content loaded dynamically at runtime._
+
+### UnitsMenu
+
+_Content loaded dynamically at runtime._
+

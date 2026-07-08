@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(db48x LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick QuickControls2 QuickWidgets Widgets Multimedia OpenGLWidgets)
 
 # Set the target and platform
@@ -20,8 +23,42 @@ execute_process(COMMAND tools/build_id OUTPUT_VARIABLE BUILD_ID OUTPUT_STRIP_TRA
 
 qt_standard_project_setup()
 
-# Add the sim subdirectory
-add_subdirectory(recorder)
+include(CheckSymbolExists)
+include(CheckIncludeFile)
+
+check_symbol_exists(sigaction signal.h HAVE_SIGACTION)
+check_include_file(regex.h HAVE_REGEX_H)
+check_include_file(sys/mman.h HAVE_SYS_MMAN_H)
+check_include_file(signal.h HAVE_SIGNAL_H)
+check_symbol_exists(drand48 stdlib.h HAVE_DRAND48)
+check_symbol_exists(setlinebuf stdio.h HAVE_SETLINEBUF)
+check_symbol_exists(SIGSTKSZ signal.h HAVE_SIGSTKSZ)
+check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
+
+configure_file(
+    cmake/recorder-config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/recorder/config.h
+)
+
+add_library(recorder STATIC
+    recorder/recorder.c
+    recorder/recorder_ring.c
+)
+
+target_include_directories(recorder
+    PUBLIC recorder
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/recorder
+)
+target_compile_definitions(recorder PRIVATE
+    $<$<BOOL:${HAVE_SIGACTION}>:HAVE_SIGACTION>
+    $<$<BOOL:${HAVE_REGEX_H}>:HAVE_REGEX_H>
+    $<$<BOOL:${HAVE_SYS_MMAN_H}>:HAVE_SYS_MMAN_H>
+    $<$<BOOL:${HAVE_SIGNAL_H}>:HAVE_SIGNAL_H>
+    $<$<BOOL:${HAVE_DRAND48}>:HAVE_DRAND48>
+    $<$<BOOL:${HAVE_SETLINEBUF}>:HAVE_SETLINEBUF>
+    $<$<BOOL:${HAVE_SIGSTKSZ}>:HAVE_SIGSTKSZ>
+    $<$<BOOL:${HAVE_STRSIGNAL}>:HAVE_STRSIGNAL>
+)
 
 # Run the shell command and capture its output
 execute_process(

@@ -218,7 +218,7 @@ PARSE_BODY(decimal)
                 exponent--;
             }
         }
-        else if (decimalDot < 0 && (cp == '.' || cp == ','))
+        else if (decimalDot < 0 && (cp == '.' || (cp == ',' && !p.precedence)))
         {
             decimalDot = +s - +source;
         }
@@ -1322,10 +1322,12 @@ algebraic_p decimal::to_fraction(uint count, uint decimals) const
     if (fp->is_zero())
         return ip->to_integer();
 
+    decimal_g target = num;
     if (neg)
     {
         ip = decimal::neg(ip);
         fp = decimal::neg(fp);
+        target = decimal::neg(num);
     }
     one = make(1);
     n1 = ip->to_bignum();
@@ -1337,13 +1339,15 @@ algebraic_p decimal::to_fraction(uint count, uint decimals) const
     if (decimals > maxdec)
         decimals = maxdec;
 
+    // Limit fraction precision to displayed digits (DisplayDigits) like HP50G
+    uint dispdig = Settings.DisplayDigits();
+    if (dispdig > 0 && decimals > dispdig)
+        decimals = dispdig;
+
     while (count--)
     {
         // Check if the decimal part is small enough
-        if (fp->is_zero())
-            break;
-        large exp = fp->exponent();
-        if (-exp > large(decimals))
+        if (fp->is_zero() || fp->exponent() < -large(decimals))
             break;
 
         next = one / fp;
@@ -1365,16 +1369,21 @@ algebraic_p decimal::to_fraction(uint count, uint decimals) const
         d2 = s;
 
         fraction_g f = +big_fraction::make(n1, d1);
-        fp = num - decimal_g(decimal::from_fraction(f));
-        if (fp->is_zero())
+        // Check convergence: break when |target - n/d| < 10^(-decimals)
+        decimal_g err = target - decimal_g(decimal::from_fraction(f));
+        if (err->is_zero())
+            break;
+        if (err->is_negative())
+            err = decimal::neg(err);
+        if (-err->exponent() > large(decimals))
             break;
 
         fp = next - ip;
     }
 
     algebraic_g result = d1->is_one()
-                           ? algebraic_p(+n1)
-                           : algebraic_p(+big_fraction::make(n1, d1));
+        ? algebraic_p(+n1)
+        : algebraic_p(+big_fraction::make(n1, d1));
     if (neg)
         result = -result;
     return +result;
@@ -2433,6 +2442,52 @@ decimal_p decimal::tan(decimal_r x)
 }
 
 
+decimal_p decimal::sec(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Secant as reciprocal of cosine
+// ----------------------------------------------------------------------------
+{
+    uint qturns;
+    decimal_g fp;
+    precision_adjust prec;
+    if (!x->adjust_from_angle(qturns, fp))
+        return nullptr;
+    decimal_g c = cos_fracpi(qturns, fp);
+    return prec(inv(c));
+}
+
+
+decimal_p decimal::csc(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Cosecant as reciprocal of sine
+// ----------------------------------------------------------------------------
+{
+    uint qturns;
+    decimal_g fp;
+    precision_adjust prec;
+    if (!x->adjust_from_angle(qturns, fp))
+        return nullptr;
+    decimal_g s = sin_fracpi(qturns, fp);
+    return prec(inv(s));
+}
+
+
+decimal_p decimal::cot(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Cotangent as ratio of cos/sin
+// ----------------------------------------------------------------------------
+{
+    uint qturns;
+    decimal_g fp;
+    precision_adjust prec;
+    if (!x->adjust_from_angle(qturns, fp))
+        return nullptr;
+    decimal_g s = sin_fracpi(qturns, fp);
+    decimal_g c = cos_fracpi(qturns, fp);
+    return prec(c / s);
+}
+
+
 decimal_p decimal::asin(decimal_r x)
 // ----------------------------------------------------------------------------
 //   Arc-sine, use asin(x) = atan(x / sqrt(1-x^2))
@@ -2482,6 +2537,58 @@ decimal_p decimal::acos(decimal_r x)
         tmp = exact_angle(5,-1);
     }
     return prec(tmp);
+}
+
+
+decimal_p decimal::asec(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Arc-secant
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    if (!x)
+        return nullptr;
+    decimal_g absx = abs(x);
+    decimal_g one = make(1);
+    if (absx && absx < one)
+    {
+        rt.domain_error();
+        return nullptr;
+    }
+    return prec(acos(one / x));
+}
+
+
+decimal_p decimal::acsc(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Arc-cosecant
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    if (!x)
+        return nullptr;
+    decimal_g absx = abs(x);
+    decimal_g one = make(1);
+    if (absx && absx < one)
+    {
+        rt.domain_error();
+        return nullptr;
+    }
+    return prec(asin(one / x));
+}
+
+
+decimal_p decimal::acot(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Arc-cotangent
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    if (!x)
+        return nullptr;
+    if (x->is_zero())
+        return exact_angle(5, -1);
+    return prec(atan(make(1) / x));
 }
 
 
@@ -2638,6 +2745,96 @@ decimal_p decimal::atanh(decimal_r x)
     decimal_g one = make(1);
     decimal_g half = make(5, -1);
     return prec(half * ln((one + x) / (one - x)));
+}
+
+
+decimal_p decimal::csch(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Hyperbolic cosecant
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    decimal_g s = sinh(x);
+    return prec(inv(s));
+}
+
+
+decimal_p decimal::sech(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Hyperbolic secant
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    decimal_g c = cosh(x);
+    return prec(inv(c));
+}
+
+
+decimal_p decimal::coth(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Hyperbolic cotangent
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    decimal_g s = sinh(x);
+    decimal_g c = cosh(x);
+    return prec(c / s);
+}
+
+
+decimal_p decimal::acsch(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Inverse hyperbolic cosecant
+// ----------------------------------------------------------------------------
+{
+    precision_adjust prec;
+    decimal_g one = make(1);
+    decimal_g inv_x = inv(x);
+    return prec(ln(inv_x + decimal_g(sqrt(inv_x*inv_x + one))));
+}
+
+
+decimal_p decimal::asech(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Inverse hyperbolic secant
+// ----------------------------------------------------------------------------
+{
+    // Domain: 0 < x <= 1
+    if (x->is_zero() || x->is_negative())
+    {
+        rt.domain_error();
+        return nullptr;
+    }
+    decimal_g one = make(1);
+    if (x > one)
+    {
+        rt.domain_error();
+        return nullptr;
+    }
+
+    precision_adjust prec;
+    decimal_g inv_x = inv(x);
+    return prec(ln(inv_x + decimal_g(sqrt(inv_x*inv_x - one))));
+}
+
+
+decimal_p decimal::acoth(decimal_r x)
+// ----------------------------------------------------------------------------
+//   Inverse hyperbolic cotangent
+// ----------------------------------------------------------------------------
+{
+    // Domain: |x| > 1
+    decimal_g absx = abs(x);
+    decimal_g one = make(1);
+    if (absx && absx <= one)
+    {
+        rt.domain_error();
+        return nullptr;
+    }
+
+    precision_adjust prec;
+    decimal_g half = make(5, -1);
+    return prec(half * ln((x + one) / (x - one)));
 }
 
 

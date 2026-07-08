@@ -31,8 +31,12 @@
 #include "complex.h"
 
 #include "arithmetic.h"
+#include "array.h"
 #include "compare.h"
+#include "expression.h"
+#include "fraction.h"
 #include "functions.h"
+#include "integer.h"
 #include "parser.h"
 #include "renderer.h"
 #include "runtime.h"
@@ -104,6 +108,18 @@ algebraic_g complex::mod() const
 }
 
 
+algebraic_g complex::arg() const
+// ----------------------------------------------------------------------------
+//   Return argument in a format-independant way
+// ----------------------------------------------------------------------------
+{
+    algebraic_g a = arg(Settings.AngleMode());
+    if (a && Settings.SetAngleUnits() && a->is_real())
+        add_angle(a);
+    return a;
+}
+
+
 algebraic_g complex::arg(complex::angle_unit unit) const
 // ----------------------------------------------------------------------------
 //   Return argument in a format-independant way
@@ -169,6 +185,128 @@ rectangular_p complex::make(int re, int im)
     return rectangular_p(make(ID_rectangular,
                               integer::make(re), integer::make(im),
                               ID_PiRadians));
+}
+
+
+complex_g complex::zero()
+// ----------------------------------------------------------------------------
+//   Complex zero
+// ----------------------------------------------------------------------------
+{
+    return make(0, 0);
+}
+
+
+complex_g complex::one()
+// ----------------------------------------------------------------------------
+//   Complex one
+// ----------------------------------------------------------------------------
+{
+    return make(1, 0);
+}
+
+
+complex_g complex::from_algebraic(algebraic_r x)
+// ----------------------------------------------------------------------------
+//   Promote an algebraic to a complex value
+// ----------------------------------------------------------------------------
+{
+    if (complex_p z = x->as_complex())
+        return z;
+    if (x->is_real())
+        return rectangular::make(x, integer::make(0));
+    return nullptr;
+}
+
+
+bool complex::is_zero() const
+// ----------------------------------------------------------------------------
+//   Test if complex is zero
+// ----------------------------------------------------------------------------
+{
+    if (type() == ID_rectangular)
+        return rectangular_p(this)->is_zero();
+    return polar_p(this)->is_zero();
+}
+
+
+bool complex::is_one() const
+// ----------------------------------------------------------------------------
+//   Test if complex is one
+// ----------------------------------------------------------------------------
+{
+    if (type() == ID_rectangular)
+        return rectangular_p(this)->is_one();
+    return polar_p(this)->is_one();
+}
+
+
+bool complex::is_integer(algebraic_g &re) const
+// ----------------------------------------------------------------------------
+//   If z is a purely real integer, return that value
+// ----------------------------------------------------------------------------
+{
+    if (has_imaginary())
+        return false;
+    algebraic_g eps = epsilon();
+    re = this->re()->snap_near_integer(eps);
+    return re && re->is_integer();
+}
+
+
+bool complex::near(complex_r other) const
+// ----------------------------------------------------------------------------
+//   Test if two complex values are equal within solver imprecision
+// ----------------------------------------------------------------------------
+{
+    if (!other)
+        return false;
+    complex_g   self = complex_p(this);
+    complex_g   d    = self - other;
+    if (!d)
+        return false;
+    algebraic_g m   = abs::run(algebraic_p(+d));
+    algebraic_g eps = epsilon();
+    return m && smaller_magnitude(m, eps);
+}
+
+
+bool complex::has_imaginary() const
+// ----------------------------------------------------------------------------
+//   True when the imaginary part exceeds solver imprecision
+// ----------------------------------------------------------------------------
+{
+    algebraic_g im = this->im()->evaluate();
+    if (!im)
+        return false;
+    algebraic_g aim = abs::run(im);
+    if (!aim)
+        return false;
+    return !smaller_magnitude(aim, epsilon());
+}
+
+
+algebraic_p complex::as_rounded_result(int impr) const
+// ----------------------------------------------------------------------------
+//   Drop imaginary noise that result from complex coefficients
+// ----------------------------------------------------------------------------
+{
+    rectangular_g r = as_rectangular();
+    if (!r)
+        return nullptr;
+    algebraic_g eps = epsilon(impr);
+    algebraic_g re  = r->re();
+    algebraic_g im  = r->im();
+    re = re->snap_near_integer(eps);
+    if (!re || !im)
+        return nullptr;
+    im = abs::run(im);
+    if (!im || im->is_zero(false) || smaller_magnitude(im, eps))
+        return re;
+    im = im->snap_near_integer(eps);
+    if (!im)
+        return nullptr;
+    return rectangular::make(re, im);
 }
 
 
@@ -387,7 +525,7 @@ PARSE_BODY(rectangular)
         size_t spaces = utf8_skip_whitespace(p.source + offs, max - offs);
         offs += spaces;
         cp = utf8_codepoint(p.source + offs);
-        if (cp == ';')
+        if (cp == ';' || (cp == ',' && !Settings.DecimalComma()))
         {
             offs++;
             offs += utf8_skip_whitespace(p.source + offs, max - offs);
@@ -434,32 +572,37 @@ PARSE_BODY(rectangular)
         if (max <= 1)
             return SKIP;
         offs = utf8_next(p.source, offs, max);
-        cp = utf8_codepoint(p.source + offs);
+        cp = offs < max ? utf8_codepoint(p.source + offs) : 0;
     }
 
     bool imark = cp == I_MARK;
     if (imark)
     {
         offs = utf8_next(p.source, offs, max);
-        cp = utf8_codepoint(p.source + offs);
+        cp = offs < max ? utf8_codepoint(p.source + offs) : 0;
     }
     bool     sp    = utf8_whitespace(cp);
     size_t   imsz  = max - offs;
     object_p imobj = sp ? nullptr : parse(p.source + offs, imsz,
                                           PARENTHESES, p.separator);
+    algebraic_g im;
     if (!imobj)
     {
         rt.clear_error();
         if (!imark)
             return SKIP;
         // Case i or 3+i: We only got the imaginary mark
-        algebraic_g im = re ? +re : algebraic_p(integer::make(neg ? -1 : 1));
-        re = integer::make(0);
+        if (!re || hadsign)
+            im = algebraic_p(integer::make(neg ? -1 : 1));
+        if (re && !hadsign)
+            im = re;
+        if (!re || !hadsign)
+            re = integer::make(0);
         p.out = rectangular::make(re, im);
         p.length = offs;
         return p.out ? OK : ERROR;
     }
-    algebraic_g im = imobj->as_algebraic();
+    im = imobj->as_algebraic();
     if (!im)
         return SKIP;            // Case of 3+"Hello"
 
@@ -566,13 +709,25 @@ RENDER_BODY(rectangular)
         return r.printf("Invalid rectangular");
     bool ifirst = r.editing() || Settings.ComplexIBeforeImaginary();
     bool neg  = im->is_negative(false);
+    if (expression_p expr = im->as<expression>())
+        if (object_p obj = expr->outermost_operator())
+            if (obj->type() == ID_neg)
+                neg = true;
     if (neg)
         im = -im;
-    re->render(r);
-    r.put(neg ? '-' : '+');
+    if (!re->is_zero(false))
+    {
+        re->render(r);
+        r.put(neg ? '-' : '+');
+    }
+    else if (neg)
+    {
+        r.put('-');
+    }
     if (ifirst)
         r.put(unicode(I_MARK));
-    im->render(r);
+    if (!im->is_one(false))
+        im->render(r);
     if (!ifirst)
         r.put(unicode(I_MARK));
     return r.size();
@@ -1150,6 +1305,33 @@ COMPLEX_BODY(tan)
 }
 
 
+COMPLEX_BODY(sec)
+// ----------------------------------------------------------------------------
+//   Complex implementation of sec
+// ----------------------------------------------------------------------------
+{
+    return complex::make(1, 0) / complex::cos(z);
+}
+
+
+COMPLEX_BODY(csc)
+// ----------------------------------------------------------------------------
+//   Complex implementation of csc
+// ----------------------------------------------------------------------------
+{
+    return complex::make(1, 0) / complex::sin(z);
+}
+
+
+COMPLEX_BODY(cot)
+// ----------------------------------------------------------------------------
+//   Complex implementation of cot
+// ----------------------------------------------------------------------------
+{
+    return complex::cos(z) / complex::sin(z);
+}
+
+
 COMPLEX_BODY(asin)
 // ----------------------------------------------------------------------------
 //   Complex implementation of asin
@@ -1187,6 +1369,33 @@ COMPLEX_BODY(atan)
     // atan(z) = -i/2 ln((i-z) / (i + z))
     complex_g i = complex::make(0,1);
     return complex::ln((i - z) / (i + z)) / complex_g(complex::make(0,2));
+}
+
+
+COMPLEX_BODY(asec)
+// ----------------------------------------------------------------------------
+//   Complex implementation of asec
+// ----------------------------------------------------------------------------
+{
+    return complex::acos(complex::make(1, 0) / z);
+}
+
+
+COMPLEX_BODY(acsc)
+// ----------------------------------------------------------------------------
+//   Complex implementation of acsc
+// ----------------------------------------------------------------------------
+{
+    return complex::asin(complex::make(1, 0) / z);
+}
+
+
+COMPLEX_BODY(acot)
+// ----------------------------------------------------------------------------
+//   Complex implementation of acot
+// ----------------------------------------------------------------------------
+{
+    return complex::atan(complex::make(1, 0) / z);
 }
 
 
@@ -1257,22 +1466,122 @@ COMPLEX_BODY(atanh)
 }
 
 
-COMPLEX_BODY(ln1p)
+COMPLEX_BODY(csch)
 // ----------------------------------------------------------------------------
-//   Complex implementation of log1p
+//   Complex implementation of csch
 // ----------------------------------------------------------------------------
 {
+    // csch(z) = 1 / sinh(z)
     complex_g one = complex::make(1, 0);
-    return ln(one + z);
+    return one / complex::sinh(z);
 }
+
+
+COMPLEX_BODY(sech)
+// ----------------------------------------------------------------------------
+//   Complex implementation of sech
+// ----------------------------------------------------------------------------
+{
+    // sech(z) = 1 / cosh(z)
+    complex_g one = complex::make(1, 0);
+    return one / complex::cosh(z);
+}
+
+
+COMPLEX_BODY(coth)
+// ----------------------------------------------------------------------------
+//   Complex implementation of coth
+// ----------------------------------------------------------------------------
+{
+    // coth(z) = cosh(z) / sinh(z)
+    complex_g s = complex::sinh(z);
+    complex_g c = complex::cosh(z);
+    return c / s;
+}
+
+
+COMPLEX_BODY(acsch)
+// ----------------------------------------------------------------------------
+//   Complex implementation of acsch
+// ----------------------------------------------------------------------------
+{
+    // acsch(z) = ln(1/z + sqrt(1/z^2 + 1))
+    complex_g one = complex::make(1, 0);
+    complex_g inv_z = one / z;
+    return complex::ln(inv_z + complex::sqrt(inv_z*inv_z + one));
+}
+
+
+COMPLEX_BODY(asech)
+// ----------------------------------------------------------------------------
+//   Complex implementation of asech
+// ----------------------------------------------------------------------------
+{
+    // asech(z) = ln(1/z + sqrt(1/z^2 - 1))
+    complex_g one = complex::make(1, 0);
+    complex_g inv_z = one / z;
+    return complex::ln(inv_z + complex::sqrt(inv_z*inv_z - one));
+}
+
+
+COMPLEX_BODY(acoth)
+// ----------------------------------------------------------------------------
+//   Complex implementation of acoth
+// ----------------------------------------------------------------------------
+{
+    // acoth(z) = 1/2 ln((z+1) / (z-1))
+    complex_g one = complex::make(1, 0);
+    complex_g two = complex::make(2, 0);
+    return complex::ln((z + one) / (z - one)) / two;
+}
+
+
+COMPLEX_BODY(ln1p)
+// ----------------------------------------------------------------------------
+//   Complex implementation of log1p, avoiding cancellation for small z
+// ----------------------------------------------------------------------------
+//   ln1p(a+bi) = 0.5*ln1p(a*(2+a)+b*b) + i*atan2(b, 1+a)
+{
+    algebraic_g a = z->re();
+    algebraic_g b = z->im();
+
+    // Real part: 0.5 * ln1p(a*(2+a) + b*b)
+    algebraic_g two = integer::make(2);
+    algebraic_g re  = ln1p::run(a * (two + a) + b * b) / two;
+
+    // Imaginary part: atan2(b, 1+a) — suppress angle unit on result
+    settings::SaveSetAngleUnits ssau(false);
+    algebraic_g one = integer::make(1);
+    algebraic_g im  = atan2::evaluate(b, one + a);
+
+    return rectangular::make(re, im);
+}
+
 
 COMPLEX_BODY(expm1)
 // ----------------------------------------------------------------------------
-//   Complex implementation of expm1
+//   Complex implementation of expm1, avoiding cancellation for small z
 // ----------------------------------------------------------------------------
+//   expm1(a+bi) = (expm1(a)*cos(b) - 2*sin(b/2)^2) + i*(exp(a)*sin(b))
 {
-    complex_g one = complex::make(1, 0);
-    return exp(z - one);
+    algebraic_g a = z->re();
+    algebraic_g b = z->im();
+
+    // Real part: expm1(a)*cos(b) - 2*sin(b/2)^2
+    algebraic_g em1   = expm1::run(a);
+    algebraic_g cosb  = cos::run(b);
+    algebraic_g two   = integer::make(2);
+    algebraic_g bh    = b / two;
+    algebraic_g sinbh = sin::run(bh);
+    algebraic_g re    = em1 * cosb - two * sinbh * sinbh;
+
+    // Imaginary part: (expm1(a)+1)*sin(b), reusing em1 to avoid a second exp call
+    algebraic_g one  = integer::make(1);
+    algebraic_g ea   = em1 + one;
+    algebraic_g sinb = sin::run(b);
+    algebraic_g im   = ea * sinb;
+
+    return rectangular::make(re, im);
 }
 
 

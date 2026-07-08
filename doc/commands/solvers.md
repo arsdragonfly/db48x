@@ -4,6 +4,47 @@
 Numerical integration (adaptive Simpson)
 
 
+## Zeros
+
+Find unique zeros of a univariate expression.
+
+`'Expr'` `'Var'` ▶ `{ Zeros }`
+
+`'Expr'` can be an algebraic expression, equation or polynomial in the variable
+`'Var'`.  Equations such as `'X+1=X^2'` are converted to the difference of their
+sides before solving. `'Var'` must be the quoted name of a variable found in the
+expression.
+
+```rpl
+'Zeros(X^3-X^2-8*X+12;X)'
+@ Expecting { -3 2 }
+```
+
+`Zeros` will attempt to return symbolic results when possible:
+
+```rpl
+'A*X^2+B*X+C' 'X' Zeros
+@ Expecting { '(-B+√(B²-4·A·C))÷(2·A)' '(-B-√(B²-4·A·C))÷(2·A)' }
+```
+
+`Zeros` will find independent roots in the terms of a product:
+
+```rpl
+'zeros(sin(x)*cos(x);x)'
+@ Expecting { 'sin⁻¹ 0+2·i1·π' 'cos⁻¹ 0+2·i2·π' }
+```
+
+When finding the roots of polynomials, if `SymbolicResults` and `AutoSimplify`
+are set, `Zeros` will round numerical results to fractions and square roots if
+possible. `Zeros` will only return complex results if `ComplexResults` is
+set.
+
+```rpl
+ComplexResults 'Zeros(x^2+3;x)' Eval  RealResults
+@ Expecting { '√ 3'ⅈ -'√ 3'ⅈ }
+```
+
+
 ## Root
 
 Find the root of an equation or of a system of equations.
@@ -141,7 +182,7 @@ compared to HP implementations of RPL.
 For example, you can find a complex root for the following equation:
 ```rpl
 'ROOT((X-5)²+3;X;0+0ⅈ)'
-@ Expecting X=5.+1.73205 08075 7ⅈ
+@ Expecting X=5+1.73205 08075 7ⅈ
 ```
 
 ### Differences with HP calculators
@@ -170,13 +211,20 @@ END
 As an extension to the HP implementation, `ROOT` can solve systems of equations
 and multiple variables by solving them one equation at a time, a programmatic version of what the HP50G Advanced Reference Manual calls the Multiple Equation Solver (`MINIT`, `MITM` and `MSOLVR` commands).
 
-## SolvingMenuSolve
+## Solving Menu Solve Key
 
-Solve the system of equations for the given variable.
+A variable name followed by "?" will solve the system of equations for the given
+variable.
 
-## SolvingMenuRecall
+## Solving Menu Recall Key
 
-Recall the current value of a variable in a system of equations. The value is returned as an assignment.
+A variable name followed by ▶ will recall the value of the given equation. The
+value is returned as an assignment.
+
+## Solving Menu Store Key
+
+A variable name preceded by ▶ will store the value of the given equation. The
+stored value is placed on the stack as an assignment.
 
 ## MultipleEquationsSolver
 
@@ -186,13 +234,9 @@ Solve a system of multiple equations simultaneously.
 
 Solve for multiple variables in a system of equations.
 
-## MSlv
-
-On HP50G, a special command is dedicated to solving systems of equations.
-
-On DB48x, the `MSlv` command is provided for comptability. It behaves almost
-exactly like `Root`, except that it leaves the equations and variable lists on
-the stack in addition to the result.
+On HP50G, `MSlv` is dedicated to solving systems of equations.
+On DB48x, it behaves almost exactly like `Root`, except that it
+leaves the equations and variable lists on the stack in addition to the result.
 
 ```rpl
 RAD

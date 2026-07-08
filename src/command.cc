@@ -88,6 +88,8 @@ object::id command::lookup(utf8 name, size_t &maxlen, bool eq)
 {
     id     type  = id(0);
     size_t len   = maxlen;
+    if (!len)
+        return type;
 
     if (!sorted_ids)
     {
@@ -159,15 +161,18 @@ object::id command::lookup(utf8 name, size_t &maxlen, bool eq)
                     if (len <= max)
                     {
                         cmp = strncasecmp(cstring(cmd), cstring(name), len);
-                        if (cmp == 0 && at_end(name, max, cmd, len, eq))
-                        {
-                            if (uskip || xsq)
-                                return id(0);
-                            maxlen = len;
-                            return type;
-                        }
+
                         if (cmp == 0)
+                        {
+                            if (at_end(name, max, cmd, len, eq))
+                            {
+                                if (uskip || xsq)
+                                    return id(0);
+                                maxlen = len;
+                                return type;
+                            }
                             cmp = -1; // Logically equivalent to cmd ending in 0
+                        }
                     }
                     else
                     {
@@ -335,6 +340,8 @@ size_t    command::sorted_ids_count = 0;
 #  pragma GCC optimize("-O2")
 #endif // DEOPTIMIZE_CATALOG
 
+RECORDER(sort_ids, 32, "Sorting command spellings");
+
 static int sort_ids(const void *left, const void *right)
 // ----------------------------------------------------------------------------
 //   Sort the IDs alphabetically based on their fancy name
@@ -342,9 +349,20 @@ static int sort_ids(const void *left, const void *right)
 {
     uint16_t l = *((uint16_t *) left);
     uint16_t r = *((uint16_t *) right);
-    if (!object::spellings[l].name || !object::spellings[r].name)
-        return !!object::spellings[l].name - !!object::spellings[r].name;
-    return strcasecmp(object::spellings[l].name, object::spellings[r].name);
+    ASSERT(object::spellings[l].name && object::spellings[r].name);
+    int cmp = utf8_compare(utf8(object::spellings[l].name),
+                           utf8(object::spellings[r].name));
+    record(sort_ids,
+           "%u[%s] %+s %u[%s] %d",
+           l,
+           object::spellings[l].name,
+           cmp < 0   ? "<"
+           : cmp > 0 ? ">"
+                     : "=",
+           r,
+           object::spellings[r].name,
+           cmp);
+    return cmp;
 }
 
 
@@ -370,52 +388,37 @@ bool command::initialize_sorted_ids()
                 if (object::is_command(ty))
                     if (object::spellings[i].name)
                         sorted_ids[cmd++] = i;
-        qsort(sorted_ids, count, sizeof(sorted_ids[0]), sort_ids);
 
         // Make sure we have unique commands in the catalog
-        cstring spelling = nullptr;
-        cmd = 0;
-        for (uint i = 0; i < count; i++)
+        // This loop needs to repeat the qsort step because the DM32 hardware
+        // sometimes gives bogus data out of the QSPI when "hammered" like in
+        // qsort, which results in incorrectly sorted arrays.
+        bool fumbled;
+        uint sorts = 0;
+        do
         {
-            uint16_t j = sorted_ids[i];
-            auto &s = object::spellings[j];
+            fumbled = false;
+            sorts++;
+            qsort(sorted_ids, count, sizeof(sorted_ids[0]), sort_ids);
+            sys_delay(10);      // For DM32 hardware on battery
 
-            if (object::is_command(s.type))
+            // Make sure we have unique entries
+            cmd = 0;
+            auto last = object::spellings[sorted_ids[cmd++]];
+            for (uint i = 1; i < count; i++)
             {
-                if (cstring sp = s.name)
-                {
-                    if (!spelling ||
-                        (spelling != sp && strcasecmp(sp, spelling) != 0))
-                    {
-                        sorted_ids[cmd++] = sorted_ids[i];
-                        spelling = sp;
-                    }
-                    else if (cmd)
-                    {
-                        uint c = sorted_ids[cmd - 1];
-                        auto &last = object::spellings[c];
-                        if (s.type != last.type)
-                        {
-                            record(command_error,
-                                   "Types %u and %u have same spelling "
-                                   "%+s and %+s",
-                                   s.type, last.type, spelling, sp);
-                        }
-                    }
-                }
+                uint16_t j = sorted_ids[i];
+                auto    &s = object::spellings[j];
+                int      cmp = utf8_compare(utf8(s.name), utf8(last.name));
+                if (cmp < 0)
+                    fumbled = true; // qsort failed, retry
+                last = object::spellings[sorted_ids[i]];
+                if (cmp > 0)
+                    sorted_ids[cmd++] = sorted_ids[i];
             }
-            else
-            {
-                // Do not remove this code
-                // It seems useless, but without it, the catalog is
-                // badly broken on DM42. Apparently, the loop is a bit
-                // too fast, and we end up adding a varying, but too small,
-                // number of commands to the array
-                debug_printf(5, "Not a command for %u, type %u[%s]",
-                             i, s.type, object::name(s.type));
-                debug_wait(-1);
-            }
-        }
+            count = cmd;
+        } while (fumbled);
+
         sorted_ids_count = cmd;
 
 #if SIMULATOR
@@ -1079,12 +1082,30 @@ COMMAND_BODY(Version)
         "Reverse Polish Lisp (RPL)\n"
         "and a tribute to\n"
         "Bill Hewlett and Dave Packard\n"
-        "© 2025 Christophe de Dinechin";
+        "© 2026 Christophe de Dinechin";
     if (text_g version = text::make(version_text))
         if (rt.push(object_p(version)))
             return OK;
     return ERROR;
 }
+
+
+#ifdef HAS_CHUCK
+COMMAND_BODY(ChuckNorris)
+// ----------------------------------------------------------------------------
+//   Return the Chuck Norris quote for this version
+// ----------------------------------------------------------------------------
+{
+#include "chuck-norris.h"
+    const size_t nchuckles = sizeof(chuckles)/sizeof(chuckles[0]);
+    static_assert (nchuckles > 0);
+    const utf8 chuckle_text = (utf8) chuckles[rand() % nchuckles];
+    if (text_g chuckle = text::make(chuckle_text))
+        if (rt.push(object_p(chuckle)))
+            return OK;
+    return ERROR;
+}
+#endif // HAS_CHUCK
 
 
 COMMAND_BODY(Help)

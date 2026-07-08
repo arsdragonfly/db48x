@@ -296,23 +296,27 @@ struct list : text
     //   Return the head and tail of a list
     // ------------------------------------------------------------------------
 
+    // Map, reduce and filter operations
+    list_p        map(object_p prg) const;
+    object_p      reduce(object_p prg) const;
+    list_p        filter(object_p prg) const;
 
     // Apply an algebraic function to all elements in list
-    list_p map(object_p prg) const;
-    list_p map(algebraic_fn fn) const;
-    list_p map(arithmetic_fn fn, algebraic_r y) const;
-    list_p map(algebraic_r x, arithmetic_fn fn) const;
-    static list_p map(algebraic_fn fn, list_r x)
+    list_p        map(object_p prg, size_t recurse) const;
+    list_p        map(algebraic_fn fn, size_t r = ~0U) const;
+    list_p        map(arithmetic_fn fn, algebraic_r y, size_t r = ~0U) const;
+    list_p        map(algebraic_r x, arithmetic_fn fn, size_t r = ~0U) const;
+    static list_p map(algebraic_fn fn, list_r x, size_t recurse = ~0U)
     {
-        return x->map(fn);
+        return x->map(fn, recurse);
     }
-    static list_p map(arithmetic_fn fn, list_r x, algebraic_r y)
+    static list_p map(arithmetic_fn fn, list_r x, algebraic_r y, size_t r = ~0U)
     {
-        return x->map(fn, y);
+        return x->map(fn, y, r);
     }
-    static list_p map(arithmetic_fn fn, algebraic_r x, list_r y)
+    static list_p map(arithmetic_fn fn, algebraic_r x, list_r y, size_t r = ~0U)
     {
-        return y->map(x, fn);
+        return y->map(x, fn, r);
     }
 
     static object::result push_list_from_stack(uint depth, id ty = ID_list);
@@ -335,23 +339,28 @@ struct list : text
     // Swap two elements in the array
     list_p swap(size_t first, size_t second) const;
 
-    // Reduce and filter operations
-    object_p reduce(object_p prg) const;
-    list_p   filter(object_p prg) const;
+    // Reduce and filter implementations
+    object_p reduce(object_p prg, size_t recurse) const;
+    list_p   filter(object_p prg, size_t recurse) const;
 
     // Build a list by combining two subsequent items
     list_p   pair_map(object_p prg) const;
-    object_p map_as_object(object_p prg) const          { return map(prg);    }
-    object_p filter_as_object(object_p prg) const       { return filter(prg); }
 
     // Element substitution
     static algebraic_p where(algebraic_r expr, algebraic_r args);
     static object_p substitute(object_p expr, object_p args);
-    list_p substitute(symbol_r name, object_r value, size_t len) const;
+    list_p substitute(symbol_r name, object_p value, size_t len) const;
     list_p substitute(symbol_r name, object_p value) const;
     list_p substitute(expression_r assign) const;
     list_p substitute(list_r assignments) const;
     list_p substitute(object_r repl) const;
+    template<typename... args>
+    list_p substitute(symbol_r name, object_p value, args... rest) const
+    {
+        if (list_p result = substitute(name, value))
+            return result->substitute(rest...);
+        return nullptr;
+    }
 
     // Extract a sublist
     list_p extract(object_r first, object_r last) const;
@@ -366,6 +375,8 @@ struct list : text
     // Get a sorted list
     list_p sort() const;
     list_p sort(int (*compare)(object_p *x, object_p *y)) const;
+    list_p unique() const;
+    list_p unique(int (*compare)(object_p *x, object_p *y)) const;
 
 public:
     // Shared code for parsing and rendering, taking delimiters as input
@@ -385,30 +396,32 @@ typedef const list *list_p;
 
 COMMAND_DECLARE(ToList,~1);
 COMMAND_DECLARE(FromList,1);
-COMMAND_DECLARE(Size,1);
-COMMAND_DECLARE(Get,2);
+COMMAND_DECLARE_FN(Size,1);
+COMMAND_DECLARE_FN(Get,2);
 COMMAND_DECLARE(Put,3);
-COMMAND_DECLARE(GetI,2);
+COMMAND_DECLARE_FN(GetI,2);
 COMMAND_DECLARE(PutI,3);
-COMMAND_DECLARE(Sort,1);
-COMMAND_DECLARE(QuickSort,1);
-COMMAND_DECLARE(ReverseSort,1);
-COMMAND_DECLARE(ReverseQuickSort,1);
-COMMAND_DECLARE(ReverseList,1);
-COMMAND_DECLARE(Head,1);
-COMMAND_DECLARE(Tail,1);
-COMMAND_DECLARE(Map,2);
-COMMAND_DECLARE(Reduce,2);
-COMMAND_DECLARE(Filter, 2);
+COMMAND_DECLARE_FN(Sort,1);
+COMMAND_DECLARE_FN(QuickSort,1);
+COMMAND_DECLARE_FN(ReverseSort,1);
+COMMAND_DECLARE_FN(ReverseQuickSort,1);
+COMMAND_DECLARE_FN(ReverseList,1);
+COMMAND_DECLARE_FN(Unique,1);
+COMMAND_DECLARE_FN(QuickUnique,1);
+COMMAND_DECLARE_FN(Head,1);
+COMMAND_DECLARE_FN(Tail,1);
+COMMAND_DECLARE_FN(Map,2);
+COMMAND_DECLARE_FN(Reduce,2);
+COMMAND_DECLARE_FN(Filter, 2);
 COMMAND_DECLARE(DoList, ~1);
 COMMAND_DECLARE(DoSubs, ~2);
-COMMAND_DECLARE(NSub, 0);
-COMMAND_DECLARE(EndSub, 0);
-COMMAND_DECLARE(ListSum,1);
-COMMAND_DECLARE(ListProduct,1);
-COMMAND_DECLARE(ListDifferences,1);
-COMMAND_DECLARE(XVars, 1);
-COMMAND_DECLARE(LName, 1);
+SYMBOL_DECLARE(NSub);
+SYMBOL_DECLARE(EndSub);
+COMMAND_DECLARE_FN(ListSum,1);
+COMMAND_DECLARE_FN(ListProduct,1);
+COMMAND_DECLARE_FN(ListDifferences,1);
+COMMAND_DECLARE_FN(XVars, 1);
+COMMAND_DECLARE_SPECIAL(LName, algebraic, 1, PREC_DECL(FUNCTION); SYMARGS);
 
 
 inline list_g operator+(list_r x, list_r y)
