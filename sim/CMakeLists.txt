@@ -107,6 +107,9 @@ if(WIN32)
     target_link_libraries(${TARGET} PRIVATE setupapi)
 elseif(ANDROID)
     target_compile_definitions(${TARGET} PRIVATE ANDROID)
+    set_target_properties(${TARGET} PROPERTIES
+        QT_ANDROID_COMPILE_SDK_VERSION android-35
+        QT_ANDROID_TARGET_SDK_VERSION 35)
 elseif(FREEBSD)
     target_link_libraries(${TARGET} PRIVATE thr iconv)
 elseif(APPLE)
